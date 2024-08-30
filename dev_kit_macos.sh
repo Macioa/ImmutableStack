@@ -4,6 +4,7 @@ brew install --cask dbeaver-community
 brew install --cask iterm2
 brew install --cask postman
 brew install --cask visual-studio-code
+brew install --cask github
 
 code --install-extension eamodio.gitlens
 code --install-extension esbenp.prettier-vscode
