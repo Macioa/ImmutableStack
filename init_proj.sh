@@ -14,11 +14,19 @@ PROJECT_NAME=$(echo "$PROJECT_NAME" | tr ' -' '_')
 # Remove all other special characters
 PROJECT_NAME=$(echo "$PROJECT_NAME" | sed 's/[^a-z0-9_]//g')
 
-# Initialize new project
+echo ""
+echo "Generating Phoenix apps..." && sleep 2
 mix phx.new $PROJECT_NAME --no-html --no-assets --binary-id --umbrella --install && \
+
+echo ""
+echo "Generating React app..." && sleep 2
 cd "${PROJECT_NAME}_umbrella/apps" && \
 npx create-react-app "${PROJECT_NAME}_ui" --template typescript && \
+
+echo ""
+echo "Installing Redux..." && sleep 2
 cd "${PROJECT_NAME}_ui" && \
 npm install @reduxjs/toolkit react-redux @types/react-redux && \
 npm install --save-dev @babel/plugin-proposal-private-property-in-object && \
-cd ../..
+
+cd ../../..
