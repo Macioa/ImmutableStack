@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ../../.
+      dockerfile: ./docker/dev/SERVER.DOCKERFILE # Assuming the Dockerfile for the server is named `Dockerfile`
+    ports:
+      - "4000:4000"  # Expose port 4000 internally and map it to port 5000 externally
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgres://postgres:password@db:5432/mydatabase"
+    networks:
+      - app-network
+
+  client:
+    build:
+      context: ../../apps/test_ui/.
+      dockerfile: ../../docker/dev/CLIENT.DOCKERFILE # Assuming the Dockerfile for the client is named `CLIENT.DOCKERFILE`
+    ports:
+      - "3000:3000"  # Expose port 3000 internally and map it to port 8000 externally
+    depends_on:
+      - server
+    environment:
+      API_URL: "http://server:4000"
+    networks:
+      - app-network
+
+  db:
+    build:
+      dockerfile: DB.DOCKERFILE # Assuming the Dockerfile for the database is named `DB.DOCKERFILE`
+    ports:
+      - "5432:5432"  # Expose port 5432 internally and map it to port 5433 externally
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
