@@ -1,0 +1,17 @@
+{
+  "name": "immutablestack",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc && tar -czvf ImmutableStack-v0.0.2.tar.gz . && mv -f ImmutableStack-v0.0.2.tar.gz ~/git/homebrew-immutable"
+  },
+  "keywords": [],
+  "author": "macioa",
+  "license": "Apache-2.0",
+  "description": "Toolkit for working with the Immutable Stack (elixir/phoenix + react/redux)",
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}
