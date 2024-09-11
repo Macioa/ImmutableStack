@@ -95,6 +95,7 @@ interface AllowedTypes {
     | binary_id;
 }
 type GenType<T extends AllowedTypes> = T;
+
 interface ImmutableGenerator {
     name: string
     generate: {
