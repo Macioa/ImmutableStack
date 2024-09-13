@@ -1,13 +1,26 @@
-import { match } from "assert";
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from "url";
+
+import { createMigration } from "./gen_migration";
+
+type ImmutableGenerator = {
+  name: string;
+  generate: {
+    slice?: string
+    http_controller?: string
+    channel_controller?: string;
+    databaseModel?: string;
+    schema?: string;
+    tstype?: string;
+  };
+  test: boolean;
+}
 
 interface Dict {
   [key: string]: string | Dict;
 }
 
-interface Mem {
+interface TypeDict {
   name: string | null;
   ts: Dict;
   ex: Dict;
@@ -24,7 +37,7 @@ const getGenTypes = (
     .forEach(({ name, ts, ex }) => {
       const hasTs = Object.keys(ts || {}).length > 0,
         hasEx = Object.keys(ex || {}).length > 0;
-      name && hasTs && hasEx ? (mem[name] = { ts, ex }) : null;
+      if (name && hasTs && hasEx) mem[name] = { ts, ex };
     });
   return mem;
 };
@@ -32,8 +45,8 @@ const getGenTypes = (
 const interperetType = (
   str: string,
   dict: Dict,
-  mem: Mem = { name: null, ts: {}, ex: {} }
-): Mem => {
+  mem: TypeDict = { name: null, ts: {}, ex: {} }
+): TypeDict => {
   const name = str.match(/interface\s(\w+)/);
   const attr_reg = /(\w+):\s(\w+)/gs;
   Object.assign(mem, { name: name?.[1] });
@@ -81,6 +94,9 @@ const main = async () => {
   const mem = getGenTypes(fileContent, typeDict);
 
   console.log(gen, mem);
+  console.log(await createMigration(gen, mem));
 };
 
 main().catch(console.error);
+
+export { Dict, TypeDict, ImmutableGenerator };
