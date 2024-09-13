@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-// Get the string argument from the command line
 const [,, genName] = process.argv;
 console.log("GENNAME", genName)
 
@@ -10,7 +9,6 @@ if (!genName) {
   process.exit(1);
 }
 
-// Template object
 const tsContent = `
 
 const Immutable : ImmutableGenerator = {
@@ -47,7 +45,7 @@ interface TransitoryState extends GenType<{
 interface Schema extends GenType<{
 
 }> {}
-interface Model extends GenType<{
+interface DatabaseModel extends GenType<{
 
 }> {}
 interface TsType extends GenType<{
@@ -114,12 +112,7 @@ export { Immutable, ImmutableGlobal, AppState, TransitoryState, Schema, Model, T
 
 `;
 
-const test = "test"
-
-// Define the output file path
 const outputPath = path.join(__dirname, `.genfile_${genName}.ts`);
-
-// Write the TypeScript content to the file
 fs.writeFileSync(outputPath, tsContent, 'utf8');
 
 console.log(`Template written to ${outputPath}`);
