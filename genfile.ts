@@ -1,8 +1,7 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import pluralize from 'pluralize';
 
 const [,, genName] = process.argv;
-console.log("GENNAME", genName)
 
 if (!genName) {
   console.error('Please provide a name as an argument.');
@@ -14,12 +13,16 @@ const tsContent = `
 const Immutable : ImmutableGenerator = {
   name: "${genName}",
   generate: {
-    slice: "${genName}Slice",
+    // BACK END
     http_controller: "${genName}_controller",
-    channel_controller: "${genName}_channel",
-    databaseModel: "${genName}",
-    schema: "${genName}",
-    tstype: "${genName}"
+    channel_controller: "${genName}_channel",     // Requires Context, Schema, and DatabaseModel
+    context: "${capFirst(genName)}Context",       // Requires Schema and DatabaseModel
+    schema: "${capFirst(genName)}",               // Requires DatabaseModel
+    databaseModel: "${pluralize(genName)}",       // Requires Schema
+    
+    // FRONT END
+    slice: "${genName}Slice",
+    tstype: "${capFirst(genName)}"
   },
   test: true
 }
@@ -27,7 +30,7 @@ const Immutable : ImmutableGenerator = {
 /*                  DECLARATIONS
 
    Global will be used when other types are not specified. If all types are specified, Global will be ignored. 
-       If genfile is run again with the same argument, global will be propagated to all other types which can then be customized.
+       If genfile is run again with the same name argument, global will be propagated to all other types which can then be customized.
 */
 interface ImmutableGlobal
   extends GenType<{
@@ -100,6 +103,7 @@ interface ImmutableGenerator {
       slice?: string
       http_controller?: string
       channel_controller?: string;
+      context?: string;
       databaseModel?: string;
       schema?: string;
       tstype?: string;
@@ -107,12 +111,24 @@ interface ImmutableGenerator {
     test: boolean
 }
 
-export { Immutable, ImmutableGlobal, AppState, TransitoryState, Schema, Model, TsType };
+export { Immutable, ImmutableGlobal, AppState, TransitoryState, Schema, DatabaseModel, TsType };
 
 
 `;
 
-const outputPath = path.join(__dirname, `.genfile_${genName}.ts`);
-fs.writeFileSync(outputPath, tsContent, 'utf8');
+fs.writeFileSync(`.genfile_${genName}.ts`, tsContent, 'utf8');
 
-console.log(`Template written to ${outputPath}`);
+console.log(`Created .genfile_${genName}.ts`);
+
+
+
+
+// Utils
+function capFirst(str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function snakeToCamel(str: string): string {
+  return str.toLowerCase().replace(/(_\w)/g, (match) => match[1].toUpperCase());
+}
