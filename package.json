@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build_src": "tsc && esbuild generators/gen_controller.ts --bundle --minify --sourcemap --outfile=gen.js --platform=node",
-    "build_hbrew":  "tar -czvf ImmutableStack-v0.0.16.tar.gz . && mv -f ImmutableStack-v0.0.16.tar.gz ~/git/homebrew-immutable",
+    "b_genhandle": "esbuild generators/gen_controller.ts --bundle --minify --sourcemap --outfile=gen.js --platform=node",
+    "b_genfile": "esbuild genfile.ts --bundle --minify --sourcemap --outfile=genfile.js --platform=node",
+    "build_src": "tsc && npm run b_genhandle && npm run b_genfile",
+    "build_hbrew": "VERSION=\"v0.0.55\"; tar -czvf ImmutableStack-$VERSION.tar.gz . && mv -f ImmutableStack-$VERSION.tar.gz ~/git/homebrew-immutable",
     "build": "npm run build_src && npm run build_hbrew"
   },
   "keywords": [],
@@ -13,8 +15,12 @@
   "description": "Toolkit for working with the Immutable Stack (elixir/phoenix + react/redux)",
   "devDependencies": {
     "@types/node": "^22.5.4",
+    "@types/pluralize": "^0.0.33",
     "esbuild": "^0.23.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "pluralize": "^8.0.0"
   }
 }

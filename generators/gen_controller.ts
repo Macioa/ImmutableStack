@@ -2,19 +2,24 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { createMigration } from "./gen_migration";
+import { getAppName } from "../readers/get_app_data";
+import { handle_phx_gen } from "./phx_gen_handler";
+import { log, setLogLevel } from "../utils/logger";
+
+setLogLevel(9)
 
 type ImmutableGenerator = {
   name: string;
   generate: {
-    slice?: string
-    http_controller?: string
+    slice?: string;
+    http_controller?: string;
     channel_controller?: string;
     databaseModel?: string;
     schema?: string;
     tstype?: string;
   };
   test: boolean;
-}
+};
 
 interface Dict {
   [key: string]: string | Dict;
@@ -76,7 +81,9 @@ const getGenerator = (file: string): object => {
   const gen = file
     .match(gen_reg)?.[1]
     .replace(/(\w+):/g, '"$1":')
-    ?.replace(/,\s*\}/gs, "}");
+    ?.replace(/,\s*\}/gs, "}")
+    ?.replace(/\/\/([\w ,]+)/g, "");
+  log(6, "Generating from: ", gen || {})
   return JSON.parse(gen || "{}");
 };
 
@@ -88,13 +95,21 @@ const main = async () => {
   }
 
   const fileContent = fs.readFileSync(path.resolve(args[0]), "utf8");
+  const appName = await getAppName();
 
+  log(2, "**READING GENFILE**");
+  log(3, "Analyzing types...");
   const typeDict = getTypeEquivalents(fileContent);
+  log(3, "Reading generator...");
   const gen = getGenerator(fileContent);
+
+  Object.assign(gen, { AppName: appName });
   const mem = getGenTypes(fileContent, typeDict);
 
-  console.log(gen, mem);
-  console.log(await createMigration(gen, mem));
+  log(6, gen, mem);
+
+  log(2, "**   GENERTATING BACKEND  **");
+  log(3, await handle_phx_gen(gen, mem));
 };
 
 main().catch(console.error);

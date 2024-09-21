@@ -16,7 +16,12 @@ PROJECT_NAME=$(echo "$PROJECT_NAME" | sed 's/[^a-z0-9_]//g')
 
 echo ""
 echo "Generating Phoenix apps..." && sleep 2
-mix phx.new $PROJECT_NAME --no-html --no-assets --binary-id --umbrella --install && \
+mix phx.new $PROJECT_NAME --no-live --no-html --no-assets --binary-id --umbrella --install && \
+# Modify mix.exs to add apps: [$PROJECT_NAME, "${PROJECT_NAME}_web"] underneath apps_path
+sed -i '' "/apps_path: \"apps\"/a\\
+  apps: [:${PROJECT_NAME}, :${PROJECT_NAME}_web],
+" "${PROJECT_NAME}_umbrella/mix.exs"
+cd "${PROJECT_NAME}_umbrella" && mix format mix.exs; cd ..
 
 echo ""
 echo "Generating React app..." && sleep 2
