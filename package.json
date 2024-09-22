@@ -9,8 +9,7 @@
     "b_bash": "mkdir -p .build && cp start_macos.sh dev_kit_macos.sh versions.sh gen_toolkit.sh .build/",
     "build": "tsc && npm run b_genhandle && npm run b_genfile && npm run b_init && npm run b_bash",
 
-    "zip": "VERSION=\"v0.0.63\"; HBREW_PATH=$(eval echo ~)/git/homebrew-immutable; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_PATH\"",
-    "asdf": "",
+    "zip": "VERSION=\"v0.1.1\"; HBREW_PATH=$(eval echo ~)/git/homebrew-immutable; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_PATH\"",
     "p": "npm run build && npm run zip"
   },
   "keywords": [],
