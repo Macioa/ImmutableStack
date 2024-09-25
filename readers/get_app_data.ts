@@ -1,18 +1,35 @@
 import { readFile } from "fs/promises";
+import path from "path";
+import { log } from "../utils/logger";
 
-const getAppName = async () => {
+const getAppData = async () => {
   try {
+    console.log(8, `Getting App Data from mix.exs in ${process.cwd()}`);
     const fileContent = await readFile("mix.exs", "utf-8");
-    let appName;
+    let appName = '';
     fileContent.replace(
       /defmodule (\w+)(\.Umbrella){0,1}\.MixProject do/g,
       (m, n) => (appName = n)
     );
-    console.log(`Found app: ${appName}`)
-    return appName;
+    log(2, `Found app: ${appName}`);
+    const appNameSnake = appName.replace(/([A-Z])/g, "_$1").toLowerCase().slice(1)
+
+    const umbrellaDir = process.cwd(),
+      appdir = path.join(umbrellaDir, "apps"),
+      uidir = path.join(appdir, `${appNameSnake}_ui`),
+      webdir = path.join(appdir, `${appNameSnake}_web`);
+
+    return {
+      AppNameCamel: appName,
+      AppNameSnake: appNameSnake,
+      ProjectDir: umbrellaDir,
+      AppDir: appdir,
+      UiDir: uidir,
+      WebDir: webdir
+    };
   } catch (error) {
     console.error(`Could not get AppName from mix.exs`);
   }
 };
 
-export { getAppName };
+export { getAppData };
