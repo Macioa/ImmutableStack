@@ -1,8 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { createMigration } from "./gen_migration";
-import { getAppName } from "../readers/get_app_data";
+import { getAppData } from "../readers/get_app_data";
 import { handle_phx_gen } from "./phx_gen_handler";
 import { log, setLogLevel } from "../utils/logger";
 
@@ -95,15 +94,15 @@ const main = async () => {
   }
 
   const fileContent = fs.readFileSync(path.resolve(args[0]), "utf8");
-  const appName = await getAppName();
+  const appData = await getAppData();
+  
 
   log(2, "**READING GENFILE**");
   log(3, "Analyzing types...");
   const typeDict = getTypeEquivalents(fileContent);
   log(3, "Reading generator...");
-  const gen = getGenerator(fileContent);
+  const gen = Object.assign(await getGenerator(fileContent), appData);
 
-  Object.assign(gen, { AppName: appName });
   const mem = getGenTypes(fileContent, typeDict);
 
   log(6, gen, mem);
