@@ -14,7 +14,7 @@ const Immutable : ImmutableGenerator = {
   name: "${genName}",
   generate: {
     // BACK END
-    http_controller: "${genName}_controller",
+    http_controller: "${capFirst(genName)}Controller",
     channel_controller: "${genName}_channel",     // Requires Context, Schema, and DatabaseModel
     context: "${capFirst(genName)}Context",       // Requires Schema and DatabaseModel
     schema: "${capFirst(genName)}",               // Requires DatabaseModel

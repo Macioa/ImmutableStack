@@ -1,6 +1,9 @@
 import { execSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import { gen_store } from "./generators/gen_store";
+import { inject_redux_provider } from "./injectors/inject_redux_provider";
+import { inject_router } from "./injectors/inject_router";
 
 const args = process.argv.slice(2);
 
@@ -16,9 +19,15 @@ projectName = projectName
   .replace(/[\s-]/g, "_")
   .replace(/[^a-z0-9_]/g, "");
 
+const projectNameCamel = projectName
+  .split('_')
+  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+  .join('');
+
 const umbrellaDir = `${projectName}_umbrella`,
   appdir = path.join(umbrellaDir, "apps"),
-  uidir = path.join(appdir, `${projectName}_ui`);
+  uidir = path.join(appdir, `${projectName}_ui`),
+  webdir = path.join(appdir, `${projectName}_web`)
 
 console.log("\nGenerating Phoenix apps...");
 execSync(
@@ -53,3 +62,5 @@ execSync(
   `cd ${uidir} && npm install --save-dev @babel/plugin-proposal-private-property-in-object`,
   { stdio: "inherit" }
 );
+gen_store(projectNameCamel, uidir);
+inject_redux_provider(projectNameCamel, uidir);
