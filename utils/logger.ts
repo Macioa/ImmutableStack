@@ -1,4 +1,4 @@
-var log_level = 1
+var log_level = 9
 
 const setLogLevel = (level: number) => {
   log_level = level
