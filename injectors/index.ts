@@ -16,21 +16,21 @@ type FileInjection = {
 };
 
 const inject_file = async ({ file, injections }: FileInjection) => {
-  log(5, `Injecting into ${file}....`);
+  log({level: 5}, `Injecting into ${file}....`);
 
   return new Promise(async (resolve, reject) => {
     let content = fs.readFileSync(file, "utf8");
     let new_file = content;
 
     injections.forEach(([type, regex, new_content]: Injection) => {
-        log(7, `Injecting ${new_content} into ${file}`);
-        log(9, "File: ", new_file)
+        log({level: 7}, `Injecting ${new_content} into ${file}`);
+        log({level: 9}, "File: ", new_file)
       switch (type) {
         case InjectType.REPLACE:
           const replaced = new_file.replace(regex, new_content);
           if (replaced == new_file) error(regex, file, reject);
           else {
-            log(8, `Found ${regex} in ${file}`);
+            log({level: 8}, `Found ${regex} in ${file}`);
             new_file = replaced;
           }
           break;
@@ -72,7 +72,7 @@ const insert = (
   const match = content.match(regex);
   if (!match) return null;
   let index = match.index as number;
-  log(8, `Found ${regex} at ${index} in ${file}`);
+  log({level: 8}, `Found ${regex} at ${index} in ${file}`);
   if (type === InjectType.AFTER) index += match[0].length;
   else if (type != InjectType.BEFORE) return null;
   return content.slice(0, index) + new_content + content.slice(index);
