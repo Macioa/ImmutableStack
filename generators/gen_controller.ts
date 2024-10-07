@@ -82,7 +82,7 @@ const getGenerator = (file: string): object => {
     .replace(/(\w+):/g, '"$1":')
     ?.replace(/,\s*\}/gs, "}")
     ?.replace(/\/\/([\w ,]+)/g, "");
-  log(6, "Generating from: ", gen || {})
+  log({level: 6}, "Generating from: ", gen || {})
   return JSON.parse(gen || "{}");
 };
 
@@ -96,19 +96,21 @@ const main = async () => {
   const fileContent = fs.readFileSync(path.resolve(args[0]), "utf8");
   const appData = await getAppData();
   
+  log(
+    { level: 1, color: "GREEN" },
+    `\n\n Generating from genfile...\n\n`
+  );
 
-  log(2, "**READING GENFILE**");
-  log(3, "Analyzing types...");
+  log({level: 3, color: 'BLUE'}, `\nReading genfile: ${path.resolve(args[0])}`);
+  log({level: 5}, "Analyzing types...");
   const typeDict = getTypeEquivalents(fileContent);
-  log(3, "Reading generator...");
+  log({level: 5}, "Reading generator...");
   const gen = Object.assign(await getGenerator(fileContent), appData);
-
   const mem = getGenTypes(fileContent, typeDict);
+  log({level: 8}, gen, mem);
 
-  log(6, gen, mem);
-
-  log(2, "**   GENERTATING BACKEND  **");
-  log(3, await handle_phx_gen(gen, mem));
+  log({level: 2, color: "BLUE"}, `\nGenerating server components...`);
+  log({level: 3}, await handle_phx_gen(gen, mem));
 };
 
 main().catch(console.error);

@@ -4,14 +4,14 @@ import { log } from "../utils/logger";
 
 const getAppData = async () => {
   try {
-    console.log(8, `Getting App Data from mix.exs in ${process.cwd()}`);
+    console.log({level: 8}, `Getting App Data from mix.exs in ${process.cwd()}`);
     const fileContent = await readFile("mix.exs", "utf-8");
     let appName = '';
     fileContent.replace(
       /defmodule (\w+)(\.Umbrella){0,1}\.MixProject do/g,
       (m, n) => (appName = n)
     );
-    log(2, `Found app: ${appName}`);
+    log({level: 2}, `Found app: ${appName}`);
     const appNameSnake = appName.replace(/([A-Z])/g, "_$1").toLowerCase().slice(1)
 
     const umbrellaDir = process.cwd(),
@@ -28,7 +28,7 @@ const getAppData = async () => {
       WebDir: webdir
     };
   } catch (error) {
-    console.error(`Could not get AppName from mix.exs`);
+    console.error(`Could not get AppName from mix.exs\n${error}`);
   }
 };
 

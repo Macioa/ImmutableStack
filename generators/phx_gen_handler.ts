@@ -19,7 +19,7 @@ const handle_phx_gen = async (generator: any, typeDict: any) => {
 
 const handle_json = async (generator: any, typeDict: any): Promise<any> => {
   const { generate, ...rest } = generator;
-  log(8, `Generating JSON API for ${JSON.stringify(rest)}`);
+  log({level: 8}, `Generating JSON API for ${JSON.stringify(rest)}`);
 
   const source = (typeDict.DatabaseModel || typeDict.ImmutableGlobal)["ex"];
 
@@ -39,7 +39,7 @@ const gen_context = async (generator: any, typeDict: any) => {
       .map((k) => `add :${k}, :${source[k]}`)
       .join("\n");
     command = `cd apps/${appName}_web && ${command}; cd ../..`;
-    log(2, `Executing: ${command}`);
+    log({level: 2}, `Executing: ${command}`);
     exec(command, (err, stdout, stderr) => {
       if (err || stderr) {
         console.error(`Error while generating: ${err || stderr}`);
@@ -61,7 +61,7 @@ const gen_schema = async (generator: any, typeDict: any) => {
       .map((k) => `add :${k}, :${source[k]}`)
       .join("\n");
     command = `cd apps/${appName}_web && ${command}; cd ../..`;
-    log(2, `Executing: ${command}`);
+    log({level: 2}, `Executing: ${command}`);
     exec(command, (err, stdout, stderr) => {
       if (err || stderr) {
         console.error(`Error while generating: ${err || stderr}`);
