@@ -1,4 +1,4 @@
-var log_level = 5;
+var log_level = 99;
 
 const COLOR = {
   'GREEN': "\x1b[32m%s\x1b[0m",

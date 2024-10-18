@@ -11,8 +11,6 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { ${AppNameCamel}State } from "../store";
 import merge from "deepmerge";
 
-const requestsKey = "Requests";
-
 type AppRequest = {
   name: string;
   request: Promise<any>;
@@ -53,7 +51,7 @@ const requestSlice = createSlice({
 const requestReducer = requestSlice.reducer;
 
 const isLoading = (state: ${AppNameCamel}State, key: string | null = null) => {
-  const requests = state[requestsKey].activeRequests;
+  const requests = state.requestsStore.activeRequests;
   return key ? !!requests[key] : !!Object.keys(requests).length;
 };
 
@@ -114,7 +112,6 @@ const Request = { API: requestAPI };
 export const { addRequest, completeRequest } = requestSlice.actions;
 export type { AppRequest, RequestsStoreState, requestAPIinterface };
 export {
-  requestsKey,
   initialRequestsState,
   requestReducer,
   isLoading,
@@ -123,7 +120,7 @@ export {
 export default requestSlice;
 `;
 
-    return generateFile({ dir, filename: "index.ts", content });
+    return generateFile({ dir, filename: "index.tsx", content });
 };
 
 export { gen_request_lib };
