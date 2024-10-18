@@ -154,13 +154,11 @@ const update_genfile = () => {
   const [_, global_def] =
     parsed?.find(([name, _]) => name === "ImmutableGlobal") || [];
   const updated_interfaces = parsed?.map(([_name, definition, _fullstr], i: number) => {
-    console.log('from update')
     if (definition.length === 0 && global_def) {
       let res = "";
       interfaces?.[i].replace(
         /interface\s(\w+).*?extends\sGenType<\{(.*?)\}?> \{\}/gs,
-        (_, name, def) => {
-          console.log(name, _name, def, definition)
+        (name, _attr, _str) => {
           res = `interface ${name} extends GenType<{${global_def}}> {}`;
           return res;
         }
@@ -177,11 +175,6 @@ const update_genfile = () => {
       );
   });
 
-  console.log("Interfaces", interfaces)
-  console.log("Parsed", parsed)
-  console.log("Global Def", global_def)
-  console.log("Updated Interfaces", updated_interfaces)
-  console.log("Updated Content", updatedContent)
   fs.writeFileSync(`.genfile_${genName}.ts`, updatedContent, "utf8");
 
   console.log(`Updated .genfile_${genName}.ts`);

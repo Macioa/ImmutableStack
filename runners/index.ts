@@ -2,6 +2,7 @@ import { spawn } from "child_process";
 import { mkdirSync } from "fs";
 import { resolve as pathResolve } from "path";
 import { log } from "../utils/logger";
+import { chunkArray } from "../utils/chunk";
 
 type Execution = {
   dir: string;
@@ -26,7 +27,7 @@ const execute = async (execution: Execution) => {
     
     const child = spawn(cmd, args, { cwd: executedDir, shell: true });
     child.stdout.on('data', (data) => log({level: 5}, data.toString()));
-    child.stderr.on('data', (data) =>  console.error(`Error: ${data}`));
+    child.stderr.on('error', (error) =>  console.error(`Error: ${error}`));
     child.on('close', (exitcode) => exitcode ? reject(null) : resolve([]) );
   });
 };
@@ -36,16 +37,17 @@ const executeChunk = async (executions: Execution[]) => {
     return Promise.all(promises)
 }
 
-const executeAll = async (executions: Execution[]) => {
-    const chunkSize = 5;
-    let resolved: Execution[] = []
-    for (let i = 0; i < executions.length; i += chunkSize) {
-      const chunk = executions.slice(i, i + chunkSize);
-      const res = await executeChunk(chunk)
-      resolved = [...resolved, ...res] as Execution[]
+const executeAll = async (executions: Execution[], chunkSize = 5) => {
+    const queue = chunkArray(executions, chunkSize);
+    let results: any[] = [];
+
+    for (let i = 0; i < queue.length; i++) {
+        const chunkResults = await executeChunk(queue[i]);
+        results = results.concat(chunkResults);
     }
-    return resolved
-}
+    
+    return results;
+};
 
 const executeAllSync = async (executions: Execution[]) => {
     executions.forEach(async exec=> await execute(exec))

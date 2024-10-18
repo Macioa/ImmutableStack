@@ -2,8 +2,9 @@ import { exec } from "child_process";
 import { log } from "../utils/logger";
 import { inject_router } from "../injectors/inject_router";
 import { gen_json } from "./phx_gen_json";
+import { ImmutableGenerator } from "./gen_controller";
 
-const handle_phx_gen = async (generator: any, typeDict: any) => {
+const handle_phx_gen = async (generator: ImmutableGenerator, typeDict: any) => {
   const gen = generator.generate;
   let res = null;
   if (gen.http_controller && gen.context && gen.schema && gen.databaseModel)
@@ -20,6 +21,7 @@ const handle_phx_gen = async (generator: any, typeDict: any) => {
 const handle_json = async (generator: any, typeDict: any): Promise<any> => {
   const { generate, ...rest } = generator;
   log({level: 8}, `Generating JSON API for ${JSON.stringify(rest)}`);
+  log({level: 9}, `TypeDict: ${JSON.stringify(typeDict)}`);
 
   const source = (typeDict.DatabaseModel || typeDict.ImmutableGlobal)["ex"];
 

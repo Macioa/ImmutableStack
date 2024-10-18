@@ -1,6 +1,7 @@
 import fs from "fs";
 import { execSync } from "child_process";
 import { log } from "../utils/logger";
+import { format } from "../utils/format";
 
 type Injection = [InjectType, RegExp, string];
 
@@ -44,17 +45,6 @@ const inject_file = async ({ file, injections }: FileInjection) => {
     fs.writeFileSync(file, new_file, "utf8");
     await format(file);
     resolve([file]);
-  });
-};
-
-const format = async (file: string) => {
-  return new Promise((resolve, reject) => {
-    const isReact = file.endsWith(".tsx") || file.endsWith(".ts");
-    const isElixir = file.endsWith(".ex") || file.endsWith(".exs");
-    if (isReact) execSync(`npx prettier --write ${file}`, { stdio: "inherit" });
-    if (isElixir)
-      execSync(`mix format ${file}`, { stdio: "inherit" });
-    resolve(true);
   });
 };
 

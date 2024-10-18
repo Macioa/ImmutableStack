@@ -4,33 +4,35 @@ import { generateFile } from "./index";
 const gen_store = async (AppName: string, UiDir: string) => {
     const storePath = join(UiDir, "/src/store");
 
-    const literal = "`${requestsKey}/activeRequests`"
-
     const content = `
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
-import { requestsKey, RequestsStoreState, requestReducer } from "../requests"; 
+import { RequestsStoreState, requestReducer } from "../requests"; 
+
 
 type ${AppName}State = {
-    [requestsKey]: RequestsStoreState;
+    requestsStore: RequestsStoreState;
 };
 
 const ${AppName}Store = configureStore({
   reducer: combineReducers({
-    [requestsKey]: requestReducer,
+    requestsStore: requestReducer,
   }),
       middleware: (getDefaultMiddleware) => getDefaultMiddleware({
     serializableCheck: {
       ignoredActionPaths: ['payload.details.callback', 'payload.request'],
-      ignoredPaths: [${literal}],
+      ignoredPaths: ["requestsStore.activeRequests"],
     },
   }),
+    // devTools: {
+    // actionsDenylist: ['add_request', 'complete_request'],
+    // },
 });
 
 export { ${AppName}Store };
 export type { ${AppName}State };
         `;
 
-    return generateFile({ dir: storePath, filename: "index.ts", content });
+    return generateFile({ dir: storePath, filename: "index.tsx", content });
 };
 
 export { gen_store };

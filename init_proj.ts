@@ -49,7 +49,7 @@ async function main() {
 
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix apps...");
   await exec({
-    command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --install`,
+    command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
     dir: ".",
   });
   await inject_app_declarations(projectName, umbrellaDir);
@@ -58,6 +58,10 @@ async function main() {
     inject_web_endpoint(projectName, webdir),
     inject_dev_config(projectName, umbrellaDir),
   ]);
+  await exec({
+    command: `mix deps.get && mix compile`,
+    dir: umbrellaDir,
+  });
 
   log({ level: 2, color: "BLUE" }, "\nGenerating React app...");
   await exec({
@@ -70,11 +74,12 @@ async function main() {
     "\nInstalling React libs and configuring app..."
   );
   const frontEndCommands = [
+    "npm i --save-dev @types/node",
     "npm install @reduxjs/toolkit react-redux @types/react-redux",
     "npm install --save-dev @babel/plugin-transform-private-property-in-object",
     "npm install --save-dev lorem-ipsum",
     "npm install deepmerge",
-    "npm install @mui/material @emotion/react @emotion/styled"
+    // "npm install @mui/material @emotion/react @emotion/styled"
   ].map((c) => ({ command: c, dir: uidir }));
   await execAll(frontEndCommands);
   await Promise.all([
