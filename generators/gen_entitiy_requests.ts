@@ -9,7 +9,7 @@ const gen_entity_requests = async (
 ) => {
     const { name, generate, UiDir, AppNameCamel } = generator;
     const { tstype } = generate;
-    const filedir = join(UiDir, "src/requests");
+    const filedir = join(UiDir || '', "src/requests");
 
     const content = `
 import { Dispatch } from "redux";
@@ -19,7 +19,7 @@ import { ${tstype}, set${tstype}, set${pluralize(tstype as string)} } from "../s
 const request${tstype} = (id: string, dispatch: Dispatch) => {
   Request.API({
     name: "fetch${tstype}",
-    api_url_key: "${AppNameCamel.toUpperCase()}_API_URL",
+    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
     route: \`${pluralize(tstype as string).toLowerCase()}/\${id}\`,
     callback: (res: any) => dispatch(set${tstype}(res.data))
   }, dispatch);
@@ -28,7 +28,7 @@ const request${tstype} = (id: string, dispatch: Dispatch) => {
 const request${pluralize(tstype as string)} = (dispatch: Dispatch) => {
   return Request.API({
     name: "fetch${pluralize(tstype as string)}",
-    api_url_key: "${AppNameCamel.toUpperCase()}_API_URL",
+    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
     route: \`${pluralize(tstype as string).toLowerCase()}\`,
     callback: (res: any) => dispatch(set${pluralize(tstype as string)}(res.data)),
   }, dispatch);
@@ -37,7 +37,7 @@ const request${pluralize(tstype as string)} = (dispatch: Dispatch) => {
 const update${tstype} = (${tstype?.toLowerCase()}: ${tstype}, dispatch: Dispatch) => {
   Request.API({
     name: "update${tstype}",
-    api_url_key: "${AppNameCamel.toUpperCase()}_API_URL",
+    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
     route: "${tstype?.toLowerCase()}",
     options: {
       method: "PUT",
@@ -50,7 +50,7 @@ const update${tstype} = (${tstype?.toLowerCase()}: ${tstype}, dispatch: Dispatch
 const delete${tstype} = (id: string, dispatch: Dispatch) => {
   Request.API({
     name: "delete${tstype}",
-    api_url_key: "${AppNameCamel.toUpperCase()}_API_URL",
+    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
     route: \`${tstype?.toLowerCase()}/\${id}\`,
     options: {
       method: "DELETE",

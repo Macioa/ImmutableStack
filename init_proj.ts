@@ -13,6 +13,7 @@ import { inject_phoenix_libs } from "./injectors/inject_phoenix_libs";
 import { inject_redux_provider } from "./injectors/inject_redux_provider";
 import { inject_web_endpoint } from "./injectors/inject_web_endpoint";
 import { gen_request_lib } from "./generators/gen_request_lib";
+import { gen_phx_utils } from "./generators/phx_utils";
 
 const args = process.argv.slice(2);
 
@@ -39,6 +40,7 @@ async function main() {
   const currentDir = process.cwd(),
     umbrellaDir = join(currentDir, `${projectName}_umbrella`),
     appdir = join(umbrellaDir, "apps"),
+    libdir = join(appdir, projectName),
     uidir = join(appdir, `${projectName}_ui`),
     webdir = join(appdir, `${projectName}_web`);
 
@@ -54,9 +56,10 @@ async function main() {
   });
   await inject_app_declarations(projectName, umbrellaDir);
   await Promise.all([
-    inject_phoenix_libs(projectName, {WebDir: webdir}),
+    inject_phoenix_libs(projectName, {WebDir: webdir, LibDir: libdir}),
     inject_web_endpoint(projectName, webdir),
     inject_dev_config(projectName, umbrellaDir),
+    gen_phx_utils(projectNameCamel, libdir),
   ]);
   await exec({
     command: `mix deps.get && mix compile`,
