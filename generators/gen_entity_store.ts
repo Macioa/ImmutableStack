@@ -13,7 +13,7 @@ const gen_entity_store = async (
   log({ level: 7 }, "TYPE DICT", typeDict);
   const { name, generate, UiDir, AppNameCamel } = generator;
   const { tstype, appstate, factory, slice } = generate;
-  const filedir = join(UiDir, "src/store");
+  const filedir = join(UiDir as string, "src/store");
 
   const capName = name.charAt(0).toUpperCase() + name.slice(1);
   const typeSource = (typeDict.TsType || typeDict.ImmutableGlobal)["ts"];

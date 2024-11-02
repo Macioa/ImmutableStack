@@ -26,6 +26,12 @@ type ImmutableGenerator = {
     initialstate?: object;
   };
   test: boolean;
+  AppNameCamel?: string,
+  AppNameSnake?: string,
+  ProjectDir?: string,
+  AppDir?: string,
+  UiDir?: string,
+  WebDir?: string
   [key: string]: any;
 };
 

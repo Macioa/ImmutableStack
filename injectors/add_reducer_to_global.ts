@@ -5,7 +5,7 @@ import { ImmutableGenerator } from "../generators/gen_controller";
 const addReducerToGlobal = async (generator: ImmutableGenerator) => {
   const { name, generate, UiDir } = generator;
   const { appstate } = generate;
-  const file = path.join(UiDir, "src/store/index.tsx");
+  const file = path.join(UiDir as string, "src/store/index.tsx");
 
   const injections: Injection[] = [
     [
