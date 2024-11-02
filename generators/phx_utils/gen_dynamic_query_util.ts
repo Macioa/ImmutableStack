@@ -1,5 +1,11 @@
-const content2 = `
-defmodule Hello.Utils.DynamicQuery do
+import { join } from "path";
+import { generateFile } from "../index";
+
+const gen_dynamic_query_util = async (AppNameCamel: string, AppDir: string) => {
+  const utilsPath = join(AppDir || "", "/lib/utils");
+
+  const content = `
+defmodule ${AppNameCamel}.Utils.DynamicQuery do
   import Ecto.Query
   @moduledoc """
   A utility module for building dynamic queries based on controller level restful query params.
@@ -108,7 +114,7 @@ defmodule Hello.Utils.DynamicQuery do
   defp parse_value(value, :string), do: value
 end
 
-defmodule Hello.Plugs.ListAsJSON do
+defmodule ${AppNameCamel}.Plugs.ListAsJSON do
   @moduledoc """
   A plug for controllers that allows lists to be sent as top-level JSON arrays
   without needing to wrap them in an object. It detects the "_json" param and
@@ -123,4 +129,13 @@ defmodule Hello.Plugs.ListAsJSON do
 
   def call(conn, _opts), do: conn
 end
-`
+`;
+
+  return generateFile({
+    dir: utilsPath,
+    filename: "dynamic_query.ex",
+    content,
+  });
+};
+
+export { gen_dynamic_query_util };

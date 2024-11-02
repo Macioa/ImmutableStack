@@ -1,11 +1,17 @@
-const content = `
-defmodule Hello.Utils.Chunk do
+import { join } from "path";
+import { generateFile } from "../index";
+
+const gen_chunk_util = async (AppNameCamel: string, AppDir: string) => {
+  const utilsPath = join(AppDir || "", "/lib/utils");
+
+  const content = `
+defmodule ${AppNameCamel}.Utils.Chunk do
   @size 1000
 
   @doc """
   Applies a function to a list in chunks with specified or default chunk size.
   """
-  def apply(list, fun, size \\ @size) do
+  def apply(list, fun, size \\\\ @size) do
     list
     |> Enum.chunk_every(size)
     |> Enum.map(&fun.(&1))
@@ -48,7 +54,7 @@ defmodule Hello.Utils.Chunk do
   @doc """
   Given a list of records, prep the chunk for bulk db edits
   """
-  def prep(changesets, opts \\ %{}) do
+  def prep(changesets, opts \\\\ %{}) do
     def_opts = %{
       inserted_at?: true
     }
@@ -69,4 +75,9 @@ defmodule Hello.Utils.Chunk do
     end)
   end
 end
-`
+`;
+
+  return generateFile({ dir: utilsPath, filename: "chunk.ex", content });
+};
+
+export { gen_chunk_util };

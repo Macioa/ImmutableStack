@@ -1,10 +1,16 @@
-const content4 = `
-defmodule Hello.Utils.Paginate do
+import { join } from "path";
+import { generateFile } from "../index";
+
+const gen_paginate_util = async (AppNameCamel: string, AppDir: string) => {
+  const utilsPath = join(AppDir || "", "/lib/utils");
+
+  const content = `
+defmodule ${AppNameCamel}.Utils.Paginate do
   @doc """
   Utility functions for pagination with Scriniver Lib.
   """
 
-  def apply(query, repo, pagination_options \\ %{}) do
+  def apply(query, repo, pagination_options \\\\ %{}) do
     page = repo.paginate(query, default(pagination_options))
     res = page |> Map.get(:entries)
     params = Map.drop(page, [:entries])
@@ -27,4 +33,9 @@ defmodule Hello.Utils.Paginate do
     {Map.drop(opts, page_opts), Map.take(opts, page_opts)}
   end
 end
-`
+`;
+
+  return generateFile({ dir: utilsPath, filename: "paginate.ex", content });
+};
+
+export { gen_paginate_util };
