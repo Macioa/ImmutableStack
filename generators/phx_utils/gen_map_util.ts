@@ -16,6 +16,13 @@ defmodule ${AppNameCamel}.Utils.MapUtil do
 
   defp to_atom(string) when is_binary(string), do: String.to_atom(string)
   defp to_atom(atom) when is_atom(atom), do: atom
+
+  def id_list_from(list) when is_list(list) do
+    Enum.map(list, fn 
+      s when is_binary(s) -> s; 
+      m when is_map(m) -> get(m, :id);
+    end)
+  end
 end
 `;
 

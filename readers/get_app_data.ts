@@ -16,6 +16,7 @@ const getAppData = async () => {
 
     const umbrellaDir = process.cwd(),
       appdir = path.join(umbrellaDir, "apps"),
+      libdir = path.join(appdir, appNameSnake),
       uidir = path.join(appdir, `${appNameSnake}_ui`),
       webdir = path.join(appdir, `${appNameSnake}_web`);
 
@@ -24,6 +25,7 @@ const getAppData = async () => {
       AppNameSnake: appNameSnake,
       ProjectDir: umbrellaDir,
       AppDir: appdir,
+      LibDir: libdir,
       UiDir: uidir,
       WebDir: webdir
     };

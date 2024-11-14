@@ -13,19 +13,47 @@ if (!genName) {
 const main = () => (fs.existsSync(file) ? update_genfile() : new_genfile());
 
 const new_genfile = () => {
+  const pluralName = pluralize(genName);
   const tsContent = `
-
 const Immutable : ImmutableGenerator = {
-  name: "${genName}",
+  name: '${genName}',
   generate: {
     // BACK END
-    http_controller: "${capFirst(genName)}Controller",
-    channel_controller: "${genName}_channel",     // Requires Context, Schema, and DatabaseModel
-    context: "${capFirst(
-      genName
-    )}Context",       // Requires Schema and DatabaseModel
+    http_controller: {
+      name: '${capFirst(genName)}Controller',
+      routes: [
+        'routed_index(conn, _entity_queries, page_queries) when _entity_queries == %{}',
+        'routed_index(conn, entity_queries, page_queries) when entity_queries != %{}',
+        'create(conn, ${genName}_list) when is_list(${genName}_list)',
+        'create(conn, ${genName}_params)',
+        'show(conn, ${genName}_list) when is_list(${genName}_list)',
+        'show(conn, %{"id" => id})',
+        'update(conn, ${genName}_list) when is_list(${genName}_list)',
+        'update(conn, ${genName}_params) when is_map(${genName}_params)',
+        'delete(conn, ${pluralName}_list) when is_list(${pluralName}_list)',
+        'delete(conn, %{"id" => id})'
+      ]
+    },
+    channel_controller: '${genName}_channel',     // Requires Context, Schema, and DatabaseModel
+    context: {
+      name: '${capFirst(genName)}Context',
+      apiFunctions: [
+      'create_${genName}(attrs) when is_list(attrs)',
+      'create_${genName}(${genName}_params) when is_map(${genName}_params)',
+      'delete_${genName}(${pluralName}) when is_list(${pluralName})',
+      'delete_${genName}(${genName}_params) when is_map(${genName}_params)',
+      'delete_${genName}(id) when is_binary(id)',
+      'get_${genName}!(${pluralName}) when is_list(${pluralName})',
+      'get_${genName}!(${genName}_params) when is_map(${genName}_params)',
+      'get_${genName}!(id) when is_binary(id)',
+      'list_${pluralName}(page_query \\\\ %{})',
+      'list_${pluralName}_by(entity_queries, page_queries \\\\ %{})',
+      'update_${genName}(${pluralName}) when is_list(${pluralName})',
+      'update_${genName}(attrs) when is_map(attrs)'
+      ]
+    },  
     schema: "${capFirst(genName)}",               // Requires DatabaseModel
-    databaseModel: "${pluralize(genName)}",       // Requires Schema
+    databaseModel: "${pluralName}",       // Requires Schema
     
     // FRONT END
     appstate: "${capFirst(genName)}StoreState",
@@ -50,11 +78,11 @@ interface ImmutableGlobal
 
 interface AppState extends GenType<{
   ${genName}: ${capFirst(genName)} | null;
-  ${pluralize(genName)}: ${capFirst(genName)}[];
+  ${pluralName}: ${capFirst(genName)}[];
 }> {}
 interface InitialAppState extends AppState {
   ${genName}: null;
-  ${pluralize(genName)}: [];
+  ${pluralName}: [];
 }
 interface TransitoryState extends GenType<{
 
@@ -126,9 +154,9 @@ interface ImmutableGenerator {
     name: string
     generate: {
       slice?: string
-      http_controller?: string
+      http_controller?: ImmutableController;
       channel_controller?: string;
-      context?: string;
+      context?: ImmutableContext;
       databaseModel?: string;
       schema?: string;
       tstype?: string;
@@ -137,6 +165,19 @@ interface ImmutableGenerator {
     }
     test: boolean
 }
+
+interface ImmutableController {
+    name: string;
+    routes: string[];
+}
+
+interface ImmutableContext {
+    name: string;
+    apiFunctions: string[];
+}
+
+export { Immutable }
+export type { ImmutableGenerator, ImmutableGlobal, AppState, InitialAppState, TransitoryState, Schema, DatabaseModel, TsType }
 `;
 
   fs.writeFileSync(`.genfile_${genName}.ts`, tsContent, "utf8");

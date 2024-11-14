@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "fs";
+import { mkdirSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { resolve, join } from "path";
 import { log } from "../utils/logger";
 import { format } from "../utils/format";
@@ -10,12 +10,17 @@ type FileGeneration = {
 };
 
 const generateFile = async ({ filename, dir, content }: FileGeneration) => {
+  const fileWithSubtext = filename.replace(
+    /(.*)\.(\w+)$/,
+    (_match, file, extension) => `${file.replace(/\./g, "/")}.${extension}`
+  );
   const path = resolve(dir),
-    file = join(dir, filename);
-  log({ level: 3 }, `Generating ${filename} ...`);
+    file = join(dir, fileWithSubtext);
+  log({ level: 3 }, `Generating ${fileWithSubtext} ...`);
   log({ level: 9 }, content);
 
   mkdirSync(path, { recursive: true });
+  if (existsSync(file)) unlinkSync(file);
   writeFileSync(file, content, "utf8");
   await format(file);
   return [file];
