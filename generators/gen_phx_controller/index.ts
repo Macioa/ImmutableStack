@@ -12,6 +12,8 @@ import { routes as create_routes } from "./create_route";
 import { routes as update_routes } from "./update_route";
 import { routes as delete_routes } from "./delete_route";
 import { route as custom_route } from "./custom_route";
+import { gen_fallback_controller } from "./gen_fallback_controller";
+import { gen_json_handler } from "./gen_json_handler";
 import { log } from "../../utils/logger";
 
 const route_data = [
@@ -68,6 +70,7 @@ const gen_phx_controller = async (
     context: contextName,
     pluralName: pluralName || "",
     AppNameCamel: AppNameCamel || "",
+    camelUpperName: camelName || ""
   };
   log({ level: 7 }, "Generating controller: ", name, snakeController, dict);
 
@@ -80,7 +83,7 @@ alias ${AppNameCamel}.Utils.Paginate
 alias ${AppNameCamel}.Utils.MapUtil
 
 alias ${AppNameCamel}.${contextName}
-alias ${AppNameCamel}.${contextName}.${camelName}
+alias ${AppNameCamel}.${camelName}
 
 action_fallback ${AppNameCamel}Web.FallbackController
 
@@ -107,4 +110,4 @@ interface ImmRoute {
   header: (args: StringOnlyMap) => string;
 }
 export type { ImmRoute };
-export { gen_phx_controller };
+export { gen_phx_controller, gen_fallback_controller, gen_json_handler };

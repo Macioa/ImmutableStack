@@ -1,17 +1,32 @@
-import { handle_json } from "./phx_gen_json";
 import { gen_schema } from "./phx_gen_schema";
 import { gen_phx_contex } from "./gen_phx_context/";
-import { gen_phx_controller } from "./gen_phx_controller/";
+import { inject_router } from "../injectors/inject_router";
+import {
+  gen_phx_controller,
+  gen_fallback_controller,
+  gen_json_handler,
+} from "./gen_phx_controller/";
 import { ImmutableGenerator, GenTypes } from "./gen_controller";
 
-const handle_phx_gen = async (generator: ImmutableGenerator, genTypes: GenTypes) => {
+const handle_phx_gen = async (
+  generator: ImmutableGenerator,
+  genTypes: GenTypes
+) => {
   const gen = generator.generate;
-  let res:any = [];
+  let res: any = [];
 
-  if (gen.schema) res.push(await gen_schema(generator, genTypes))
-  if (gen.context) res.push(await gen_phx_contex(generator, genTypes))
-  if (gen.http_controller) res.push(gen_phx_controller(generator, genTypes))
-  
+  if (gen.schema) res.push(await gen_schema(generator, genTypes));
+  if (gen.context) res.push(await gen_phx_contex(generator, genTypes));
+  if (gen.http_controller)
+    res.push(
+      Promise.all([
+        gen_phx_controller(generator, genTypes),
+        gen_fallback_controller(generator, genTypes),
+        gen_json_handler(generator, genTypes),
+        inject_router(generator)
+      ])
+    );
+
   return res;
 };
 

@@ -13,13 +13,13 @@ const create_list = ({
       with {:ok, ${pluralName}, []} <- ${context}.create_${genName}(${genName}_list) do
         conn
         |> put_status(:created)
-        |> put_resp_header("location", ~p"/api/${pluralName}/:id")
+        |> put_resp_header("location", ~p"/api/${genName}")
         |> render(:show, ${pluralName}: ${pluralName})
       else
         {:partial_success, created_${pluralName}, failed_${pluralName}} ->
           conn
           |> put_status(:partial_content)
-          |> render(:show_partial, succeeded: created_${pluralName}, failed: failed_${pluralName})
+          |> render(:show_partial, succeeded: created_${pluralName}, failed: failed_${pluralName}, query_data: ${genName}_list)
   
         error ->
           ${AppNameCamel}Web.FallbackController.call(conn, error)
@@ -39,7 +39,7 @@ const create = ({
       with {:ok, %${camelUpperName}{} = ${genName}} <- ${genName}_params |> MapUtil.str_to_atom() |> ${context}.create_${genName}() do
         conn
         |> put_status(:created)
-        |> put_resp_header("location", ~p"/api/${pluralName}/#{${genName}}")
+        |> put_resp_header("location", ~p"/api/${genName}/#{${genName}.id}")
         |> render(:show, ${genName}: ${genName})
       end
     end

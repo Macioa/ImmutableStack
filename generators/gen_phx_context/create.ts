@@ -45,9 +45,7 @@ const create_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
   def create_${genName}(attrs) when is_list(attrs) do
     attrs
     |> Chunk.apply(fn attr_chunk ->
-      changesets =
-        attr_chunk
-        |> Enum.map(&${genCamelName}.changeset(${genName}, &1))
+      changesets = change_${genName}(attr_chunk)
 
       case Enum.split_with(changesets, & &1.valid?) do
         {valid, []} ->
@@ -72,8 +70,8 @@ const create_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
 const create_single = ({ genName }: StringOnlyMap) => {
   return `
   def create_${genName}(${genName}_params) when is_map(${genName}_params) do
-    changeset = change_${genName}(attrs)
-    if changeset.valid?, do: Repo.insert(changeset)
+    changeset = change_${genName}(${genName}_params)
+    if changeset.valid?, do: Repo.insert(changeset), else: {:error, changeset}
   end
 `;
 };

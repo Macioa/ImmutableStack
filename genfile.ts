@@ -22,7 +22,7 @@ const Immutable : ImmutableGenerator = {
     http_controller: {
       name: '${capFirst(genName)}Controller',
       routes: [
-        'routed_index(conn, _entity_queries, page_queries) when _entity_queries == %{}',
+        'routed_index(conn, entity_queries, page_queries) when entity_queries == %{}',
         'routed_index(conn, entity_queries, page_queries) when entity_queries != %{}',
         'create(conn, ${genName}_list) when is_list(${genName}_list)',
         'create(conn, ${genName}_params)',
@@ -30,7 +30,7 @@ const Immutable : ImmutableGenerator = {
         'show(conn, %{"id" => id})',
         'update(conn, ${genName}_list) when is_list(${genName}_list)',
         'update(conn, ${genName}_params) when is_map(${genName}_params)',
-        'delete(conn, ${pluralName}_list) when is_list(${pluralName}_list)',
+        'delete(conn, ${genName}_list) when is_list(${genName}_list)',
         'delete(conn, %{"id" => id})'
       ]
     },

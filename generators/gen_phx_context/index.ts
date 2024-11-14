@@ -91,7 +91,7 @@ defmodule ${AppNameCamel}.${camelName} do
   alias ${AppNameCamel}.Utils.Chunk
   alias ${AppNameCamel}.Utils.MapUtil
 
-  alias ${AppNameCamel}.${camelName}.${genCamelName}
+  alias ${AppNameCamel}.${genCamelName}
 
   ${gen_apis(apiFunctions, dict)}
 

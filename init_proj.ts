@@ -14,6 +14,7 @@ import { inject_redux_provider } from "./injectors/inject_redux_provider";
 import { inject_web_endpoint } from "./injectors/inject_web_endpoint";
 import { gen_request_lib } from "./generators/gen_request_lib";
 import { gen_phx_utils } from "./generators/phx_utils";
+import { inject_scrinever } from "./injectors/inject_scrinever_to_repo";
 
 const args = process.argv.slice(2);
 
@@ -59,6 +60,7 @@ async function main() {
     inject_phoenix_libs(projectName, {WebDir: webdir, LibDir: libdir}),
     inject_web_endpoint(projectName, webdir),
     inject_dev_config(projectName, umbrellaDir),
+    inject_scrinever({LibDir: libdir, AppNameSnake: projectName}),
     gen_phx_utils(projectNameCamel, libdir),
   ]);
   await exec({
