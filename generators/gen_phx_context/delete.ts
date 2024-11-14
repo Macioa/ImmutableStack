@@ -62,18 +62,15 @@ const delete_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
 `;
 };
 
-const delete_single = ({ genName, genCamelName }: StringOnlyMap) => {
+const delete_single = ({ genName }: StringOnlyMap) => {
   return `
-  def delete_${genName}(${genName}_params) when is_map(${genName}_params) do 
-    id = MapUtil.get(${genName}_params, :id)
-    Repo.delete!(${genCamelName}, id)
-  end
+  def delete_${genName}(${genName}_params) when is_map(${genName}_params), do:  MapUtil.get(${genName}_params, :id) |> delete_${genName}
 `;
 };
 
-const delete_single_by_id = ({ genName, genCamelName }: StringOnlyMap) => {
+const delete_single_by_id = ({ genName }: StringOnlyMap) => {
   return `
-    def delete_${genName}(id) when is_binary(id), do: Repo.delete!(${genCamelName}, id)    
+    def delete_${genName}(id) when is_binary(id), do: get_${genName}!(id) |> Repo.delete!    
     `;
 };
 

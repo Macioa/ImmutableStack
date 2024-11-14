@@ -4,7 +4,7 @@ import { compute_header } from "../../utils/gen_header";
 
 const index_standard = ({ pluralName, context }: StringOnlyMap) => {
   return `
-    defp routed_index(conn, _entity_queries, page_queries) when _entity_queries == %{} do
+    defp routed_index(conn, entity_queries, page_queries) when entity_queries == %{} do
       with {:ok, ${pluralName}, query_data} <- ${context}.list_${pluralName}(page_queries) do
         render(conn, :show, ${pluralName}: ${pluralName}, query_data: query_data)
       end

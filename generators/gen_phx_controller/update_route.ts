@@ -16,13 +16,11 @@ const update_list = ({
         {:partial_success, updated_${pluralName}, failed_${pluralName}} ->
           conn
           |> put_status(:partial_content)
-          |> render(:show_partial, succeeded: updated_${pluralName}, failed: failed_${pluralName})
+          |> render(:show_partial, succeeded: updated_${pluralName}, failed: failed_${pluralName}, query_data: ${genName}_list)
   
         error ->
           ${AppNameCamel}Web.FallbackController.call(conn, error)
       end
-  
-      render(conn, :show, ${pluralName}: ${pluralName})
     end
     `;
 };
