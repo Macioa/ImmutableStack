@@ -7,16 +7,24 @@ import { chunkArray } from "../utils/chunk";
 type Execution = {
   dir: string;
   command: string;
-  options?: object;
+  options?: ExecutionOptions;
 };
+
+type ExecutionOptions = {
+  timeoutResolve?: number;
+  timeoutReject?: number;
+}
 
 const ExecutionDefaults: Execution = {
   dir: '',
   command: '',
+  options: {}
 };
 
 const execute = async (execution: Execution) => {
-  const { dir, command } = { ...ExecutionDefaults, ...execution };
+  const { dir, command, options } = { ...ExecutionDefaults, ...execution };
+  const { timeoutResolve, timeoutReject } = options || {}
+
   log({level: 4}, `Executing: ${command}`);
   log({level: 4}, `      in ${dir}...`);
 
@@ -29,6 +37,9 @@ const execute = async (execution: Execution) => {
     child.stdout.on('data', (data) => log({level: 5}, data.toString()));
     child.stderr.on('error', (error) =>  console.error(`Error: ${error}`));
     child.on('close', (exitcode) => exitcode ? reject(null) : resolve([]) );
+
+    if (timeoutResolve) setTimeout(() => resolve([]), timeoutResolve);
+    if (timeoutReject) setTimeout(() => reject([]), timeoutReject);
   });
 };
 

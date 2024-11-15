@@ -3,18 +3,18 @@ import { join } from "path";
 import { execute as exec, executeAll as execAll } from "./runners";
 import { log } from "./utils/logger";
 
-import { gen_lorem_utils } from "./generators/gen_lorem_utils";
-import { gen_react_config } from "./generators/gen_react_config";
-import { gen_store } from "./generators/gen_store";
+import { gen_lorem_utils } from "./generators/init_react/gen_lorem_utils";
+import { gen_react_config } from "./generators/init_react/gen_react_config";
+import { gen_store } from "./generators/init_react/gen_store";
 
-import { inject_app_declarations } from "./injectors/inject_app_declarations";
-import { inject_dev_config } from "./injectors/inject_dev_config";
-import { inject_phoenix_libs } from "./injectors/inject_phoenix_libs";
-import { inject_redux_provider } from "./injectors/inject_redux_provider";
-import { inject_web_endpoint } from "./injectors/inject_web_endpoint";
-import { gen_request_lib } from "./generators/gen_request_lib";
-import { gen_phx_utils } from "./generators/phx_utils";
-import { inject_scrinever } from "./injectors/inject_scrinever_to_repo";
+import { inject_app_declarations } from "./injectors/init_phoenix/inject_app_declarations";
+import { inject_dev_config } from "./injectors/init_phoenix/inject_dev_config";
+import { inject_phoenix_libs } from "./injectors/init_phoenix/inject_phoenix_libs";
+import { inject_redux_provider } from "./injectors/init_react/inject_redux_provider";
+import { inject_web_endpoint } from "./injectors/init_phoenix/inject_web_endpoint";
+import { gen_request_lib } from "./generators/gen_react/gen_request_lib";
+import { gen_phx_utils } from "./generators/init_phoenix/phx_utils";
+import { inject_scrinever } from "./injectors/init_phoenix/inject_scrinever_to_repo";
 
 const args = process.argv.slice(2);
 
@@ -69,11 +69,15 @@ async function main() {
   });
 
   log({ level: 2, color: "BLUE" }, "\nGenerating React app...");
+  // await exec({
+  //   command: `npx create-react-app ${projectName}_ui --template typescript`,
+  //   dir: appdir,
+  // });
   await exec({
-    command: `npx create-react-app ${projectName}_ui --template typescript`,
+    command: `npm create vite@latest ${projectName}_ui -- --template react-ts --no-interactive --loglevel verbose`,
     dir: appdir,
-  });
-
+  })
+  process.exit(1)
   log(
     { level: 2, color: "BLUE" },
     "\nInstalling React libs and configuring app..."
