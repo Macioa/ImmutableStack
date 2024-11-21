@@ -1,20 +1,10 @@
 import { join } from "path";
-
-import { execute as exec, executeAll as execAll } from "./runners";
 import { log } from "./utils/logger";
+import {execute as exec} from "./runners";
 
-import { gen_lorem_utils } from "./generators/init_react/gen_lorem_utils";
-import { gen_react_config } from "./generators/init_react/gen_react_config";
-import { gen_store } from "./generators/init_react/gen_store";
-
-import { inject_app_declarations } from "./injectors/init_phoenix/inject_app_declarations";
-import { inject_dev_config } from "./injectors/init_phoenix/inject_dev_config";
-import { inject_phoenix_libs } from "./injectors/init_phoenix/inject_phoenix_libs";
-import { inject_redux_provider } from "./injectors/init_react/inject_redux_provider";
-import { inject_web_endpoint } from "./injectors/init_phoenix/inject_web_endpoint";
-import { gen_request_lib } from "./generators/gen_react/gen_request_lib";
-import { gen_phx_utils } from "./generators/init_phoenix/phx_utils";
-import { inject_scrinever } from "./injectors/init_phoenix/inject_scrinever_to_repo";
+import { init_react_app_with_vite } from "./composite/init_react/init_react_app_with_vite";
+import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
+import { init_phoenix_umbrella_app } from "./composite/init_phoenix/init_phoenix_umbrella_app";
 
 const args = process.argv.slice(2);
 
@@ -47,57 +37,23 @@ async function main() {
 
   log(
     { level: 1, color: "GREEN" },
-    `\n\n Generating ${projectName} Umbrella App with Immutable Stack\n\n`
+    `\n\n Generating ${projectName} App with Immutable Stack\n\n`
   );
 
-  log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix apps...");
-  await exec({
-    command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
-    dir: ".",
-  });
-  await inject_app_declarations(projectName, umbrellaDir);
-  await Promise.all([
-    inject_phoenix_libs(projectName, {WebDir: webdir, LibDir: libdir}),
-    inject_web_endpoint(projectName, webdir),
-    inject_dev_config(projectName, umbrellaDir),
-    inject_scrinever({LibDir: libdir, AppNameSnake: projectName}),
-    gen_phx_utils(projectNameCamel, libdir),
-  ]);
-  await exec({
-    command: `mix deps.get && mix compile`,
+  await init_phoenix_umbrella_app({projectName, projectNameCamel, umbrellaDir, libdir, webdir})
+
+  await init_react_app_with_vite({projectName, projectNameCamel, appdir, uidir, webdir})
+  await build_tool_agnostic_init_tasks(projectNameCamel, uidir)
+
+  const deps = await exec({
+    command: `mix deps.get`,
     dir: umbrellaDir,
   });
 
-  log({ level: 2, color: "BLUE" }, "\nGenerating React app...");
-  // await exec({
-  //   command: `npx create-react-app ${projectName}_ui --template typescript`,
-  //   dir: appdir,
-  // });
   await exec({
-    command: `npm create vite@latest ${projectName}_ui -- --template react-ts --no-interactive --loglevel verbose`,
-    dir: appdir,
-  })
-  process.exit(1)
-  log(
-    { level: 2, color: "BLUE" },
-    "\nInstalling React libs and configuring app..."
-  );
-  const frontEndCommands = [
-    "npm i --save-dev @types/node",
-    "npm install @reduxjs/toolkit react-redux @types/react-redux",
-    "npm install --save-dev @babel/plugin-transform-private-property-in-object",
-    "npm install --save-dev lorem-ipsum",
-    "npm install deepmerge",
-    // "npm install @mui/material @emotion/react @emotion/styled"
-  ].map((c) => ({ command: c, dir: uidir }));
-  await execAll(frontEndCommands);
-  await Promise.all([
-    gen_store(projectNameCamel, uidir),
-    inject_redux_provider(projectNameCamel, uidir),
-    gen_react_config(projectNameCamel, uidir),
-    gen_lorem_utils(projectNameCamel, uidir),
-    gen_request_lib(projectNameCamel, uidir),
-  ]);
+    command: `mix compile`,
+    dir: umbrellaDir,
+  });
 
   log(
     { level: 1, color: "GREEN" },
