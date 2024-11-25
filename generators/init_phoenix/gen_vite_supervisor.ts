@@ -1,14 +1,14 @@
 import { join } from "path";
 import { generateFile } from "../index";
 
-const gen_vite_supervisor = async (AppNameCamel: string, WebDir: string) => {
-  const supervisorPath = join(WebDir, `/lib/mix/processes/`);
+const gen_vite_supervisor = async (AppName: string, AppNameCamel: string, LibDir: string) => {
+  const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `
 defmodule ${AppNameCamel}Web.ViteDevSupervisor do
   use GenServer
 
-  @vite_dev_cmd ["run", "dev", "--prefix", "apps/hello4_ui/"]
+  @vite_dev_cmd ["run", "dev", "--prefix", "apps/${AppName}_ui/"]
   @timeout_sec 5
   @type state :: %{
           vite_server: nil | Port.t(),

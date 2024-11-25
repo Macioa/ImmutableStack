@@ -28,7 +28,7 @@ const delete_list = ({
 const deleted = ({ genName, context, camelUpperName }: StringOnlyMap) => {
   return `
     def delete(conn, %{"id" => id}) do
-      with %${camelUpperName}{} = waldo <- ${context}.delete_${genName}(id) do
+      with %${camelUpperName}{} = ${genName} <- ${context}.delete_${genName}(id) do
         conn
         |> put_status(:ok)
         |> render(:show, ${genName}: ${genName})

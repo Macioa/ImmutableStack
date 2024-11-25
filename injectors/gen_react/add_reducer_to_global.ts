@@ -25,7 +25,7 @@ const addReducerToGlobal = async (generator: ImmutableGenerator) => {
     ],
     [
       InjectType.AFTER,
-      /type\s[A-Z][a-z]+State\s\=\s\{/,
+      /type\s+[A-Za-z]+State\s+\=\s+\{/,
       `\n  ${name}Store: ${appstate};`,
     ],
     // [InjectType.AFTER, /export\s\{\s*\w+\s*,\s*REQUESTSKEY/, `, ${namekey}`],

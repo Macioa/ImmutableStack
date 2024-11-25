@@ -10,6 +10,7 @@ import { gen_phx_utils } from "../../generators/init_phoenix/phx_utils";
 import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_to_repo";
 import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
 import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix/inject_deps_get_aliases_to_mix_exs";
+import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
 
 const init_phoenix_umbrella_app = async ({
   projectName,
@@ -31,10 +32,11 @@ const init_phoenix_umbrella_app = async ({
     inject_scrinever({ LibDir: libdir, AppNameSnake: projectName }),
     gen_phx_utils(projectNameCamel, libdir),
   ]);
-  const configure = await configure_phoenix_to_serve_react(projectName, projectNameCamel, webdir);
+  const configure = await configure_phoenix_to_serve_react({AppName: projectName, AppNameCamel: projectNameCamel, WebDir: webdir, LibDir: libdir});
+  const format = await configure_phoenix_to_format_react({AppName: projectName, LibDir: libdir})
   const depsget = await inject_deps_get_aliases_to_mix_exs(projectName, umbrellaDir);
 
-  return [init, declarations, tasks].flat();
+  return [init, declarations, tasks, configure, format, depsget].flat();
 };
 
 export { init_phoenix_umbrella_app };

@@ -11,6 +11,7 @@ const init_react_app_with_vite = async ({
   projectName,
   projectNameCamel,
   appdir,
+  libdir,
   uidir,
   webdir,
 }: StringOnlyMap) => {
@@ -32,7 +33,7 @@ const init_react_app_with_vite = async ({
   );
   const build_aliases = await inject_build_aliases(projectName, uidir);
   const build_ouput = await inject_vite_build_output(projectName, uidir);
-  const vite_supervisor = await gen_vite_supervisor(projectNameCamel, webdir);
+  const vite_supervisor = await gen_vite_supervisor(projectName, projectNameCamel, libdir);
   const inject_supervisor = await inject_vite_supervisor_to_application_ex(
     projectName,
     projectNameCamel,

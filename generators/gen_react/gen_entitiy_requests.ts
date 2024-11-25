@@ -43,7 +43,7 @@ const update${tstype} = (${tstype?.toLowerCase()}: ${tstype}, dispatch: Dispatch
       method: "PUT",
       body: JSON.stringify(${tstype?.toLowerCase()}),
     },
-    callback: (data: any) => null,
+    callback: (_data: any) => null,
   }, dispatch);
 };
 
