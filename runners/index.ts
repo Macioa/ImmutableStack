@@ -65,8 +65,8 @@ const execute = async (execution: Execution) => {
     });
 
     child.stderr.on("error", (error) => {
-      console.error(`Error: ${error}`);
-      reject(error);
+      console.error(`Could not run ${command}:\n      ${error}`);
+      reject(error || `Could not run ${command}`);
     });
 
     child.on("close", (exitcode) => {
@@ -77,7 +77,7 @@ const execute = async (execution: Execution) => {
     });
 
     if (timeoutResolve) setTimeout(() => resolve(dir), timeoutResolve);
-    if (timeoutReject) setTimeout(() => reject("Time out"), timeoutReject);
+    if (timeoutReject) setTimeout(() => reject(new Error("Time out")), timeoutReject);
   });
 };
 

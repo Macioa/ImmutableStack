@@ -10,7 +10,7 @@ const inject_router = async (generator: ImmutableGenerator) => {
   const injections: Injection[] = [
     [
       InjectType.AFTER,
-      /pipe_through :api/,
+      /pipe_through[\s\(]{1,3}:api\){0,1}/,
       `\nresources "/${resource}", ${controller}` +
         `\nput "/${resource}", ${controller}, :update` +
         `\ndelete "/${resource}", ${controller}, :delete`,

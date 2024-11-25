@@ -39,7 +39,7 @@ const updateMigration = (
       resolve(true);
     } catch (error) {
       console.log("Could not update migration: ", error);
-      reject(false);
+      reject(new Error(`Could not update migration: ${error}`));
     }
   });
 };
@@ -57,12 +57,12 @@ const createMigrationFile = (generator: any): Promise<string | null> => {
           console.log(`Migration created at ${match[1]}`);
         } else {
           console.error(`Error creating migration: ${err || stderr}`);
-          reject(null);
+          reject(new Error(`Error creating migration: ${err || stderr}`));
         }
       });
     } catch (error) {
       console.error(error);
-      reject(null);
+      reject(new Error(error as string));
     }
   });
 };

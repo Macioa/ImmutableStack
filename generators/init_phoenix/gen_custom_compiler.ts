@@ -3,9 +3,9 @@ import { generateFile } from "../index";
 
 const gen_custom_compiler = async (
   AppName: string,
-  WebDir: string
+  LibDir: string
 ) => {
-  const compilerPath = join(WebDir, `/lib/mix/tasks`);
+  const compilerPath = join(LibDir, `/lib/mix/tasks`);
 
   const content = `
 defmodule Mix.Tasks.Compile.ImmutableCompiler do
