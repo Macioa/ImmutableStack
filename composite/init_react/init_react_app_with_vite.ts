@@ -6,6 +6,7 @@ import { inject_vite_build_output } from "../../injectors/init_react/inject_vite
 import { gen_vite_supervisor } from "../../generators/init_phoenix/gen_vite_supervisor";
 import { inject_vite_supervisor_to_application_ex } from "../../injectors/init_phoenix/inject_vite_supervisor_to_application_ex";
 import { StringOnlyMap } from "../../utils/map";
+import { inject_vite_deps } from "../../injectors/init_react/inject_vite_deps";
 
 const init_react_app_with_vite = async ({
   projectName,
@@ -31,22 +32,19 @@ const init_react_app_with_vite = async ({
     { level: 2, color: "BLUE" },
     "\nConfiguring Vite build output and aliases..."
   );
-  const build_aliases = await inject_build_aliases(projectName, uidir);
-  const build_ouput = await inject_vite_build_output(projectName, uidir);
-  const vite_supervisor = await gen_vite_supervisor(projectName, projectNameCamel, libdir);
-  const inject_supervisor = await inject_vite_supervisor_to_application_ex(
-    projectName,
-    projectNameCamel,
-    webdir
-  );
 
-  return [
-    init,
-    build_aliases,
-    build_ouput,
-    vite_supervisor,
-    inject_supervisor,
-  ].flat();
+  const tasks = [
+    await inject_build_aliases(projectName, uidir),
+    await inject_vite_build_output(projectName, uidir),
+    await gen_vite_supervisor(projectName, projectNameCamel, libdir),
+    await inject_vite_supervisor_to_application_ex(
+      projectName,
+      projectNameCamel,
+      webdir
+    ),
+  ];
+
+  return tasks.flat();
 };
 
 export { init_react_app_with_vite };

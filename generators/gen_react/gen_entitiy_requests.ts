@@ -7,14 +7,14 @@ const gen_entity_requests = async (
   generator: ImmutableGenerator,
   typeDict: any
 ) => {
-    const { name, generate, UiDir, AppNameCamel } = generator;
+    const { name, generate, AppNameCamel, LibDir } = generator;
     const { tstype } = generate;
-    const filedir = join(UiDir || '', "src/requests");
+    const filedir = join(LibDir || '', "lib/typescript/requests/");
 
     const content = `
 import { Dispatch } from "redux";
 import { Request } from "./index";
-import { ${tstype}, set${tstype}, set${pluralize(tstype as string)} } from "../store/${name}";
+import { ${tstype}, set${tstype}, set${pluralize(tstype as string)} } from "../state/${name}";
 
 const request${tstype} = (id: string, dispatch: Dispatch) => {
   Request.API({
@@ -60,7 +60,6 @@ const delete${tstype} = (id: string, dispatch: Dispatch) => {
 
 export { request${tstype}, request${pluralize(tstype as string)}, update${tstype}, delete${tstype} };
 `;
-
 return generateFile({ dir: filedir, filename: `${name}.tsx`, content });
 }
 

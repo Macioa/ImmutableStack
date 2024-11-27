@@ -42,15 +42,15 @@ async function main() {
 
   await init_phoenix_umbrella_app({projectName, projectNameCamel, umbrellaDir, libdir, webdir})
 
-  await init_react_app_with_vite({projectName, projectNameCamel, appdir, uidir, webdir})
-  await build_tool_agnostic_init_tasks(projectNameCamel, uidir)
+  await init_react_app_with_vite({projectName, projectNameCamel, appdir, uidir, webdir, libdir})
+  await build_tool_agnostic_init_tasks({projectName, projectNameCamel, uidir, libdir})
 
   const deps = await exec({
     command: `mix deps.get`,
     dir: umbrellaDir,
   });
 
-  await exec({
+  const compile = await exec({
     command: `mix compile`,
     dir: umbrellaDir,
   });

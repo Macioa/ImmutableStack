@@ -5,7 +5,7 @@ const gen_vite_supervisor = async (AppName: string, AppNameCamel: string, LibDir
   const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `
-defmodule ${AppNameCamel}Web.ViteDevSupervisor do
+defmodule ${AppNameCamel}.ViteDevSupervisor do
   use GenServer
 
   @vite_dev_cmd ["run", "dev", "--prefix", "apps/${AppName}_ui/"]
