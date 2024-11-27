@@ -1,5 +1,3 @@
-import { executeAllSync as execAllSync, Execution } from "../../runners";
-
 import { gen_lorem_utils } from "../../generators/init_react/gen_lorem_utils";
 import { gen_request_lib } from "../../generators/init_react/gen_request_lib";
 import { gen_store } from "../../generators/init_react/gen_store";
