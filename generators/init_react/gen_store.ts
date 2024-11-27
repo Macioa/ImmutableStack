@@ -3,10 +3,10 @@ import { generateFile } from "../index";
 
 const gen_store = async (AppName: string, UiDir: string) => {
     const storePath = join(UiDir, "/src/store");
-console.log("******", AppName, UiDir, storePath);
+
     const content = `
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
-import { RequestsStoreState, requestReducer } from "../requests"; 
+import { RequestsStoreState, requestReducer } from "@requests/index"; 
 
 
 type ${AppName}State = {

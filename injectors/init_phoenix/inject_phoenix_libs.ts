@@ -15,8 +15,7 @@ const inject_umbrella_libs = async (
   UmbrellaDir: string
 ) => Promise.resolve(true);
 
-const inject_app_libs = async (AppNameSnake: string, AppDir: string) => {
-  console.log("APPDIR", AppDir);
+const inject_app_libs = async (AppDir: string) => {
   const file = path.join(AppDir, "mix.exs");
   const injections: Injection[] = [
     [InjectType.AFTER, /\{\:ecto_sql\, \".*\"\}\,/, `\n      {:scrivener_ecto, "~> 3.0"},`],
@@ -38,7 +37,7 @@ const inject_phoenix_libs = async (
 ) => {
   return Promise.all([
     inject_web_app_libs(AppNameSnake, WebDir || ""),
-    inject_app_libs(AppNameSnake, LibDir || ""),
+    inject_app_libs(LibDir || ""),
     inject_umbrella_libs(AppNameSnake, UmbrellaDir || ""),
   ]);
 };

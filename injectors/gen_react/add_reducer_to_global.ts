@@ -21,7 +21,7 @@ const addReducerToGlobal = async (generator: ImmutableGenerator) => {
     [
       InjectType.AFTER,
       /import\s.*/,
-      `\nimport { ${name}Reducer, ${appstate} } from './${name}';`,
+      `\nimport { ${name}Reducer, ${appstate} } from '@state/${name}';`,
     ],
     [
       InjectType.AFTER,

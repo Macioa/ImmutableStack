@@ -1,15 +1,19 @@
 import { join } from 'path'
 import { generateFile } from "../index";
 
-const gen_request_lib = async (AppNameCamel: string, UiDir: string) => {
-    const dir = join(UiDir, "/src/requests");
+const gen_request_lib = async (LibDir: string) => {
+    const dir = join(LibDir, "lib/typescript/requests");
     const literalFetchRoute = "`${API_URL}/${route}`"; 
     const literalErrorString = "`${API_URL} request failed: ${res?.status}\\n${res?.statusText}`";
     const content = `
 import { Dispatch } from "redux";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ${AppNameCamel}State } from "../store";
 import merge from "deepmerge";
+
+interface GenericAppState {
+  RequestsStore: RequestsStoreState;
+  [key: string]: any;
+}
 
 type AppRequest = {
   name: string;
@@ -50,7 +54,7 @@ const requestSlice = createSlice({
 });
 const requestReducer = requestSlice.reducer;
 
-const isLoading = (state: ${AppNameCamel}State, key: string | null = null) => {
+const isLoading = (state: GenericAppState, key: string | null = null) => {
   const requests = state.requestsStore.activeRequests;
   return key ? !!requests[key] : !!Object.keys(requests).length;
 };
@@ -110,7 +114,7 @@ const requestAPI = async (details: requestAPIinterface, dispatch: Dispatch) => {
 const Request = { API: requestAPI };
 
 export const { addRequest, completeRequest } = requestSlice.actions;
-export type { AppRequest, RequestsStoreState, requestAPIinterface };
+export type { AppRequest, RequestsStoreState, requestAPIinterface, GenericAppState };
 export {
   initialRequestsState,
   requestReducer,

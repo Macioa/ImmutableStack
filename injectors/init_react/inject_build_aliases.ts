@@ -1,7 +1,7 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
 
-const inject_viteconfig = async (UiDir: string) => {
+const inject_viteconfig = async (AppNameSnake: string, UiDir: string) => {
   const file = path.join(UiDir, "vite.config.ts");
   const injections: Injection[] = [
     [
@@ -10,7 +10,10 @@ const inject_viteconfig = async (UiDir: string) => {
       `\n
   resolve: {
     alias: {
-      '@components': path.resolve(__dirname, 'src/components'),
+      '@utils': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/utils'),
+      '@state': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/state'),
+      '@requests': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/requests'),
+      '@components': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/components'),
       '@test': path.resolve(__dirname, 'src/test')
     }
   },
@@ -32,7 +35,10 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
       `\n
   "baseUrl": "../../",
   "paths": {
-    "@components/*": ["apps/${AppNameSnake}_ui/components/*"],
+    "@utils/*": ["apps/${AppNameSnake}/lib/typescript/utils/*"],
+    "@state/*": ["apps/${AppNameSnake}/lib/typescript/state/*"],
+    "@requests/*": ["apps/${AppNameSnake}/lib/typescript/requests/*"],
+    "@components/*": ["apps/${AppNameSnake}/lib/typescript/components/*"]
   },
 `,
     ],
@@ -42,6 +48,6 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
 };
 
 const inject_build_aliases = async (AppNameSnake: string, UiDir: string) =>
-  Promise.all([inject_viteconfig(UiDir), inject_tsconfig(AppNameSnake, UiDir)]);
+  Promise.all([inject_viteconfig(AppNameSnake, UiDir), inject_tsconfig(AppNameSnake, UiDir)]);
 
 export { inject_viteconfig, inject_tsconfig, inject_build_aliases };

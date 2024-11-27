@@ -4,7 +4,7 @@ import { log } from "../utils/logger";
 
 const getAppData = async () => {
   try {
-    console.log({level: 8}, `Getting App Data from mix.exs in ${process.cwd()}`);
+    log({level: 8}, `Getting App Data from mix.exs in ${process.cwd()}`);
     const fileContent = await readFile("mix.exs", "utf-8");
     let appName = '';
     fileContent.replace(

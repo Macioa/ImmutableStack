@@ -8,7 +8,7 @@ const gen_custom_compiler = async (
   const compilerPath = join(LibDir, `/lib/mix/tasks`);
 
   const content = `
-defmodule Mix.Tasks.Compile.ImmutableCompiler do
+defmodule Mix.Tasks.Compile.CustomCompiler do
   use Mix.Task.Compiler
 
   @impl Mix.Task.Compiler
@@ -30,7 +30,7 @@ end
 
   return generateFile({
     dir: compilerPath,
-    filename: "immutable_compiler.ex",
+    filename: "custom_compiler.ex",
     content,
   });
 };

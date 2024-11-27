@@ -10,7 +10,7 @@ const inject_custom_compile_to_mix_exs = async (
     [
       InjectType.AFTER,
       /def\sproject\s+do[\s\n]+\[/,
-      `compilers: Mix.compilers() ++ [:immutable_compiler],\n`,
+      `compilers: Mix.compilers() ++ [:custom_compiler],\n`,
     ],
   ];
 

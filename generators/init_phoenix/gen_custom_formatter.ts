@@ -2,13 +2,13 @@ import { join } from "path";
 import { generateFile } from "../index";
 
 const gen_custom_formatter = async (AppName: string, LibDir: string) => {
-  const formatterPath = join(LibDir, `/lib/mix/task/`);
+  const formatterPath = join(LibDir, `/lib/mix/tasks/`);
 
   const content = `
 defmodule Mix.Tasks.CustomFormatter do
   use Mix.Task
 
-  def run(args \\ []) do
+  def run(args \\\\ []) do
     IO.puts("Immutable Formatter")
 
     {js_paths, ex_paths} =
@@ -17,7 +17,7 @@ defmodule Mix.Tasks.CustomFormatter do
           String.ends_with?(path, ".tsx")
       end)
 
-    js_paths = Enum.map(js_paths, &String.replace(&1, ~r/(.*){0,1}apps\/${AppName}_ui\//, ""))
+    js_paths = Enum.map(js_paths, &String.replace(&1, ~r/(.*){0,1}apps\\/${AppName}_ui\\//, ""))
 
     IO.puts("Formatting Elixir files...")
     Mix.Task.run("format", ex_paths)
