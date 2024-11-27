@@ -10,7 +10,7 @@ const inject_static_output_to_endpoint = async (
     [
       InjectType.REPLACE,
       /(?<=plug\(Plug\.Static\,.*only:\s)[^\n]*/s,
-      `~w(assets fonts images js css *.svg index.html)`,
+      `~w(assets fonts images js css vite.svg index.html)`,
     ],
   ];
 
