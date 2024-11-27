@@ -1,4 +1,4 @@
-import { StringOnlyMap } from "../../../utils/map";
+import { StringOnlyMap, validate } from "../../../utils/map";
 import { ImmRoute } from ".";
 import { compute_header } from "../../../utils/gen_header";
 
@@ -8,6 +8,7 @@ const create_list = ({
   pluralName,
   AppNameCamel,
 }: StringOnlyMap) => {
+  validate({ genName, context, pluralName, AppNameCamel }, create_list);
   return `
     def create(conn, ${genName}_list) when is_list(${genName}_list) do
       with {:ok, ${pluralName}, []} <- ${context}.create_${genName}(${genName}_list) do
@@ -34,6 +35,7 @@ const create = ({
   context,
   pluralName,
 }: StringOnlyMap) => {
+  validate({ genName, camelUpperName, context, pluralName }, create);
   return `
     def create(conn, ${genName}_params) do
       with {:ok, %${camelUpperName}{} = ${genName}} <- ${genName}_params |> MapUtil.str_to_atom() |> ${context}.create_${genName}() do

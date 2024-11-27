@@ -1,8 +1,9 @@
-import { StringOnlyMap } from "../../../utils/map";
+import { StringOnlyMap, validate } from "../../../utils/map";
 import { compute_header } from "../../../utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
 const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
+  validate({ pluralName }, comment_main);
   return `
   @doc """
     Update ${pluralName} records.
@@ -14,6 +15,7 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
 };
 
 const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralName, genCamelName }, comment_many);
   return `
 update_${genName}(${pluralName}) when is_list ${pluralName} -> Updates ${pluralName} with an array of tuples [{${genName}, attrs}].
 
@@ -24,6 +26,7 @@ update_${genName}(${pluralName}) when is_list ${pluralName} -> Updates ${pluralN
 };
 
 const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
+  validate({ genName, genCamelName }, comment_single);
   return `
 update_${genName}(%${genCamelName}{} = ${genName}, attrs) -> Updates a ${genName}.
 
@@ -36,6 +39,7 @@ update_${genName}(%${genCamelName}{} = ${genName}, attrs) -> Updates a ${genName
 };
 
 const update_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralName, genCamelName }, update_many);
   return `
 def update_${genName}(${pluralName}) when is_list(${pluralName}) do
   ${pluralName}
@@ -91,6 +95,7 @@ end
 };
 
 const update_single = ({ genName }: StringOnlyMap) => {
+  validate({ genName }, update_single);
   return `
 def update_${genName}(attrs) when is_map(attrs) do
   changeset =

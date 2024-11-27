@@ -1,8 +1,9 @@
-import { StringOnlyMap } from "../../../utils/map";
+import { StringOnlyMap, validate } from "../../../utils/map";
 import { ImmRoute } from ".";
 import { compute_header } from "../../../utils/gen_header";
 
 const index_standard = ({ pluralName, context }: StringOnlyMap) => {
+  validate({ pluralName, context }, index_standard);
   return `
     defp routed_index(conn, entity_queries, page_queries) when entity_queries == %{} do
       with {:ok, ${pluralName}, query_data} <- ${context}.list_${pluralName}(page_queries) do
@@ -13,6 +14,7 @@ const index_standard = ({ pluralName, context }: StringOnlyMap) => {
 };
 
 const index_dynamic = ({ pluralName, context }: StringOnlyMap) => {
+  validate({ pluralName, context }, index_dynamic);
   return `
     defp routed_index(conn, entity_queries, page_queries) when entity_queries != %{} do
       with {:ok, ${pluralName}, query_data} <- ${context}.list_${pluralName}_by(entity_queries, page_queries) do

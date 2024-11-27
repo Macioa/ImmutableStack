@@ -1,9 +1,10 @@
-import { StringOnlyMap } from "../../../utils/map";
+import { StringOnlyMap, validate } from "../../../utils/map";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 import { compute_header } from "../../../utils/gen_header";
 import { log } from "../../../utils/logger";
 
 const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
+  validate({ pluralName }, comment_main);
   return `
   @doc """
     Create ${pluralName} by id.
@@ -15,6 +16,7 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
 };
 
 const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralName, genCamelName }, comment_many);
   return `
 create_${genName}(attrs) when is_list attrs -> Creates ${pluralName} from an array of attrs.
 
@@ -25,6 +27,7 @@ create_${genName}(attrs) when is_list attrs -> Creates ${pluralName} from an arr
 };
 
 const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
+  validate({ genName, genCamelName }, comment_single);
   return `
  create_${genName}(attrs \\ %{}) -> Creates a ${genName}.
 
@@ -41,6 +44,7 @@ const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
 // };
 
 const create_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralName, genCamelName }, create_many);
   return `
   def create_${genName}(attrs) when is_list(attrs) do
     attrs
@@ -68,6 +72,7 @@ const create_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
 };
 
 const create_single = ({ genName }: StringOnlyMap) => {
+  validate({ genName }, create_single);
   return `
   def create_${genName}(${genName}_params) when is_map(${genName}_params) do
     changeset = change_${genName}(${genName}_params)

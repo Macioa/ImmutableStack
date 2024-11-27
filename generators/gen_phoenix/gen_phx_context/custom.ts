@@ -1,7 +1,8 @@
 import { ImmAPI } from ".";
-import { StringOnlyMap } from "../../../utils/map";
+import { StringOnlyMap, validate } from "../../../utils/map";
 
 const custom = ({ header }: StringOnlyMap) => {
+  validate({ header }, custom);
   return `\n    def ${header} do\n        # TODO: Provide function definition here\n    end\n`;
 };
 
