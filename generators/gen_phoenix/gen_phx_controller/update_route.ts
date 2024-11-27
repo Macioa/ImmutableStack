@@ -1,4 +1,4 @@
-import { StringOnlyMap } from "../../../utils/map";
+import { StringOnlyMap, validate } from "../../../utils/map";
 import { ImmRoute } from ".";
 import { compute_header } from "../../../utils/gen_header";
 
@@ -8,6 +8,7 @@ const update_list = ({
   genName,
   AppNameCamel,
 }: StringOnlyMap) => {
+  validate({ pluralName, context, genName, AppNameCamel }, update_list);
   return `
     def update(conn, ${genName}_list) when is_list(${genName}_list) do
       with {:ok, ${pluralName}, []} <- ${context}.update_${genName}(${genName}_list) do
@@ -26,6 +27,7 @@ const update_list = ({
 };
 
 const update = ({ genName, context, camelName }: StringOnlyMap) => {
+  validate({ genName, context, camelName }, update);
   return `
     def update(conn, ${genName}_params) when is_map(${genName}_params) do
       with {:ok, %${camelName}{} = ${genName}} <- ${context}.update_${genName}(${genName}_params) do

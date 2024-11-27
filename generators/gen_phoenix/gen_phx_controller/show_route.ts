@@ -1,8 +1,9 @@
-import { StringOnlyMap } from "../../../utils/map";
+import { StringOnlyMap, validate } from "../../../utils/map";
 import { ImmRoute } from ".";
 import { compute_header } from "../../../utils/gen_header";
 
 const show_list = ({ pluralName, context, genName }: StringOnlyMap) => {
+  validate({ pluralName, context, genName }, show_list);
   return `
     def show(conn, ${genName}_list) when is_list(${genName}_list) do
       ${pluralName} = ${context}.get_${genName}!(${genName}_list)
@@ -12,6 +13,7 @@ const show_list = ({ pluralName, context, genName }: StringOnlyMap) => {
 };
 
 const show = ({ genName, context }: StringOnlyMap) => {
+  validate({ genName, context }, show);
   return `
     def show(conn, %{"id" => id}) do
         ${genName} = ${context}.get_${genName}!(id)

@@ -1,6 +1,6 @@
 import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
-import { StringOnlyMap } from "../../utils/map";
+import { StringOnlyMap, validate } from "../../utils/map";
 
 import { inject_app_declarations } from "../../injectors/init_phoenix/inject_app_declarations";
 import { inject_dev_config } from "../../injectors/init_phoenix/inject_dev_config";
@@ -19,6 +19,7 @@ const init_phoenix_umbrella_app = async ({
   libdir,
   webdir,
 }: StringOnlyMap) => {
+  validate({ projectName, projectNameCamel, umbrellaDir, libdir, webdir }, init_phoenix_umbrella_app);
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
   const init = await exec({
     command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,

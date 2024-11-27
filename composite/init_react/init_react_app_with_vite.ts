@@ -5,8 +5,7 @@ import { inject_build_aliases } from "../../injectors/init_react/inject_build_al
 import { inject_vite_build_output } from "../../injectors/init_react/inject_vite_build_output";
 import { gen_vite_supervisor } from "../../generators/init_phoenix/gen_vite_supervisor";
 import { inject_vite_supervisor_to_application_ex } from "../../injectors/init_phoenix/inject_vite_supervisor_to_application_ex";
-import { StringOnlyMap } from "../../utils/map";
-import { inject_vite_deps } from "../../injectors/init_react/inject_vite_deps";
+import { StringOnlyMap, validate } from "../../utils/map";
 
 const init_react_app_with_vite = async ({
   projectName,
@@ -16,6 +15,7 @@ const init_react_app_with_vite = async ({
   uidir,
   webdir,
 }: StringOnlyMap) => {
+  validate({ projectName, projectNameCamel, appdir, libdir, uidir, webdir }, init_react_app_with_vite);
   log(
     { level: 2, color: "BLUE" },
     `\nGenerating React app: ${projectName}_ui with vite ...`
