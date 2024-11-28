@@ -1,7 +1,11 @@
 import { join } from "path";
 import { generateFile } from "../index";
 
-const gen_page_controller = async (AppName: string, AppNameCamel: string, WebDir: string) => {
+const gen_page_controller = async (
+  AppName: string,
+  AppNameCamel: string,
+  WebDir: string,
+) => {
   const controllersPath = join(WebDir, `/lib/${AppName}_web/controllers`);
 
   const content = `
@@ -18,11 +22,14 @@ end
 
 `;
 
-  return generateFile({
-    dir: controllersPath,
-    filename: "page_controller.ex",
-    content,
-  });
+  return generateFile(
+    {
+      dir: controllersPath,
+      filename: "page_controller.ex",
+      content,
+    },
+    "gen_page_controller",
+  );
 };
 
 export { gen_page_controller };

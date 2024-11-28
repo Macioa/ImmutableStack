@@ -27,26 +27,27 @@ const route_data = [
 const gen_routes = (
   requested_routes: string[],
   route_data: ImmRoute[],
-  gen_ref_data: StringOnlyMap
+  gen_ref_data: StringOnlyMap,
 ) => {
   log({ level: 7 }, "Requested Routes: ", requested_routes);
   const route_data_computed: { [key: string]: string } = route_data.reduce(
     (acc, route) => {
       return { ...acc, [route.header(gen_ref_data)]: route.fn(gen_ref_data) };
     },
-    {}
+    {},
   );
   log({ level: 7 }, "Route Data Computed: ", route_data_computed);
   return requested_routes
     .map((header) => {
-        log({ level: 7 }, "Header: ", header);
-        return route_data_computed[header] || custom_route.fn({ header })
-    }).join("\n\n");
+      log({ level: 7 }, "Header: ", header);
+      return route_data_computed[header] || custom_route.fn({ header });
+    })
+    .join("\n\n");
 };
 
 const gen_phx_controller = async (
   generator: ImmutableGenerator,
-  _typeDict: any
+  _typeDict: any,
 ) => {
   const {
     AppNameSnake,
@@ -59,18 +60,21 @@ const gen_phx_controller = async (
   } = generator;
   const { name, routes } = generate.http_controller as ImmutableController;
   const { name: contextName } = generate.context as ImmutableContext;
-  const controllerPath = join(WebDir || "", `/lib/${AppNameSnake}_web/controllers/`);
+  const controllerPath = join(
+    WebDir || "",
+    `/lib/${AppNameSnake}_web/controllers/`,
+  );
   const snakeController = name
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
-  
+
   const dict: StringOnlyMap = {
     camelName: camelName || "",
     genName,
     context: contextName,
     pluralName: pluralName || "",
     AppNameCamel: AppNameCamel || "",
-    camelUpperName: camelName || ""
+    camelUpperName: camelName || "",
   };
   log({ level: 7 }, "Generating controller: ", name, snakeController, dict);
 
@@ -97,11 +101,14 @@ ${gen_routes(routes, route_data, dict)}
 end
 `;
 
-  return generateFile({
-    dir: controllerPath,
-    filename: `${snakeController}.ex`,
-    content,
-  });
+  return generateFile(
+    {
+      dir: controllerPath,
+      filename: `${snakeController}.ex`,
+      content,
+    },
+    "gen_phx_controller",
+  );
 };
 
 interface ImmRoute {

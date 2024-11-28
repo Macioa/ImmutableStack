@@ -10,8 +10,11 @@ const gen_context = async (generator: any, source: any) => {
       .join("") +
     " --no-prompts";
 
-  log({ level: 2, color: "BLUE" }, `Generating Phoenix Context: ${gen.context}`);
-  return execute({ command, dir: generator.WebDir });
+  log(
+    { level: 2, color: "BLUE" },
+    `Generating Phoenix Context: ${gen.context}`,
+  );
+  return execute({ command, dir: generator.WebDir }, "gen_context");
 };
 
 export { gen_context };

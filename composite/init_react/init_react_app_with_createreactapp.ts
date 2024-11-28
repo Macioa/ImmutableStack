@@ -3,16 +3,19 @@ import { log } from "../../utils/logger";
 
 const init_react_app_with_createreactapp = async (
   projectName: string,
-  appdir: string
+  appdir: string,
 ) => {
   log(
     { level: 2, color: "BLUE" },
-    `\nGenerating React app: ${projectName}_ui with Create-React-App ...`
+    `\nGenerating React app: ${projectName}_ui with Create-React-App ...`,
   );
-  return exec({
-    command: `npx create-react-app ${projectName}_ui --template typescript`,
-    dir: appdir,
-  });
+  return exec(
+    {
+      command: `npx create-react-app ${projectName}_ui --template typescript`,
+      dir: appdir,
+    },
+    "init_react_app_with_createreactapp",
+  );
 };
 
 export { init_react_app_with_createreactapp };

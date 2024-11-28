@@ -9,7 +9,7 @@ const inject_scrinever = async (generator: any) => {
     [InjectType.BEFORE, /end[\s\n]*$/, `  use Scrivener\n`],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_scrinever");
 };
 
 export { inject_scrinever };

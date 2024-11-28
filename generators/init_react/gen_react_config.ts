@@ -1,7 +1,7 @@
 import { generateFile } from "../index";
 
 const gen_react_config = async (AppName: string, UiDir: string) => {
-    const content = `
+  const content = `
 ${AppName.toUpperCase()}_WEB_API_URL=http://localhost:4000/api
 ${AppName.toUpperCase()}_FEATURE_FLAG_EXAMPLE=true
 
@@ -15,7 +15,10 @@ ${AppName.toUpperCase()}_FEATURE_FLAG_EXAMPLE=true
 # Copy to .env.production for production settings or .env.test for test settings
 `;
 
-    return generateFile({ dir: UiDir, filename: ".env.development", content });
+  return generateFile(
+    { dir: UiDir, filename: ".env.development", content },
+    "gen_react_config",
+  );
 };
 
 export { gen_react_config };

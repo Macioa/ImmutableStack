@@ -1,11 +1,12 @@
-import { join } from 'path'
+import { join } from "path";
 import { generateFile } from "../index";
 
 const gen_request_lib = async (LibDir: string) => {
-    const dir = join(LibDir, "lib/typescript/requests");
-    const literalFetchRoute = "`${API_URL}/${route}`"; 
-    const literalErrorString = "`${API_URL} request failed: ${res?.status}\\n${res?.statusText}`";
-    const content = `
+  const dir = join(LibDir, "lib/typescript/requests");
+  const literalFetchRoute = "`${API_URL}/${route}`";
+  const literalErrorString =
+    "`${API_URL} request failed: ${res?.status}\\n${res?.statusText}`";
+  const content = `
 import { Dispatch } from "redux";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import merge from "deepmerge";
@@ -124,7 +125,10 @@ export {
 export default requestSlice;
 `;
 
-    return generateFile({ dir, filename: "index.tsx", content });
+  return generateFile(
+    { dir, filename: "index.tsx", content },
+    "gen_request_lib",
+  );
 };
 
 export { gen_request_lib };

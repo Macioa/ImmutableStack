@@ -3,7 +3,7 @@ import { compute_header } from "../../../utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
 const comment_standard = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, comment_standard);
+  validate({ pluralName, genCamelName }, "comment_standard");
   return `
 @doc """
 Returns the list of ${pluralName}.
@@ -17,14 +17,14 @@ Returns the list of ${pluralName}.
 };
 
 const list_standard = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, list_standard);
+  validate({ pluralName, genCamelName }, "list_standard");
   return `
     def list_${pluralName}(page_query \\\\ %{}), do: Paginate.apply(${genCamelName}, Repo, page_query)
     `;
 };
 
 const comment_dynamic = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, comment_dynamic);
+  validate({ pluralName, genCamelName }, "comment_dynamic");
   return `
 @doc """
 Use a Dynamic Query to get a list of ${pluralName} with specific values for any directly queryable fields.
@@ -33,7 +33,7 @@ Use a Dynamic Query to get a list of ${pluralName} with specific values for any 
 };
 
 const list_dynamic = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, list_dynamic);
+  validate({ pluralName, genCamelName }, "list_dynamic");
   return `
 def list_${pluralName}_by(entity_queries, page_queries \\\\ %{}) do
   with {:ok, query, entity_queries} <- DynamicQuery.by_schema(entity_queries, ${genCamelName}),
@@ -77,7 +77,7 @@ const gen_list_apis: ApiGenFunction = (apis, dict) => {
       .map((id) => comment_map[id](dict) + "\n" + definition_map[id](dict))
       .join("\n"),
     remaining_apis: apis.filter(
-      (api) => !computed_apis.map(({ header }) => header).includes(api)
+      (api) => !computed_apis.map(({ header }) => header).includes(api),
     ),
   };
 };

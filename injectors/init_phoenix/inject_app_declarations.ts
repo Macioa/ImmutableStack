@@ -3,7 +3,7 @@ import { inject_file, Injection, InjectType } from "../index";
 
 const inject_app_declarations = async (
   AppNameSnake: string,
-  AppDir: string
+  AppDir: string,
 ) => {
   const file = path.join(AppDir, "mix.exs");
   const injections: Injection[] = [
@@ -14,7 +14,7 @@ const inject_app_declarations = async (
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_app_declarations");
 };
 
 export { inject_app_declarations };

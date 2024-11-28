@@ -26,7 +26,10 @@ defmodule ${AppNameCamel}.Utils.MapUtil do
 end
 `;
 
-  return generateFile({ dir: utilsPath, filename: "map.ex", content });
+  return generateFile(
+    { dir: utilsPath, filename: "map.ex", content },
+    "gen_map_util",
+  );
 };
 
 export { gen_map_util };

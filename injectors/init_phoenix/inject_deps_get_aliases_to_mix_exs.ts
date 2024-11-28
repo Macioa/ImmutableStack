@@ -3,7 +3,7 @@ import { inject_file, Injection, InjectType } from "../index";
 
 const inject_deps_get_aliases_to_mix_exs = async (
   AppName: string,
-  umbrellaDir: string
+  umbrellaDir: string,
 ) => {
   const file = path.join(umbrellaDir, `mix.exs`);
   const injections: Injection[] = [
@@ -23,7 +23,10 @@ const inject_deps_get_aliases_to_mix_exs = async (
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file(
+    { file, injections },
+    "inject_deps_get_aliases_to_mix_exs",
+  );
 };
 
 export { inject_deps_get_aliases_to_mix_exs };

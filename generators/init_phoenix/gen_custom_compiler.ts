@@ -1,10 +1,7 @@
 import { join } from "path";
 import { generateFile } from "../index";
 
-const gen_custom_compiler = async (
-  AppName: string,
-  LibDir: string
-) => {
+const gen_custom_compiler = async (AppName: string, LibDir: string) => {
   const compilerPath = join(LibDir, `/lib/mix/tasks`);
 
   const content = `
@@ -28,11 +25,14 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
 end
 `;
 
-  return generateFile({
-    dir: compilerPath,
-    filename: "custom_compiler.ex",
-    content,
-  });
+  return generateFile(
+    {
+      dir: compilerPath,
+      filename: "custom_compiler.ex",
+      content,
+    },
+    "gen_custom_compiler",
+  );
 };
 
 export { gen_custom_compiler };

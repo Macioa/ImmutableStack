@@ -3,7 +3,7 @@ import { compute_header } from "../../../utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
 const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
-  validate({ pluralName }, comment_main);
+  validate({ pluralName }, "comment_main");
   return `
   @doc """
     Delete ${pluralName} by id.
@@ -15,7 +15,7 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
 };
 
 const comment_many = ({ genName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, genCamelName }, comment_many);
+  validate({ genName, genCamelName }, "comment_many");
   return `
   ## Examples
       iex> delete_${genName}([${genName}, ${genName}])
@@ -24,7 +24,7 @@ const comment_many = ({ genName, genCamelName }: StringOnlyMap) => {
 };
 
 const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, genCamelName }, comment_single);
+  validate({ genName, genCamelName }, "comment_single");
   return `
   ## Examples
       iex> delete_${genName}(${genName})
@@ -35,7 +35,7 @@ const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
 };
 
 const delete_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, delete_many);
+  validate({ genName, pluralName, genCamelName }, "delete_many");
   return `
   def delete_${genName}(${pluralName}) when is_list(${pluralName}) do
     result =
@@ -67,14 +67,14 @@ const delete_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
 };
 
 const delete_single = ({ genName }: StringOnlyMap) => {
-  validate({ genName }, delete_single);
+  validate({ genName }, "delete_single");
   return `
   def delete_${genName}(${genName}_params) when is_map(${genName}_params), do:  MapUtil.get(${genName}_params, :id) |> delete_${genName}
 `;
 };
 
 const delete_single_by_id = ({ genName }: StringOnlyMap) => {
-  validate({ genName }, delete_single_by_id);
+  validate({ genName }, "delete_single_by_id");
   return `
     def delete_${genName}(id) when is_binary(id), do: get_${genName}!(id) |> Repo.delete!    
     `;
@@ -124,7 +124,7 @@ const gen_delete_apis: ApiGenFunction = (apis, dict) => {
   return {
     result: comments + "\n" + definitions,
     remaining_apis: apis.filter(
-      (api) => !computed_apis.map(({ header }) => header).includes(api)
+      (api) => !computed_apis.map(({ header }) => header).includes(api),
     ),
   };
 };

@@ -15,22 +15,28 @@ const init_react_app_with_vite = async ({
   uidir,
   webdir,
 }: StringOnlyMap) => {
-  validate({ projectName, projectNameCamel, appdir, libdir, uidir, webdir }, init_react_app_with_vite);
+  validate(
+    { projectName, projectNameCamel, appdir, libdir, uidir, webdir },
+    "init_react_app_with_vite",
+  );
   log(
     { level: 2, color: "BLUE" },
-    `\nGenerating React app: ${projectName}_ui with vite ...`
+    `\nGenerating React app: ${projectName}_ui with vite ...`,
   );
-  const init = await exec({
-    command: `npx create-vite@latest ${projectName}_ui --template react-ts`,
-    dir: appdir,
-    // options: {
-    //   timeoutResolve: 1000 * 30,
-    // }
-  });
+  const init = await exec(
+    {
+      command: `npx create-vite@latest ${projectName}_ui --template react-ts`,
+      dir: appdir,
+      // options: {
+      //   timeoutResolve: 1000 * 30,
+      // }
+    },
+    "init_react_app_with_vite",
+  );
 
   log(
     { level: 2, color: "BLUE" },
-    "\nConfiguring Vite build output and aliases..."
+    "\nConfiguring Vite build output and aliases...",
   );
 
   const tasks = [
@@ -40,7 +46,7 @@ const init_react_app_with_vite = async ({
     await inject_vite_supervisor_to_application_ex(
       projectName,
       projectNameCamel,
-      webdir
+      webdir,
     ),
   ];
 

@@ -35,7 +35,10 @@ defmodule ${AppNameCamel}.Utils.Paginate do
 end
 `;
 
-  return generateFile({ dir: utilsPath, filename: "paginate.ex", content });
+  return generateFile(
+    { dir: utilsPath, filename: "paginate.ex", content },
+    "gen_paginate_util",
+  );
 };
 
 export { gen_paginate_util };

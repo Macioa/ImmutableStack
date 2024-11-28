@@ -4,7 +4,7 @@ import { generateFile } from "../../index";
 
 const gen_fallback_controller = async (
   generator: ImmutableGenerator,
-  _typeDict: any
+  _typeDict: any,
 ) => {
   const { WebDir, AppNameCamel, AppNameSnake } = generator;
   const { generate } = generator;
@@ -12,7 +12,7 @@ const gen_fallback_controller = async (
 
   const fallbackControllerPath = join(
     WebDir || ".",
-    `lib/${AppNameSnake}_web/controllers`
+    `lib/${AppNameSnake}_web/controllers`,
   );
 
   const content = `
@@ -60,11 +60,14 @@ end
 `;
 
   return http_controller
-    ? generateFile({
-        dir: fallbackControllerPath,
-        filename: "fallback_controller.ex",
-        content,
-      })
+    ? generateFile(
+        {
+          dir: fallbackControllerPath,
+          filename: "fallback_controller.ex",
+          content,
+        },
+        "gen_fallback_controller",
+      )
     : false;
 };
 

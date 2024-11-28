@@ -1,7 +1,8 @@
 import fs from "fs";
-import { execSync } from "child_process";
+
 import { log } from "../utils/logger";
 import { format } from "../utils/format";
+import { cacheLogByPath as cacheLog } from "../utils/history_cache";
 
 type Injection = [InjectType, RegExp, string];
 
@@ -16,10 +17,14 @@ type FileInjection = {
   injections: Injection[];
 };
 
-const inject_file = async ({ file, injections }: FileInjection) => {
+const inject_file = async (
+  { file, injections }: FileInjection,
+  caller: string | null = null,
+) => {
   log({ level: 5 }, `Injecting into ${file}....`);
 
   return new Promise(async (resolve, reject) => {
+    cacheLog(file, caller);
     let content = fs.readFileSync(file, "utf8");
     let new_file = content;
 
@@ -29,9 +34,9 @@ const inject_file = async ({ file, injections }: FileInjection) => {
       switch (type) {
         case InjectType.REPLACE:
           const replaced = new_file.replace(regex, new_content);
-          if (replaced == new_file || replaced == ""){ 
+          if (replaced == new_file || replaced == "") {
             error(regex, file, reject);
-            return 
+            return;
           } else {
             log({ level: 8 }, `Found ${regex} in ${file}`);
             new_file = replaced;
@@ -46,8 +51,9 @@ const inject_file = async ({ file, injections }: FileInjection) => {
 
     if (new_file.length) {
       fs.writeFileSync(file, new_file, "utf8");
-    await format(file);
-    resolve([file]);
+      await format(file);
+
+      resolve([file]);
     } else reject(new Error(`Insertion failed for ${file}`));
   });
 };
@@ -61,7 +67,7 @@ const error = (regex: RegExp, file: string, reject: Function) => {
 const insert = (
   content: string,
   file: string,
-  [type, regex, new_content]: Injection
+  [type, regex, new_content]: Injection,
 ) => {
   const match = content.match(regex);
   if (!match) return null;

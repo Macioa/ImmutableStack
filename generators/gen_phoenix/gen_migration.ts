@@ -4,7 +4,7 @@ import { readFile, writeFile } from "fs/promises";
 const updateMigration = (
   path: string,
   generator: any,
-  typeDict: any
+  typeDict: any,
 ): Promise<boolean> => {
   const source = (typeDict.DatabaseModel || typeDict.ImmutableGlobal)["ex"];
   const nameStr = generator.generate.databaseModel;
@@ -32,7 +32,7 @@ const updateMigration = (
     drop table(:${nameStr})
   end`;
           return updatedContent;
-        }
+        },
       );
 
       await writeFile(path as string, updatedFile, "utf-8");

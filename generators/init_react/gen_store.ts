@@ -1,10 +1,10 @@
-import { join } from 'path'
+import { join } from "path";
 import { generateFile } from "../index";
 
 const gen_store = async (AppName: string, UiDir: string) => {
-    const storePath = join(UiDir, "/src/store");
+  const storePath = join(UiDir, "/src/store");
 
-    const content = `
+  const content = `
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { RequestsStoreState, requestReducer } from "@requests/index"; 
 
@@ -32,7 +32,10 @@ export { ${AppName}Store };
 export type { ${AppName}State };
         `;
 
-    return generateFile({ dir: storePath, filename: "index.tsx", content });
+  return generateFile(
+    { dir: storePath, filename: "index.tsx", content },
+    "gen_store",
+  );
 };
 
 export { gen_store };

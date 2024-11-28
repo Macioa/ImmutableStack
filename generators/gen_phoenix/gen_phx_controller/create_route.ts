@@ -8,7 +8,7 @@ const create_list = ({
   pluralName,
   AppNameCamel,
 }: StringOnlyMap) => {
-  validate({ genName, context, pluralName, AppNameCamel }, create_list);
+  validate({ genName, context, pluralName, AppNameCamel }, "create_list");
   return `
     def create(conn, ${genName}_list) when is_list(${genName}_list) do
       with {:ok, ${pluralName}, []} <- ${context}.create_${genName}(${genName}_list) do
@@ -35,7 +35,7 @@ const create = ({
   context,
   pluralName,
 }: StringOnlyMap) => {
-  validate({ genName, camelUpperName, context, pluralName }, create);
+  validate({ genName, camelUpperName, context, pluralName }, "create");
   return `
     def create(conn, ${genName}_params) do
       with {:ok, %${camelUpperName}{} = ${genName}} <- ${genName}_params |> MapUtil.str_to_atom() |> ${context}.create_${genName}() do

@@ -19,12 +19,18 @@ const init_phoenix_umbrella_app = async ({
   libdir,
   webdir,
 }: StringOnlyMap) => {
-  validate({ projectName, projectNameCamel, umbrellaDir, libdir, webdir }, init_phoenix_umbrella_app);
+  validate(
+    { projectName, projectNameCamel, umbrellaDir, libdir, webdir },
+    "init_phoenix_umbrella_app",
+  );
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
-  const init = await exec({
-    command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
-    dir: ".",
-  });
+  const init = await exec(
+    {
+      command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
+      dir: ".",
+    },
+    "init_phoenix_umbrella_app",
+  );
   const declarations = await inject_app_declarations(projectName, umbrellaDir);
   const tasks = await Promise.all([
     inject_phoenix_libs(projectName, { WebDir: webdir, LibDir: libdir }),
@@ -33,9 +39,20 @@ const init_phoenix_umbrella_app = async ({
     inject_scrinever({ LibDir: libdir, AppNameSnake: projectName }),
     gen_phx_utils(projectNameCamel, libdir),
   ]);
-  const configure = await configure_phoenix_to_serve_react({AppName: projectName, AppNameCamel: projectNameCamel, WebDir: webdir, LibDir: libdir});
-  const format = await configure_phoenix_to_format_react({AppName: projectName, LibDir: libdir})
-  const depsget = await inject_deps_get_aliases_to_mix_exs(projectName, umbrellaDir);
+  const configure = await configure_phoenix_to_serve_react({
+    AppName: projectName,
+    AppNameCamel: projectNameCamel,
+    WebDir: webdir,
+    LibDir: libdir,
+  });
+  const format = await configure_phoenix_to_format_react({
+    AppName: projectName,
+    LibDir: libdir,
+  });
+  const depsget = await inject_deps_get_aliases_to_mix_exs(
+    projectName,
+    umbrellaDir,
+  );
 
   return [init, declarations, tasks, configure, format, depsget].flat();
 };

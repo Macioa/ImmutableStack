@@ -13,7 +13,7 @@ import { log } from "../utils/logger";
 const getGenTypes = (
   fileContent: string,
   typeDict: { [key: string]: string },
-  mem: Dict = {}
+  mem: Dict = {},
 ): Dict => {
   fileContent
     .match(/interface (\w+).*?extends GenType<.*?> \{\}/gs)
@@ -29,7 +29,7 @@ const getGenTypes = (
 const interperetType = (
   str: string,
   dict: Dict,
-  mem: TypeDict = { name: null, ts: {}, ex: {} }
+  mem: TypeDict = { name: null, ts: {}, ex: {} },
 ): TypeDict => {
   const name = str.match(/interface\s(\w+)/)?.[1];
   const attr_reg = /([a-zA-Z0-9_\[\]]+):([a-zA-Z\s\|0-9_\[\]]+){0,20}/gs;
@@ -45,7 +45,7 @@ const interperetType = (
 
 const getTypeEquivalents = (
   file: string,
-  mem: { [key: string]: string } = {}
+  mem: { [key: string]: string } = {},
 ): { [key: string]: string } => {
   const type_reg = /type\s(\w+)\s=\s(\w+)\s&\s\{\s__brand\:/gs;
   file.replace(type_reg, (f: string, ex: string, ts: string) => {
@@ -68,7 +68,7 @@ const getGenerator = (file: string): object => {
 
   const keys_negated = gen_data.replace(
     /\"([\w]+)\"\:/g,
-    (_match, key) => `Q_HLD${key}Q_HLD:`
+    (_match, key) => `Q_HLD${key}Q_HLD:`,
   );
   log({ level: 9 }, "Negated keys: ", keys_negated);
   const double_escape = keys_negated.replace(/\\/g, "\\\\");
@@ -79,17 +79,17 @@ const getGenerator = (file: string): object => {
       const inner =
         openQuote == closeQuote ? innerQuote.replace(/\"/g, '\\"') : innerQuote;
       return `${openQuote}${preceeding}${inner}${trailing}${closeQuote}`;
-    }
+    },
   );
   log({ level: 9 }, "Escaped inner quotes: ", escaped_inner_quotes);
   const single_quotes_turned_double = escaped_inner_quotes.replace(
     /[\'\`]/g,
-    '"'
+    '"',
   );
   log(
     { level: 9 },
     "Single quotes turned double: ",
-    single_quotes_turned_double
+    single_quotes_turned_double,
   );
   const keys_restored = single_quotes_turned_double.replace(/Q_HLD/g, '"');
   log({ level: 9 }, "Restored keys: ", keys_restored);
@@ -135,7 +135,7 @@ const readGenFile = async (filePath: string): Promise<GenData> => {
   log({ level: 5 }, "Reading generator...");
 
   const genFileParsed = (await getGenerator(
-    fileContent
+    fileContent,
   )) as unknown as ImmutableGenerator;
   const generator = {
     ...(await getAppData()),
