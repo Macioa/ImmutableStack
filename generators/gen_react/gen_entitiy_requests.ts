@@ -5,13 +5,13 @@ import { generateFile } from "../index";
 
 const gen_entity_requests = async (
   generator: ImmutableGenerator,
-  typeDict: any
+  typeDict: any,
 ) => {
-    const { name, generate, AppNameCamel, LibDir } = generator;
-    const { tstype } = generate;
-    const filedir = join(LibDir || '', "lib/typescript/requests/");
+  const { name, generate, AppNameCamel, LibDir } = generator;
+  const { tstype } = generate;
+  const filedir = join(LibDir || "", "lib/typescript/requests/");
 
-    const content = `
+  const content = `
 import { Dispatch } from "redux";
 import { Request } from "./index";
 import { ${tstype}, set${tstype}, set${pluralize(tstype as string)} } from "../state/${name}";
@@ -60,11 +60,10 @@ const delete${tstype} = (id: string, dispatch: Dispatch) => {
 
 export { request${tstype}, request${pluralize(tstype as string)}, update${tstype}, delete${tstype} };
 `;
-return generateFile({ dir: filedir, filename: `${name}.tsx`, content });
-}
+  return generateFile(
+    { dir: filedir, filename: `${name}.tsx`, content },
+    "gen_entity_requests",
+  );
+};
 
 export { gen_entity_requests };
-
-
-
-

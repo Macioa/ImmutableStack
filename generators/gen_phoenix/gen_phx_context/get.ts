@@ -4,7 +4,7 @@ import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 import { disconnect } from "process";
 
 const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
-  validate({ pluralName }, comment_main);
+  validate({ pluralName }, "comment_main");
   return `
 @doc """
     Retrieve ${pluralName} by id.
@@ -16,7 +16,7 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
 };
 
 const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, comment_many);
+  validate({ genName, pluralName, genCamelName }, "comment_many");
   return `
     get_${genName}!(ids) when is_list(ids) -> Gets specified ${pluralName}.
     
@@ -27,7 +27,7 @@ const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
 };
 
 const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, genCamelName }, comment_single);
+  validate({ genName, genCamelName }, "comment_single");
   return `
   get_${genName}!(id) -> Gets a single ${genName}.
       Raises \`Ecto.NoResultsError\` if the ${genCamelName} does not exist.
@@ -41,7 +41,7 @@ const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
 };
 
 const get_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, get_many);
+  validate({ genName, pluralName, genCamelName }, "get_many");
   return `
   def get_${genName}!(${pluralName}) when is_list(${pluralName}) do
     ids =
@@ -57,7 +57,7 @@ const get_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
 };
 
 const get_single = ({ genName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, genCamelName }, get_single);
+  validate({ genName, genCamelName }, "get_single");
   return `
   def get_${genName}!(${genName}_params) when is_map(${genName}_params) do
     id = MapUtil.get(${genName}_params, :id) 
@@ -67,11 +67,11 @@ const get_single = ({ genName, genCamelName }: StringOnlyMap) => {
 };
 
 const get_single_by_id = ({ genName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, genCamelName }, get_single_by_id);
-    return `
+  validate({ genName, genCamelName }, "get_single_by_id");
+  return `
   def get_${genName}!(id) when is_binary(id), do: Repo.get!(${genCamelName}, id)    
-`
-}
+`;
+};
 
 const get_apis: ImmAPI[] = [
   {
@@ -88,7 +88,7 @@ const get_apis: ImmAPI[] = [
     id: "get_single_by_id",
     fn: get_single_by_id,
     header: (dict: StringOnlyMap) => compute_header(dict, get_single_by_id),
-  }
+  },
 ];
 
 const comment_map: ApiIdMap = {
@@ -117,7 +117,7 @@ const gen_get_apis: ApiGenFunction = (apis, dict) => {
   return {
     result: comments + "\n" + definitions,
     remaining_apis: apis.filter(
-      (api) => !computed_apis.map(({ header }) => header).includes(api)
+      (api) => !computed_apis.map(({ header }) => header).includes(api),
     ),
   };
 };

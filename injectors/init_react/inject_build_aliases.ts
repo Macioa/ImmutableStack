@@ -22,7 +22,7 @@ const inject_viteconfig = async (AppNameSnake: string, UiDir: string) => {
     [InjectType.BEFORE, /import\s+react/, `import path from 'path';\n`],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_viteconfig");
 };
 
 const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
@@ -44,10 +44,13 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_tsconfig");
 };
 
 const inject_build_aliases = async (AppNameSnake: string, UiDir: string) =>
-  Promise.all([inject_viteconfig(AppNameSnake, UiDir), inject_tsconfig(AppNameSnake, UiDir)]);
+  Promise.all([
+    inject_viteconfig(AppNameSnake, UiDir),
+    inject_tsconfig(AppNameSnake, UiDir),
+  ]);
 
 export { inject_viteconfig, inject_tsconfig, inject_build_aliases };

@@ -11,7 +11,7 @@ const inject_package_scripts = async (AppName: string, UiDir: string) => {
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_package_scripts");
 };
 
 export { inject_package_scripts };

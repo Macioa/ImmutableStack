@@ -17,7 +17,7 @@ const inject_router = async (generator: ImmutableGenerator) => {
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_router");
 };
 
 export { inject_router };

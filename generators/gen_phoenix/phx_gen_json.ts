@@ -4,8 +4,8 @@ import { inject_router } from "../../injectors/gen_phoenix/inject_router";
 
 const handle_json = async (generator: any, typeDict: any): Promise<any> => {
   const { generate, ...rest } = generator;
-  log({level: 8}, `Generating JSON API for ${JSON.stringify(rest)}`);
-  log({level: 9}, `TypeDict: ${JSON.stringify(typeDict)}`);
+  log({ level: 8 }, `Generating JSON API for ${JSON.stringify(rest)}`);
+  log({ level: 9 }, `TypeDict: ${JSON.stringify(typeDict)}`);
 
   const source = (typeDict.DatabaseModel || typeDict.ImmutableGlobal)["ex"];
 
@@ -25,7 +25,7 @@ const gen_json = async (generator: any, source: any) => {
     " --no-prompts";
 
   log({ level: 2, color: "BLUE" }, `Generating Phoenix API for ${gen.context}`);
-  return execute({ command, dir: generator.WebDir });
+  return execute({ command, dir: generator.WebDir }, "gen_json");
 };
 
 export { gen_json, handle_json };

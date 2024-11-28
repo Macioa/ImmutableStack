@@ -131,11 +131,14 @@ defmodule ${AppNameCamel}.Plugs.ListAsJSON do
 end
 `;
 
-  return generateFile({
-    dir: utilsPath,
-    filename: "dynamic_query.ex",
-    content,
-  });
+  return generateFile(
+    {
+      dir: utilsPath,
+      filename: "dynamic_query.ex",
+      content,
+    },
+    "gen_dynamic_query_util",
+  );
 };
 
 export { gen_dynamic_query_util };

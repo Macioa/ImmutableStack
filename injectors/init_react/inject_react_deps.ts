@@ -14,16 +14,16 @@ const inject_react_deps = async (UiDir: string) => {
     "react-redux": "^9.1.2",`,
     ],
     [
-        InjectType.AFTER,
-        /\"devDependencies\":\s+\{/,
-        `
+      InjectType.AFTER,
+      /\"devDependencies\":\s+\{/,
+      `
     "@babel/plugin-transform-private-property-in-object": "^7.25.9",
     "@types/node": "^22.10.0",
-    "lorem-ipsum": "^2.0.8",`
-    ]
+    "lorem-ipsum": "^2.0.8",`,
+    ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_react_deps");
 };
 
 export { inject_react_deps };

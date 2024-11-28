@@ -10,7 +10,7 @@ import { ImmutableGenerator, GenTypes } from "../gen_controller";
 
 const handle_phx_gen = async (
   generator: ImmutableGenerator,
-  genTypes: GenTypes
+  genTypes: GenTypes,
 ) => {
   const gen = generator.generate;
   let res: any = [];
@@ -23,8 +23,8 @@ const handle_phx_gen = async (
         gen_phx_controller(generator, genTypes),
         gen_fallback_controller(generator, genTypes),
         gen_json_handler(generator, genTypes),
-        inject_router(generator)
-      ])
+        inject_router(generator),
+      ]),
     );
 
   return res;

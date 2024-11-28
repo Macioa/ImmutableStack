@@ -16,7 +16,7 @@ const inject_dev_config = async (AppNameCamel: string, UmbrellaDir: string) => {
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_dev_config");
 };
 
 export { inject_dev_config };

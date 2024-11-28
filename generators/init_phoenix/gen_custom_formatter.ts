@@ -39,11 +39,14 @@ defmodule Mix.Tasks.CustomFormatter do
 end
 `;
 
-  return generateFile({
-    dir: formatterPath,
-    filename: "custom_formatter.ex",
-    content,
-  });
+  return generateFile(
+    {
+      dir: formatterPath,
+      filename: "custom_formatter.ex",
+      content,
+    },
+    "gen_custom_formatter",
+  );
 };
 
 export { gen_custom_formatter };

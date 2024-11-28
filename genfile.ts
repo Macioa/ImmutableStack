@@ -189,30 +189,32 @@ const update_genfile = () => {
   const fileContent = fs.readFileSync(file, "utf8");
   let updatedContent = fileContent;
   const interfaces = fileContent.match(
-    /interface \w+.*?extends GenType<.*?> \{\}/gs
+    /interface \w+.*?extends GenType<.*?> \{\}/gs,
   );
   const parsed = interfaces?.map((str: string) => parse_interface(str));
   const [_, global_def] =
     parsed?.find(([name, _]) => name === "ImmutableGlobal") || [];
-  const updated_interfaces = parsed?.map(([_name, definition, _fullstr], i: number) => {
-    if (definition.length === 0 && global_def) {
-      let res = "";
-      interfaces?.[i].replace(
-        /interface\s(\w+).*?extends\sGenType<\{(.*?)\}?> \{\}/gs,
-        (name, _attr, _str) => {
-          res = `interface ${name} extends GenType<{${global_def}}> {}`;
-          return res;
-        }
-      );
-      return res;
-    } else return interfaces?.[i];
-  });
+  const updated_interfaces = parsed?.map(
+    ([_name, definition, _fullstr], i: number) => {
+      if (definition.length === 0 && global_def) {
+        let res = "";
+        interfaces?.[i].replace(
+          /interface\s(\w+).*?extends\sGenType<\{(.*?)\}?> \{\}/gs,
+          (name, _attr, _str) => {
+            res = `interface ${name} extends GenType<{${global_def}}> {}`;
+            return res;
+          },
+        );
+        return res;
+      } else return interfaces?.[i];
+    },
+  );
 
   updated_interfaces?.forEach((interf, index) => {
     if (interf)
       updatedContent = updatedContent.replace(
         interfaces?.[index] || "",
-        interf
+        interf,
       );
   });
 

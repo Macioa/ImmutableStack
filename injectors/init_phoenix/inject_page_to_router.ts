@@ -4,7 +4,7 @@ import { inject_file, Injection, InjectType } from "../index";
 const inject_page_to_router = async (
   AppName: string,
   AppNameCamel: string,
-  WebDir: string
+  WebDir: string,
 ) => {
   const file = path.join(WebDir, `lib/${AppName}_web/router.ex`);
   const injections: Injection[] = [
@@ -19,7 +19,7 @@ const inject_page_to_router = async (
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_page_to_router");
 };
 
 export { inject_page_to_router };

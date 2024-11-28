@@ -1,8 +1,5 @@
 import { join } from "path";
-import {
-  ImmutableGenerator,
-  ImmutableContext,
-} from "../../gen_controller";
+import { ImmutableGenerator, ImmutableContext } from "../../gen_controller";
 import { generateFile } from "../..";
 import { StringOnlyMap } from "../../../utils/map";
 import { gen_create_apis } from "./create";
@@ -24,22 +21,19 @@ const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
   ];
   const { computed, remaining_apis } = gen_apis.reduce(
     (acc, apiFn) => {
-        log({level: 8}, "APIFN REDUCER", acc, apiFn)
-        const { computed, remaining_apis } = acc;
-        log({level: 8}, "APIFN COM", computed)
-        log({level: 8}, "APIFN REM", remaining_apis)
-        log({level: 8}, "APIFN RES", apiFn(
-            remaining_apis,
-            gen_ref_data
-          )) 
+      log({ level: 8 }, "APIFN REDUCER", acc, apiFn);
+      const { computed, remaining_apis } = acc;
+      log({ level: 8 }, "APIFN COM", computed);
+      log({ level: 8 }, "APIFN REM", remaining_apis);
+      log({ level: 8 }, "APIFN RES", apiFn(remaining_apis, gen_ref_data));
       const { result, remaining_apis: new_remaining } = apiFn(
         remaining_apis,
-        gen_ref_data
+        gen_ref_data,
       );
-   
+
       return { computed: computed + result, remaining_apis: new_remaining };
     },
-    { computed: "", remaining_apis: requested_apis }
+    { computed: "", remaining_apis: requested_apis },
   );
   log({ level: 7 }, "Computed Apis: ", computed);
   const custom_apis = remaining_apis
@@ -50,7 +44,7 @@ const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
 
 const gen_phx_contex = async (
   generator: ImmutableGenerator,
-  _typeDict: any
+  _typeDict: any,
 ) => {
   const {
     AppNameCamel,
@@ -60,7 +54,8 @@ const gen_phx_contex = async (
     camelName: genCamelName,
     pluralName: genPluralName,
   } = generator;
-  const { name: camelName, apiFunctions } = generate.context as ImmutableContext;
+  const { name: camelName, apiFunctions } =
+    generate.context as ImmutableContext;
   const contextPath = join(LibDir || "", `/lib/`);
   const snakeController = camelName
     .replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, "$1_$2")
@@ -123,11 +118,14 @@ defmodule ${AppNameCamel}.${camelName} do
 end
 `;
 
-  return generateFile({
-    dir: contextPath,
-    filename: `${snakeController}.ex`,
-    content,
-  });
+  return generateFile(
+    {
+      dir: contextPath,
+      filename: `${snakeController}.ex`,
+      content,
+    },
+    "gen_phx_contex",
+  );
 };
 
 interface ImmAPI {
@@ -141,7 +139,10 @@ interface ApiIdMap {
 }
 
 interface ApiGenFunction {
-  (api_list: string[], dict: StringOnlyMap): {
+  (
+    api_list: string[],
+    dict: StringOnlyMap,
+  ): {
     result: string;
     remaining_apis: string[];
   };

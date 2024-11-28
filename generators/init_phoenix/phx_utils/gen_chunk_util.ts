@@ -77,7 +77,10 @@ defmodule ${AppNameCamel}.Utils.Chunk do
 end
 `;
 
-  return generateFile({ dir: utilsPath, filename: "chunk.ex", content });
+  return generateFile(
+    { dir: utilsPath, filename: "chunk.ex", content },
+    "gen_chunk_util",
+  );
 };
 
 export { gen_chunk_util };

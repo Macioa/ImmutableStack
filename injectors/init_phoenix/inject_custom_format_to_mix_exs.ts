@@ -1,9 +1,7 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
 
-const inject_custom_format_to_mix_exs = async (
-  LibDir: string
-) => {
+const inject_custom_format_to_mix_exs = async (LibDir: string) => {
   const file = path.join(LibDir, `mix.exs`);
   const injections: Injection[] = [
     [
@@ -13,7 +11,7 @@ const inject_custom_format_to_mix_exs = async (
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_custom_format_to_mix_exs");
 };
 
 export { inject_custom_format_to_mix_exs };

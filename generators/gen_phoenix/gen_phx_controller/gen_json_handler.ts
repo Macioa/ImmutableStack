@@ -4,7 +4,7 @@ import { generateFile } from "../../index";
 
 const gen_json_handler = async (
   generator: ImmutableGenerator,
-  typeDict: GenTypes
+  typeDict: GenTypes,
 ) => {
   const { WebDir, AppNameCamel, AppNameSnake, camelName, pluralName, name } =
     generator;
@@ -14,7 +14,7 @@ const gen_json_handler = async (
   const { ImmutableGlobal, Schema } = typeDict;
   const jsonHandlerPath = join(
     WebDir || ".",
-    `lib/${AppNameSnake}_web/controllers`
+    `lib/${AppNameSnake}_web/controllers`,
   );
 
   const typeSource = (ImmutableGlobal || Schema)?.ex;
@@ -94,11 +94,14 @@ end
 `;
 
   return http_controller
-    ? generateFile({
-        dir: jsonHandlerPath,
-        filename: `${name}_json.ex`,
-        content,
-      })
+    ? generateFile(
+        {
+          dir: jsonHandlerPath,
+          filename: `${name}_json.ex`,
+          content,
+        },
+        "gen_json_handler",
+      )
     : null;
 };
 

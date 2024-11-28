@@ -4,7 +4,7 @@ import { compute_header } from "../../../utils/gen_header";
 import { log } from "../../../utils/logger";
 
 const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
-  validate({ pluralName }, comment_main);
+  validate({ pluralName }, "comment_main");
   return `
   @doc """
     Create ${pluralName} by id.
@@ -16,7 +16,7 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
 };
 
 const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, comment_many);
+  validate({ genName, pluralName, genCamelName }, "comment_many");
   return `
 create_${genName}(attrs) when is_list attrs -> Creates ${pluralName} from an array of attrs.
 
@@ -27,7 +27,7 @@ create_${genName}(attrs) when is_list attrs -> Creates ${pluralName} from an arr
 };
 
 const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, genCamelName }, comment_single);
+  validate({ genName, genCamelName }, "comment_single");
   return `
  create_${genName}(attrs \\ %{}) -> Creates a ${genName}.
 
@@ -44,7 +44,7 @@ const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
 // };
 
 const create_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, create_many);
+  validate({ genName, pluralName, genCamelName }, "create_many");
   return `
   def create_${genName}(attrs) when is_list(attrs) do
     attrs
@@ -72,7 +72,7 @@ const create_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
 };
 
 const create_single = ({ genName }: StringOnlyMap) => {
-  validate({ genName }, create_single);
+  validate({ genName }, "create_single");
   return `
   def create_${genName}(${genName}_params) when is_map(${genName}_params) do
     changeset = change_${genName}(${genName}_params)
@@ -112,7 +112,7 @@ const gen_create_apis: ApiGenFunction = (apis, dict) => {
   }));
   log({ level: 2 }, "Gen Create APIS", computed_apis);
   const filtered_apis = computed_apis.filter(({ header }) =>
-    apis.includes(header)
+    apis.includes(header),
   );
   const requested_ids = filtered_apis.map(({ id }) => id || "");
   const examples = requested_ids.map((id) => comment_map[id](dict)).join("\n");
@@ -124,7 +124,7 @@ const gen_create_apis: ApiGenFunction = (apis, dict) => {
   return {
     result: comments + "\n" + definitions,
     remaining_apis: apis.filter(
-      (api) => !computed_apis.map(({ header }) => header).includes(api)
+      (api) => !computed_apis.map(({ header }) => header).includes(api),
     ),
   };
 };

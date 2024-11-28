@@ -7,7 +7,7 @@ import { log } from "../../utils/logger";
 
 const gen_entity_store = async (
   generator: ImmutableGenerator,
-  typeDict: any
+  typeDict: any,
 ) => {
   log({ level: 7 }, "GEN ENTITY STORE", generator);
   log({ level: 7 }, "TYPE DICT", typeDict);
@@ -52,7 +52,7 @@ const ${slice} = createSlice({
           state.${tstype?.toLowerCase()} = action.payload;
         },
         set${pluralize(
-          tstype as string
+          tstype as string,
         )}(state: ${appstate}, action: PayloadAction<${tstype}[]>) {
           state.${pluralize(tstype as string)?.toLowerCase()} = action.payload;
         },
@@ -62,9 +62,9 @@ const ${name}Reducer = ${slice}.reducer;
 
 const select${tstype} = (state: GenericAppState) => state.${`${name}Store`}.${tstype?.toLowerCase()};
 const select${pluralize(
-    tstype as string
+    tstype as string,
   )} = (state: GenericAppState) => state.${`${name}Store`}.${pluralize(
-    tstype as string
+    tstype as string,
   )?.toLowerCase()};
 `;
 
@@ -81,9 +81,9 @@ const select${pluralize(
   const exports = [
     slice
       ? `const { set${tstype}, set${pluralize(
-          tstype as string
+          tstype as string,
         )} } = ${slice}.actions\nexport { set${tstype}, set${pluralize(
-          tstype as string
+          tstype as string,
         )} }`
       : null,
     tstype || appstate
@@ -114,7 +114,10 @@ interface GenericAppState {
 
 ${exports}
 `;
-  return generateFile({ dir: filedir, filename: `${name}.tsx`, content });
+  return generateFile(
+    { dir: filedir, filename: `${name}.tsx`, content },
+    "gen_entity_store",
+  );
 };
 
 export { gen_entity_store };

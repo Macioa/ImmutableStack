@@ -1,7 +1,11 @@
 import { join } from "path";
 import { generateFile } from "../index";
 
-const gen_vite_supervisor = async (AppName: string, AppNameCamel: string, LibDir: string) => {
+const gen_vite_supervisor = async (
+  AppName: string,
+  AppNameCamel: string,
+  LibDir: string,
+) => {
   const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `
@@ -156,11 +160,14 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
 end
 `;
 
-  return generateFile({
-    dir: supervisorPath,
-    filename: "vite_dev_supervisor.ex",
-    content,
-  });
+  return generateFile(
+    {
+      dir: supervisorPath,
+      filename: "vite_dev_supervisor.ex",
+      content,
+    },
+    "gen_vite_supervisor",
+  );
 };
 
 export { gen_vite_supervisor };

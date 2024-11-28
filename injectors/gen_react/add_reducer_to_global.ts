@@ -31,7 +31,7 @@ const addReducerToGlobal = async (generator: ImmutableGenerator) => {
     // [InjectType.AFTER, /export\s\{\s*\w+\s*,\s*REQUESTSKEY/, `, ${namekey}`],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "addReducerToGlobal");
 };
 
 export { addReducerToGlobal };

@@ -4,7 +4,7 @@ import { inject_file, Injection, InjectType } from "../index";
 const inject_vite_watcher_to_config = async (
   AppName: string,
   AppNameCamel: string,
-  umbrellaDir: string
+  umbrellaDir: string,
 ) => {
   const file = path.join(umbrellaDir, `config/config.exs`);
   const injections: Injection[] = [
@@ -26,7 +26,7 @@ if Mix.env() == :dev do
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_vite_watcher_to_config");
 };
 
 export { inject_vite_watcher_to_config };

@@ -3,6 +3,7 @@ import { mkdirSync } from "fs";
 import { resolve as pathResolve } from "path";
 import { log } from "../utils/logger";
 import { chunkArray } from "../utils/chunk";
+import { cacheLogCommand } from "../utils/history_cache";
 
 type Execution = {
   dir: string;
@@ -31,7 +32,7 @@ enum Arrow {
   YES = "\x1b[C",
 }
 
-const execute = async (execution: Execution) => {
+const execute = async (execution: Execution, caller: string | null = null) => {
   const { dir, command, options } = { ...ExecutionDefaults, ...execution };
   const {
     timeoutResolve,
@@ -42,6 +43,8 @@ const execute = async (execution: Execution) => {
     ...ExecutionDefaults.options,
     ...options,
   };
+
+  cacheLogCommand({ command, dir }, caller);
 
   log({ level: 4, color: "YELLOW" }, `Executing: ${command}`);
   log({ level: 4 }, `      in ${dir}...`);
@@ -71,41 +74,55 @@ const execute = async (execution: Execution) => {
 
     child.on("close", (exitcode) => {
       if (!resolveOnErrorCode && exitcode) {
-        console.error(`Process exited with exit code ${exitcode}:\n       ${command}`);
+        console.error(
+          `Process exited with exit code ${exitcode}:\n       ${command}`,
+        );
         reject(`Process exited with ${exitcode}`);
       } else resolve(dir);
     });
 
     if (timeoutResolve) setTimeout(() => resolve(dir), timeoutResolve);
-    if (timeoutReject) setTimeout(() => reject(new Error("Time out")), timeoutReject);
+    if (timeoutReject)
+      setTimeout(() => reject(new Error("Time out")), timeoutReject);
   });
 };
 
-const executeChunk = async (executions: Execution[]) => {
-  const promises = executions.map((execution) => execute(execution).catch(console.error));
+const executeChunk = async (
+  executions: Execution[],
+  caller: string | null = null,
+) => {
+  const promises = executions.map((execution) =>
+    execute(execution, caller).catch(console.error),
+  );
   return Promise.all(promises);
 };
 
-const executeAll = async (executions: Execution[], chunkSize = 5) => {
+const executeAll = async (
+  executions: Execution[],
+  chunkSize = 5,
+  caller: string | null = null,
+) => {
   const queue = chunkArray(executions, chunkSize);
   let res: any[] = [];
   for (const chunk of queue) {
-      res = [...res, await executeChunk(chunk)];
+    res = [...res, await executeChunk(chunk, caller)];
   }
   return res;
 };
 
-const executeAllSync = async (executions: Execution[]) => {
+const executeAllSync = async (
+  executions: Execution[],
+  caller: string | null = null,
+) => {
   let res: any[] = [];
   for (const exec of executions) {
     try {
-      res = [...res, await execute(exec)];
+      res = [...res, await execute(exec, caller)];
     } catch (error) {
       console.error(error);
       res.push(error);
     }
   }
-
 };
 
 export type { Execution };

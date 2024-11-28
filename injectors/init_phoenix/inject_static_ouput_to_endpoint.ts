@@ -3,7 +3,7 @@ import { inject_file, Injection, InjectType } from "../index";
 
 const inject_static_output_to_endpoint = async (
   AppName: string,
-  WebDir: string
+  WebDir: string,
 ) => {
   const file = path.join(WebDir, `lib/${AppName}_web/endpoint.ex`);
   const injections: Injection[] = [
@@ -14,7 +14,7 @@ const inject_static_output_to_endpoint = async (
     ],
   ];
 
-  return inject_file({ file, injections });
+  return inject_file({ file, injections }, "inject_static_output_to_endpoint");
 };
 
 export { inject_static_output_to_endpoint };
