@@ -3,21 +3,21 @@ import { ImmRoute } from ".";
 import { compute_header } from "../../../utils/gen_header";
 
 const update_list = ({
-  pluralName,
+  pluralNameSnake,
   context,
   genName,
   AppNameCamel,
 }: StringOnlyMap) => {
-  validate({ pluralName, context, genName, AppNameCamel }, "update_list");
+  validate({ pluralNameSnake, context, genName, AppNameCamel }, "update_list");
   return `
     def update(conn, ${genName}_list) when is_list(${genName}_list) do
-      with {:ok, ${pluralName}, []} <- ${context}.update_${genName}(${genName}_list) do
-        render(conn, :show, ${pluralName}: ${pluralName})
+      with {:ok, ${pluralNameSnake}, []} <- ${context}.update_${genName}(${genName}_list) do
+        render(conn, :show, ${pluralNameSnake}: ${pluralNameSnake})
       else
-        {:partial_success, updated_${pluralName}, failed_${pluralName}} ->
+        {:partial_success, updated_${pluralNameSnake}, failed_${pluralNameSnake}} ->
           conn
           |> put_status(:partial_content)
-          |> render(:show_partial, succeeded: updated_${pluralName}, failed: failed_${pluralName}, query_data: ${genName}_list)
+          |> render(:show_partial, succeeded: updated_${pluralNameSnake}, failed: failed_${pluralNameSnake}, query_data: ${genName}_list)
   
         error ->
           ${AppNameCamel}Web.FallbackController.call(conn, error)

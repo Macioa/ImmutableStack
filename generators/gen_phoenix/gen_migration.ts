@@ -6,8 +6,8 @@ const updateMigration = (
   generator: any,
   typeDict: any,
 ): Promise<boolean> => {
-  const source = (typeDict.DatabaseModel || typeDict.ImmutableGlobal)["ex"];
-  const nameStr = generator.generate.databaseModel;
+  const source = (typeDict.DatabaseTable || typeDict.ImmutableGlobal)["ex"];
+  const nameStr = generator.generate.databaseTable;
   const addStr = Object.keys(source)
     .map((k) => `add :${k}, :${source[k]}`)
     .join("\n");
@@ -47,7 +47,7 @@ const updateMigration = (
 const createMigrationFile = (generator: any): Promise<string | null> => {
   return new Promise((resolve, reject) => {
     try {
-      let command = `mix ecto.gen.migration create_${generator.generate.databaseModel}`;
+      let command = `mix ecto.gen.migration create_${generator.generate.databaseTable}`;
 
       exec(command, (err, stdout, stderr) => {
         const match = stdout.match(/\* creating (.+\.exs)/);

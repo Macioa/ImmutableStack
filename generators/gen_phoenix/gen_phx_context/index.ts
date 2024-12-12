@@ -1,5 +1,5 @@
 import { join } from "path";
-import { ImmutableGenerator, ImmutableContext } from "../../gen_controller";
+import { ImmutableGenerator, ImmutableContext } from "../../../immutable_gen";
 import { generateFile } from "../..";
 import { StringOnlyMap } from "../../../utils/map";
 import { gen_create_apis } from "./create";
@@ -9,6 +9,7 @@ import { gen_list_apis } from "./list";
 import { gen_update_apis } from "./update";
 import { api as custom_api } from "./custom";
 import { log } from "../../../utils/logger";
+import { plural } from "pluralize";
 
 const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
   log({ level: 5 }, "Requested Apis: ", requested_apis);
@@ -50,10 +51,9 @@ const gen_phx_contex = async (
     AppNameCamel,
     LibDir,
     generate,
-    name: genName,
-    camelName: genCamelName,
-    pluralName: genPluralName,
+    name,
   } = generator;
+  const { singleSnake: genName, singleUpperCamel: genCamelName, pluralUpperCamel: genPluralCamel, pluralSnake: genPluralSnake } = name
   const { name: camelName, apiFunctions } =
     generate.context as ImmutableContext;
   const contextPath = join(LibDir || "", `/lib/`);
@@ -65,8 +65,9 @@ const gen_phx_contex = async (
   const dict: StringOnlyMap = {
     camelName: camelName || "",
     genName,
-    context: camelName,
-    pluralName: genPluralName || "",
+    context: camelName || "",
+    pluralNameSnake: genPluralSnake || "",
+    pluralNameCamel: genPluralCamel || "",
     AppNameCamel: AppNameCamel || "",
     genCamelName: genCamelName || "",
   };
@@ -91,7 +92,7 @@ defmodule ${AppNameCamel}.${camelName} do
   ${gen_apis(apiFunctions, dict)}
 
   @doc """
-  change_${genName}(${genPluralName}) when is_list ${genPluralName} -> Returns a list of \`%Ecto.Changeset{}\` for tracking ${genName} changes
+  change_${genName}(${genPluralSnake}) when is_list ${genPluralSnake} -> Returns a list of \`%Ecto.Changeset{}\` for tracking ${genName} changes
 
   ## Examples
       iex> change_${genName}([{${genName}1, attrs1}, {${genName}2, attrs2}])
@@ -107,9 +108,9 @@ defmodule ${AppNameCamel}.${camelName} do
   def change_${genName}(attrs \\\\ %{})
   def change_${genName}(attrs) when is_map(attrs), do: change_${genName}(%${genCamelName}{}, attrs)
 
-  def change_${genName}(${genPluralName}) when is_list(${genPluralName}),
+  def change_${genName}(${genPluralSnake}) when is_list(${genPluralSnake}),
     do:
-      Enum.map(${genPluralName}, fn
+      Enum.map(${genPluralSnake}, fn
         {${genName}, attr} -> change_${genName}(${genName}, attr)
         attr when is_map(attr) -> change_${genName}(attr)
       end)

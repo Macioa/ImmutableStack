@@ -3,7 +3,7 @@ import {
   ImmutableGenerator,
   ImmutableController,
   ImmutableContext,
-} from "../../gen_controller";
+} from "../../../immutable_gen";
 import { generateFile } from "../..";
 import { StringOnlyMap } from "../../../utils/map";
 import { routes as show_routes } from "./show_route";
@@ -54,10 +54,9 @@ const gen_phx_controller = async (
     AppNameCamel,
     WebDir,
     generate,
-    name: genName,
-    camelName,
-    pluralName,
+    name: genNames,
   } = generator;
+  const {singleSnake: genName, singleUpperCamel: camelName, pluralSnake } = genNames
   const { name, routes } = generate.http_controller as ImmutableController;
   const { name: contextName } = generate.context as ImmutableContext;
   const controllerPath = join(
@@ -72,7 +71,7 @@ const gen_phx_controller = async (
     camelName: camelName || "",
     genName,
     context: contextName,
-    pluralName: pluralName || "",
+    pluralNameSnake: pluralSnake || "",
     AppNameCamel: AppNameCamel || "",
     camelUpperName: camelName || "",
   };

@@ -6,7 +6,7 @@ import {
   gen_fallback_controller,
   gen_json_handler,
 } from "./gen_phx_controller";
-import { ImmutableGenerator, GenTypes } from "../gen_controller";
+import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
 
 const handle_phx_gen = async (
   generator: ImmutableGenerator,

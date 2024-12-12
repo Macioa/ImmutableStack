@@ -2,11 +2,11 @@ import { StringOnlyMap, validate } from "../../../utils/map";
 import { compute_header } from "../../../utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
-const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
-  validate({ pluralName }, "comment_main");
+const comment_main = ({ pluralNameSnake }: StringOnlyMap, examples: string) => {
+  validate({ pluralNameSnake }, "comment_main");
   return `
   @doc """
-    Update ${pluralName} records.
+    Update ${pluralNameSnake} records.
 
     ## Examples
     ${examples}
@@ -14,10 +14,10 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
 `;
 };
 
-const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, "comment_many");
+const comment_many = ({ genName, pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralNameSnake, genCamelName }, "comment_many");
   return `
-update_${genName}(${pluralName}) when is_list ${pluralName} -> Updates ${pluralName} with an array of tuples [{${genName}, attrs}].
+update_${genName}(${pluralNameSnake}) when is_list ${pluralNameSnake} -> Updates ${pluralNameSnake} with an array of tuples [{${genName}, attrs}].
 
 ## Examples
     iex> update_${genName}([{%{field: new_value}}, {%{field: new_value}}])
@@ -38,26 +38,26 @@ update_${genName}(%${genCamelName}{} = ${genName}, attrs) -> Updates a ${genName
 `;
 };
 
-const update_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, "update_many");
+const update_many = ({ genName, pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralNameSnake, genCamelName }, "update_many");
   return `
-def update_${genName}(${pluralName}) when is_list(${pluralName}) do
-  ${pluralName}
+def update_${genName}(${pluralNameSnake}) when is_list(${pluralNameSnake}) do
+  ${pluralNameSnake}
   |> Chunk.apply(fn ${genName}_chunk ->
     multi =
       Multi.new()
       |> Multi.run(:initial_query, fn repo, _ ->
         requested_ids = Enum.map(${genName}_chunk, &MapUtil.get(&1, :id))
 
-        found_${pluralName} = from(b in ${genCamelName}, where: b.id in ^requested_ids) |> repo.all()
-        found_ids = Enum.map(found_${pluralName}, & &1.id)
+        found_${pluralNameSnake} = from(b in ${genCamelName}, where: b.id in ^requested_ids) |> repo.all()
+        found_ids = Enum.map(found_${pluralNameSnake}, & &1.id)
         unfound_ids = requested_ids -- found_ids
 
         {matched_attrs, unmatched_attrs} =
           Enum.split_with(${genName}_chunk, fn attrs -> MapUtil.get(attrs, :id) not in unfound_ids end)
 
         changesets =
-          Enum.zip(found_${pluralName}, matched_attrs)
+          Enum.zip(found_${pluralNameSnake}, matched_attrs)
           |> Enum.map(fn {${genName}, attrs} -> change_${genName}(${genName}, attrs) end)
           |> Enum.filter(& &1.valid?)
 

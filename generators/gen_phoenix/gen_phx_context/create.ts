@@ -3,11 +3,11 @@ import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 import { compute_header } from "../../../utils/gen_header";
 import { log } from "../../../utils/logger";
 
-const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
-  validate({ pluralName }, "comment_main");
+const comment_main = ({ pluralNameSnake }: StringOnlyMap, examples: string) => {
+  validate({ pluralNameSnake }, "comment_main");
   return `
   @doc """
-    Create ${pluralName} by id.
+    Create ${pluralNameSnake} by id.
 
     ## Examples
     ${examples}
@@ -15,10 +15,10 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
 `;
 };
 
-const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, "comment_many");
+const comment_many = ({ genName, pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralNameSnake, genCamelName }, "comment_many");
   return `
-create_${genName}(attrs) when is_list attrs -> Creates ${pluralName} from an array of attrs.
+create_${genName}(attrs) when is_list attrs -> Creates ${pluralNameSnake} from an array of attrs.
 
   ## Examples
       iex> create_${genName}([%{field: value}, %{field: value}])
@@ -43,8 +43,8 @@ const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
 //   return `def create_${genName}(${genName}_params) when is_map(${genName}_params) do`;
 // };
 
-const create_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, "create_many");
+const create_many = ({ genName, pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralNameSnake, genCamelName }, "create_many");
   return `
   def create_${genName}(attrs) when is_list(attrs) do
     attrs

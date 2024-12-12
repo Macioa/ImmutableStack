@@ -2,11 +2,11 @@ import { StringOnlyMap, validate } from "../../../utils/map";
 import { compute_header } from "../../../utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
-const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
-  validate({ pluralName }, "comment_main");
+const comment_main = ({ pluralNameSnake }: StringOnlyMap, examples: string) => {
+  validate({ pluralNameSnake }, "comment_main");
   return `
   @doc """
-    Delete ${pluralName} by id.
+    Delete ${pluralNameSnake} by id.
 
     ## Examples
     ${examples}
@@ -34,12 +34,12 @@ const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
 `;
 };
 
-const delete_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, "delete_many");
+const delete_many = ({ genName, pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralNameSnake, genCamelName }, "delete_many");
   return `
-  def delete_${genName}(${pluralName}) when is_list(${pluralName}) do
+  def delete_${genName}(${pluralNameSnake}) when is_list(${pluralNameSnake}) do
     result =
-      ${pluralName}
+      ${pluralNameSnake}
       |> Chunk.apply(fn ${genName}_chunk ->
         ids =
           Enum.map(${genName}_chunk, fn

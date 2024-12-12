@@ -13,6 +13,7 @@ const validate = (
   map: RestructuredMap,
   caller: string | null = null,
 ): boolean => {
+  console.log(map)
   Object.keys(map).forEach((key) => {
     const value = map[key];
     if (value === null || value === undefined) {
@@ -33,8 +34,8 @@ const immutable_set_in = (
   keys: string[],
   value: any,
 ): object => {
-  const immKeys = [...keys].reverse();
-  const { result } = immKeys.reduce(
+  const reversedKeys = [...keys].reverse();
+  const { result } = reversedKeys.reduce(
     ({ result, processed_keys, unprocessed_keys }, key) => {
       unprocessed_keys = unprocessed_keys.slice(1);
       const newResult = {
@@ -48,7 +49,7 @@ const immutable_set_in = (
         unprocessed_keys,
       };
     },
-    { result: {}, processed_keys: [] as string[], unprocessed_keys: immKeys },
+    { result: {}, processed_keys: [] as string[], unprocessed_keys: reversedKeys },
   );
   return result;
 };
@@ -59,7 +60,7 @@ const referenced_set_in = (
   value: any,
 ): void => {
   const lastKey = keys.pop() as string;
-  let tailRef = get_in(map, keys);
+  const tailRef = get_in(map, keys);
   if (tailRef && typeof tailRef == "object") tailRef[lastKey] = value;
   else referenced_set_in(map, keys, { [lastKey]: value });
 };

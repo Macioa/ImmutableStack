@@ -5,22 +5,22 @@ import { compute_header } from "../../../utils/gen_header";
 const create_list = ({
   genName,
   context,
-  pluralName,
+  pluralNameSnake,
   AppNameCamel,
 }: StringOnlyMap) => {
-  validate({ genName, context, pluralName, AppNameCamel }, "create_list");
+  validate({ genName, context, pluralNameSnake, AppNameCamel }, "create_list");
   return `
     def create(conn, ${genName}_list) when is_list(${genName}_list) do
-      with {:ok, ${pluralName}, []} <- ${context}.create_${genName}(${genName}_list) do
+      with {:ok, ${pluralNameSnake}, []} <- ${context}.create_${genName}(${genName}_list) do
         conn
         |> put_status(:created)
         |> put_resp_header("location", ~p"/api/${genName}")
-        |> render(:show, ${pluralName}: ${pluralName})
+        |> render(:show, ${pluralNameSnake}: ${pluralNameSnake})
       else
-        {:partial_success, created_${pluralName}, failed_${pluralName}} ->
+        {:partial_success, created_${pluralNameSnake}, failed_${pluralNameSnake}} ->
           conn
           |> put_status(:partial_content)
-          |> render(:show_partial, succeeded: created_${pluralName}, failed: failed_${pluralName}, query_data: ${genName}_list)
+          |> render(:show_partial, succeeded: created_${pluralNameSnake}, failed: failed_${pluralNameSnake}, query_data: ${genName}_list)
   
         error ->
           ${AppNameCamel}Web.FallbackController.call(conn, error)
@@ -33,9 +33,9 @@ const create = ({
   genName,
   camelUpperName,
   context,
-  pluralName,
+  pluralNameSnake,
 }: StringOnlyMap) => {
-  validate({ genName, camelUpperName, context, pluralName }, "create");
+  validate({ genName, camelUpperName, context, pluralNameSnake }, "create");
   return `
     def create(conn, ${genName}_params) do
       with {:ok, %${camelUpperName}{} = ${genName}} <- ${genName}_params |> MapUtil.str_to_atom() |> ${context}.create_${genName}() do

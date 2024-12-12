@@ -1,20 +1,23 @@
 import { join } from "path";
-import { ImmutableGenerator } from "../gen_controller";
+import { ImmutableGenerator } from "../../immutable_gen";
 import pluralize from "pluralize";
 import { generateFile } from "../index";
 
 const gen_entity_requests = async (
   generator: ImmutableGenerator,
-  typeDict: any,
+  typeDict: any
 ) => {
   const { name, generate, AppNameCamel, LibDir } = generator;
+  const { singleUpperCamel: entityNameSingleUpperCamel } = name;
   const { tstype } = generate;
   const filedir = join(LibDir || "", "lib/typescript/requests/");
 
   const content = `
 import { Dispatch } from "redux";
 import { Request } from "./index";
-import { ${tstype}, set${tstype}, set${pluralize(tstype as string)} } from "../state/${name}";
+import { ${tstype}, set${tstype}, set${pluralize(
+    tstype as string
+  )} } from "../state/${entityNameSingleUpperCamel}";
 
 const request${tstype} = (id: string, dispatch: Dispatch) => {
   Request.API({
@@ -30,7 +33,9 @@ const request${pluralize(tstype as string)} = (dispatch: Dispatch) => {
     name: "fetch${pluralize(tstype as string)}",
     api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
     route: \`${pluralize(tstype as string).toLowerCase()}\`,
-    callback: (res: any) => dispatch(set${pluralize(tstype as string)}(res.data)),
+    callback: (res: any) => dispatch(set${pluralize(
+      tstype as string
+    )}(res.data)),
   }, dispatch);
 };
 
@@ -58,11 +63,13 @@ const delete${tstype} = (id: string, dispatch: Dispatch) => {
   }, dispatch);
 };
 
-export { request${tstype}, request${pluralize(tstype as string)}, update${tstype}, delete${tstype} };
+export { request${tstype}, request${pluralize(
+    tstype as string
+  )}, update${tstype}, delete${tstype} };
 `;
   return generateFile(
-    { dir: filedir, filename: `${name}.tsx`, content },
-    "gen_entity_requests",
+    { dir: filedir, filename: `${entityNameSingleUpperCamel}.tsx`, content },
+    "gen_entity_requests"
   );
 };
 
