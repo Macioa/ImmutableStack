@@ -17,11 +17,15 @@ const setLogLevel = (level: number) => {
   return log_level;
 };
 
-const log = ({ level, color }: LogOptions, ...args: any[]) => {
+const log = async ({ level, color }: LogOptions, ...args: any[]) => {
   if (level <= log_level) {
     args = color ? [COLOR[color], ...args] : args;
+    if (level < 5) console.log("\n\n");
     console.log(...args);
+    return await sleep(level >= 5 ? 0 : 5 - level);
   }
 };
 
-export { setLogLevel, log };
+const sleep = (s: number) => new Promise((resolve) => setTimeout(resolve, s * 1000));
+
+export { setLogLevel, log, sleep };

@@ -6,20 +6,18 @@ const getAppData = async () => {
   try {
     log({ level: 8 }, `Getting App Data from mix.exs in ${process.cwd()}`);
     const fileContent = await readFile("mix.exs", "utf-8");
-    let appName = "";
-    fileContent.replace(
-      /defmodule (\w+)(\.Umbrella){0,1}\.MixProject do/g,
-      (m, n) => (appName = n),
-    );
-    log({ level: 2 }, `Found app: ${appName}`);
+    const appName = fileContent.match(
+      /(?<=defmodule\s+)\w+(?=\.Umbrella\.MixProject)/
+    )?.[0];
+
     const appNameSnake = appName
-      .replace(/([A-Z])/g, "_$1")
-      .toLowerCase()
-      .slice(1);
+      ?.replace(/([A-Z])/g, "_$1")
+      ?.toLowerCase()
+      ?.slice(1);
 
     const umbrellaDir = process.cwd(),
       appdir = path.join(umbrellaDir, "apps"),
-      libdir = path.join(appdir, appNameSnake),
+      libdir = path.join(appdir, appNameSnake as string),
       uidir = path.join(appdir, `${appNameSnake}_ui`),
       webdir = path.join(appdir, `${appNameSnake}_web`);
 

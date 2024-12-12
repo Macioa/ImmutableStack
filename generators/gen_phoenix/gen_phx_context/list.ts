@@ -2,40 +2,40 @@ import { StringOnlyMap, validate } from "../../../utils/map";
 import { compute_header } from "../../../utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
-const comment_standard = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, "comment_standard");
+const comment_standard = ({ pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ pluralNameSnake, genCamelName }, "comment_standard");
   return `
 @doc """
-Returns the list of ${pluralName}.
+Returns the list of ${pluralNameSnake}.
 
 ## Examples
-    iex> list_${pluralName}()
+    iex> list_${pluralNameSnake}()
     [%${genCamelName}{}, ...]
 
 """
     `;
 };
 
-const list_standard = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, "list_standard");
+const list_standard = ({ pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ pluralNameSnake, genCamelName }, "list_standard");
   return `
-    def list_${pluralName}(page_query \\\\ %{}), do: Paginate.apply(${genCamelName}, Repo, page_query)
+    def list_${pluralNameSnake}(page_query \\\\ %{}), do: Paginate.apply(${genCamelName}, Repo, page_query)
     `;
 };
 
-const comment_dynamic = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, "comment_dynamic");
+const comment_dynamic = ({ pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ pluralNameSnake, genCamelName }, "comment_dynamic");
   return `
 @doc """
-Use a Dynamic Query to get a list of ${pluralName} with specific values for any directly queryable fields.
+Use a Dynamic Query to get a list of ${pluralNameSnake} with specific values for any directly queryable fields.
 """
     `;
 };
 
-const list_dynamic = ({ pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ pluralName, genCamelName }, "list_dynamic");
+const list_dynamic = ({ pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ pluralNameSnake, genCamelName }, "list_dynamic");
   return `
-def list_${pluralName}_by(entity_queries, page_queries \\\\ %{}) do
+def list_${pluralNameSnake}_by(entity_queries, page_queries \\\\ %{}) do
   with {:ok, query, entity_queries} <- DynamicQuery.by_schema(entity_queries, ${genCamelName}),
        {:ok, result, page_queries} <- Paginate.apply(query, Repo, page_queries) do
     {:ok, result, Map.put(entity_queries, :page, page_queries)}

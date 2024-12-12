@@ -1,16 +1,14 @@
 import { join } from "path";
-import { ImmutableGenerator, GenTypes } from "../../gen_controller";
+import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../index";
 
 const gen_json_handler = async (
   generator: ImmutableGenerator,
   typeDict: GenTypes,
 ) => {
-  const { WebDir, AppNameCamel, AppNameSnake, camelName, pluralName, name } =
-    generator;
-  const {
-    generate: { http_controller },
-  } = generator;
+  const { WebDir, AppNameCamel, AppNameSnake, generate, name } = generator;
+  const { http_controller }= generate;
+  const { singleUpperCamel, pluralSnake, singleSnake} = name
   const { ImmutableGlobal, Schema } = typeDict;
   const jsonHandlerPath = join(
     WebDir || ".",
@@ -20,37 +18,37 @@ const gen_json_handler = async (
   const typeSource = (ImmutableGlobal || Schema)?.ex;
 
   const renderKeys = Object.keys(typeSource || {})
-    .map((key) => `${key}: Map.get(${name}, :${key})`)
+    .map((key) => `${key}: Map.get(${singleSnake}, :${key})`)
     .join(",\n      ");
 
   const content = `
-defmodule ${AppNameCamel}Web.${camelName}JSON do
+defmodule ${AppNameCamel}Web.${singleUpperCamel}JSON do
   alias ${AppNameCamel}Web.FallbackController
 
   @doc """
-  Renders a ${name} or list of ${pluralName}.
+  Renders a ${singleSnake} or list of ${pluralSnake}.
 
   ## Examples
-      iex> render(conn, :show, ${pluralName}: ${pluralName})
-      {:ok, %{data: [%${camelName}{}]}
+      iex> render(conn, :show, ${pluralSnake}: ${pluralSnake})
+      {:ok, %{data: [%${singleUpperCamel}{}]}
 
-      iex> render(conn, :show, ${name}: ${name})
-      {:ok, %{data: %${camelName}{}}}
+      iex> render(conn, :show, ${singleSnake}: ${singleSnake})
+      {:ok, %{data: %${singleUpperCamel}{}}}
   """
-  def show(%{${pluralName}: ${pluralName}, query_data: q}) when is_list(${pluralName}) do
+  def show(%{${pluralSnake}: ${pluralSnake}, query_data: q}) when is_list(${pluralSnake}) do
     if(q != %{},
       do: %{query: q},
       else: %{}
     )
-    |> Map.merge(%{data: transform(${pluralName}), count: length(${pluralName})})
+    |> Map.merge(%{data: transform(${pluralSnake}), count: length(${pluralSnake})})
   end
 
-  def show(%{${name}: ${name}, query_data: q}) do
+  def show(%{${singleSnake}: ${singleSnake}, query_data: q}) do
     if(q != %{},
       do: %{query: q},
       else: %{}
     )
-    |> Map.put(:data, transform(${name}))
+    |> Map.put(:data, transform(${singleSnake}))
   end
 
   def show(%{count: c}), do: %{success_count: c, fail_count: 0}
@@ -58,35 +56,35 @@ defmodule ${AppNameCamel}Web.${camelName}JSON do
   def show(params), do: Map.merge(%{query_data: %{}}, params) |> show
 
   @doc """
-  Renders ${pluralName} from batch operations
+  Renders ${pluralSnake} from batch operations
 
   ## Examples
-      iex> render(conn, :show_partial, succeeded: ${name}_maps, failed: ${name}_changesets)
-      {:partial_success, [%${camelName}{}], [%Changeset{}]}
+      iex> render(conn, :show_partial, succeeded: ${singleSnake}_maps, failed: ${singleSnake}_changesets)
+      {:partial_success, [%${singleUpperCamel}{}], [%Changeset{}]}
   """
   def show_partial(params \\\\ %{query_data: %{}, succeeded: [], failed: []})
 
-  def show_partial(%{succeeded: succeeded_${pluralName}, failed: failed_changesets, query_data: q})
-      when is_list(succeeded_${pluralName}) and is_list(failed_changesets) do
+  def show_partial(%{succeeded: succeeded_${pluralSnake}, failed: failed_changesets, query_data: q})
+      when is_list(succeeded_${pluralSnake}) and is_list(failed_changesets) do
     if(q != %{},
       do: %{query: q},
       else: %{}
     )
     |> Map.merge(%{
-      success_count: length(succeeded_${pluralName}),
+      success_count: length(succeeded_${pluralSnake}),
       fail_count: length(failed_changesets),
-      data: transform(succeeded_${pluralName}),
+      data: transform(succeeded_${pluralSnake}),
       failed: FallbackController.error_transform(failed_changesets)
     })
   end
 
   def show_partial(%{success_count: s_count, fail_count: f_count}), do: %{success_count: s_count, failed_count: f_count}
 
-  defp transform(${pluralName}) when is_list(${pluralName}), do: Enum.map(${pluralName}, &transform/1)
+  defp transform(${pluralSnake}) when is_list(${pluralSnake}), do: Enum.map(${pluralSnake}, &transform/1)
 
-  defp transform(${name}) when is_map(${name}) do
+  defp transform(${singleSnake}) when is_map(${singleSnake}) do
     %{
-      id: Map.get(${name}, :id),
+      id: Map.get(${singleSnake}, :id),
       ${renderKeys}
     }
   end
@@ -97,7 +95,7 @@ end
     ? generateFile(
         {
           dir: jsonHandlerPath,
-          filename: `${name}_json.ex`,
+          filename: `${singleSnake}_json.ex`,
           content,
         },
         "gen_json_handler",

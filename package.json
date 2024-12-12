@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "b_genhandle": "esbuild generators/gen_controller.ts --bundle --minify --outfile=.build/gen.js --platform=node",
-    "b_genfile": "esbuild genfile.ts --bundle --minify --outfile=.build/genfile.js --platform=node",
-    "b_init": "esbuild init_proj.ts --bundle --minify --outfile=.build/init_proj.js --platform=node",
+    "b_genhandle": "esbuild immutable_gen.ts --bundle --minify --outfile=.build/gen.js --platform=node",
+    "b_genfile": "esbuild immutable_genfile.ts --bundle --minify --outfile=.build/genfile.js --platform=node",
+    "b_init": "esbuild immutable_init.ts --bundle --minify --outfile=.build/init_proj.js --platform=node",
     "b_bash": "mkdir -p .build && cp start_macos.sh dev_kit_macos.sh versions.sh gen_toolkit.sh .build/",
     "build": "tsc && npm run b_genhandle && npm run b_genfile && npm run b_init && npm run b_bash",
-    "zip": "VERSION=\"v0.3.0\"; HBREW_PATH=$(eval echo ~)/git/homebrew-immutable; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_PATH\"",
+    "zip": "VERSION=\"v0.3.135\"; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_IMM_PATH\"",
     "p": "npm run build && npm run zip"
   },
   "keywords": [],
@@ -19,11 +19,11 @@
     "@types/node": "^22.5.4",
     "@types/pluralize": "^0.0.33",
     "esbuild": "^0.23.1",
-    "lorem-ipsum": "^2.0.8"
+    "lorem-ipsum": "^2.0.8",
+    "typescript": "^5.7.2"
   },
   "dependencies": {
     "pluralize": "^8.0.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "ts-node": "^10.9.2"
   }
 }

@@ -1,6 +1,6 @@
 import path from "path";
 import { inject_file, InjectType, Injection } from "../index";
-import { ImmutableGenerator } from "../../generators/gen_controller";
+import { ImmutableGenerator } from "../../immutable_gen";
 
 const inject_router = async (generator: ImmutableGenerator) => {
   const { WebDir, generate, AppNameSnake, name: resource } = generator || {};

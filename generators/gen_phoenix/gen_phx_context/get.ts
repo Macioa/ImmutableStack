@@ -3,11 +3,11 @@ import { compute_header } from "../../../utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 import { disconnect } from "process";
 
-const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
-  validate({ pluralName }, "comment_main");
+const comment_main = ({ pluralNameSnake }: StringOnlyMap, examples: string) => {
+  validate({ pluralNameSnake }, "comment_main");
   return `
 @doc """
-    Retrieve ${pluralName} by id.
+    Retrieve ${pluralNameSnake} by id.
 
     ## Examples
   ${examples}
@@ -15,10 +15,10 @@ const comment_main = ({ pluralName }: StringOnlyMap, examples: string) => {
   `;
 };
 
-const comment_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, "comment_many");
+const comment_many = ({ genName, pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralNameSnake, genCamelName }, "comment_many");
   return `
-    get_${genName}!(ids) when is_list(ids) -> Gets specified ${pluralName}.
+    get_${genName}!(ids) when is_list(ids) -> Gets specified ${pluralNameSnake}.
     
     iex> get_${genName}!([123, 456])
       [%${genCamelName}{}, %${genCamelName}{}]
@@ -40,12 +40,12 @@ const comment_single = ({ genName, genCamelName }: StringOnlyMap) => {
 `;
 };
 
-const get_many = ({ genName, pluralName, genCamelName }: StringOnlyMap) => {
-  validate({ genName, pluralName, genCamelName }, "get_many");
+const get_many = ({ genName, pluralNameSnake, genCamelName }: StringOnlyMap) => {
+  validate({ genName, pluralNameSnake, genCamelName }, "get_many");
   return `
-  def get_${genName}!(${pluralName}) when is_list(${pluralName}) do
+  def get_${genName}!(${pluralNameSnake}) when is_list(${pluralNameSnake}) do
     ids =
-      Enum.map(${pluralName}, fn
+      Enum.map(${pluralNameSnake}, fn
         id when is_binary(id) -> id
         ${genName} when is_map(${genName}) -> MapUtil.get(${genName}, :id)
       end)

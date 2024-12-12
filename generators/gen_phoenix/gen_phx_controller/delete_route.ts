@@ -3,12 +3,11 @@ import { ImmRoute } from ".";
 import { compute_header } from "../../../utils/gen_header";
 
 const delete_list = ({
-  pluralName,
   context,
   genName,
   AppNameCamel,
 }: StringOnlyMap) => {
-  validate({ pluralName, context, genName, AppNameCamel }, "delete_list");
+  validate({ context, genName, AppNameCamel }, "delete_list");
   return `
     def delete(conn, ${genName}_list) when is_list(${genName}_list) do
       with {:ok, count, _} <- ${context}.delete_${genName}(${genName}_list) do

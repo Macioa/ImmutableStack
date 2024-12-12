@@ -25,7 +25,7 @@ const init_react_app_with_vite = async ({
   );
   const init = await exec(
     {
-      command: `npx create-vite@latest ${projectName}_ui --template react-ts`,
+      command: `npx create-vite@latest ${projectName}_ui --template react-ts --no-install`,
       dir: appdir,
       // options: {
       //   timeoutResolve: 1000 * 30,

@@ -1,40 +1,44 @@
 import * as path from "path";
 
-import { setUmbrellaDirCache, writeLog } from "../utils/history_cache";
-import { log, setLogLevel } from "../utils/logger";
+import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
+import { log, setLogLevel } from "./utils/logger";
+import { Names } from "./utils/string";
 
-import { readGenFile } from "../readers/genfile_reader";
-import { handle_phx_gen } from "./gen_phoenix/phx_gen_handler";
-import { gen_entity_store } from "./gen_react/gen_entity_store";
-import { addReducerToGlobal } from "../injectors/gen_react/add_reducer_to_global";
-import { gen_entity_requests } from "./gen_react/gen_entitiy_requests";
+import { readGenFile } from "./readers/genfile";
+import { handle_phx_gen } from "./generators/gen_phoenix/phx_gen_handler";
+import { gen_entity_store } from "./generators/gen_react/gen_entity_store";
+import { addReducerToGlobal } from "./injectors/gen_react/add_reducer_to_global";
+import { gen_entity_requests } from "./generators/gen_react/gen_entitiy_requests";
 
 setLogLevel(5);
 
 type ImmutableGenerator = {
-  name: string;
-  camelName?: string;
-  pluralName?: string;
+  name: Names;
+  appName: {
+    camel: string;
+    snake: string;
+  };
+  dir: {
+    ProjectDir?: string;
+    AppDir?: string;
+    LibDir?: string;
+    UiDir?: string;
+    WebDir?: string;
+  };
   generate: {
-    slice?: string;
+    requests?: ImmutableRequests;
+    stateSlice?: ImmutableStateSlice;
     http_controller?: ImmutableController;
     channel_controller?: string;
-    databaseModel?: string;
     context?: ImmutableContext;
+    databaseTable?: string;
     schema?: string;
     tstype?: string;
     appstate?: string;
     factory?: boolean;
-    initialstate?: object;
   };
-  test: boolean;
-  AppNameCamel?: string;
-  AppNameSnake?: string;
-  ProjectDir?: string;
-  AppDir?: string;
-  LibDir?: string;
-  UiDir?: string;
-  WebDir?: string;
+  test?: boolean;
+
   [key: string]: any;
 };
 
@@ -48,6 +52,16 @@ interface ImmutableController {
   routes: string[];
 }
 
+interface ImmutableStateSlice {
+  name: string;
+  reducers?: string[];
+  selectors?: string[];
+}
+
+interface ImmutableRequests {
+  requestFunctions: string[];
+}
+
 interface Dict {
   [key: string]: string | Dict;
 }
@@ -58,15 +72,17 @@ interface TypeDict {
   ex: Dict;
 }
 
-interface GenTypes {
-  ImmutableGlobal?: TypeDict;
-  AppState?: TypeDict;
-  InitialAppState?: TypeDict;
-  TransitoryState?: TypeDict;
-  Schema?: TypeDict;
-  DatabaseModel?: TypeDict;
-  TsType?: TypeDict;
+enum GenTypesKey {
+  ImmutableGlobal = "ImmutableGlobal",
+  AppState = "AppState",
+  InitialAppState = "InitialAppState",
+  TransitoryState = "TransitoryState",
+  Schema = "Schema",
+  DatabaseTable = "DatabaseTable",
+  TsType = "TsType",
 }
+
+type GenTypes = { [key in GenTypesKey]?: TypeDict };
 
 const main = async () => {
   const args = process.argv.slice(2);
@@ -97,7 +113,9 @@ export type {
   Dict,
   TypeDict,
   GenTypes,
+  GenTypesKey,
   ImmutableGenerator,
   ImmutableContext,
   ImmutableController,
+  Names,
 };

@@ -2,12 +2,12 @@ import { StringOnlyMap, validate } from "../../../utils/map";
 import { ImmRoute } from ".";
 import { compute_header } from "../../../utils/gen_header";
 
-const show_list = ({ pluralName, context, genName }: StringOnlyMap) => {
-  validate({ pluralName, context, genName }, "show_list");
+const show_list = ({ pluralNameSnake, context, genName }: StringOnlyMap) => {
+  validate({ pluralNameSnake, context, genName }, "show_list");
   return `
     def show(conn, ${genName}_list) when is_list(${genName}_list) do
-      ${pluralName} = ${context}.get_${genName}!(${genName}_list)
-      render(conn, :show, ${pluralName}: ${pluralName})
+      ${pluralNameSnake} = ${context}.get_${genName}!(${genName}_list)
+      render(conn, :show, ${pluralNameSnake}: ${pluralNameSnake})
     end
   `;
 };
