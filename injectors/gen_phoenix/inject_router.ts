@@ -3,7 +3,8 @@ import { inject_file, InjectType, Injection } from "../index";
 import { ImmutableGenerator } from "../../immutable_gen";
 
 const inject_router = async (generator: ImmutableGenerator) => {
-  const { WebDir, generate, AppNameSnake, name: resource } = generator || {};
+  const { WebDir, generate, AppNameSnake, name } = generator || {};
+  const { singleSnake: resource } = name || {};
   const { http_controller } = generate || {};
   const { name: controller } = http_controller || {};
   const file = path.join(WebDir || ".", `lib/${AppNameSnake}_web/router.ex`);

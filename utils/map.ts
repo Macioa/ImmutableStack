@@ -13,7 +13,6 @@ const validate = (
   map: RestructuredMap,
   caller: string | null = null,
 ): boolean => {
-  console.log(map)
   Object.keys(map).forEach((key) => {
     const value = map[key];
     if (value === null || value === undefined) {

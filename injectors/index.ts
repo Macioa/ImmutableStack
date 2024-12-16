@@ -21,7 +21,7 @@ const inject_file = async (
   { file, injections }: FileInjection,
   caller: string | null = null,
 ) => {
-  log({ level: 5 }, `Injecting into ${file}....`);
+  log({ level: 3 }, `Injecting into ${file}....`);
 
   return new Promise(async (resolve, reject) => {
     cacheLog(file, caller);

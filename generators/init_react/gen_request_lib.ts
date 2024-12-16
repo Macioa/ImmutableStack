@@ -91,7 +91,7 @@ const requestAPI = async (details: requestAPIinterface, dispatch: Dispatch) => {
     };
 
     try {
-      const API_URL = process.env[api_url_key] || "http://localhost:4000/api/",
+      const API_URL = import.meta.env[api_url_key] || "http://localhost:4000/api/",
         reqOptions = merge(defaultOptions, options || {});
 
       const res = await fetch(${literalFetchRoute}, reqOptions)

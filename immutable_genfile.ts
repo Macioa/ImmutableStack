@@ -135,8 +135,9 @@ const Immutable: ImmutableGenerator = {
     appstate: "${singleUpperCamel}StoreState",
     tstype: "${singleUpperCamel}",
     factory: true,
+    demoComponents: true,
+    test: true,
   },
-  test: true,
 };
 
 
@@ -234,8 +235,9 @@ interface ImmutableGenerator {
     tstype?: string;
     appstate?: string;
     factory?: boolean;
+    demoComponents?: boolean;
+    test?: boolean;
   };
-  test?: boolean;
 }
 
 interface ImmutableController {
@@ -273,8 +275,6 @@ export type {
   ImmutableStateSlice,
 };
 `;
-  console.log("writesync");
-
   fs.writeFileSync(`.genfile_${genName}.ts`, tsContent, "utf8");
 
   console.log(`Created .genfile_${genName}.ts`);

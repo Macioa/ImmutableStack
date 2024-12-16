@@ -5,10 +5,8 @@ import { log, setLogLevel } from "./utils/logger";
 import { Names } from "./utils/string";
 
 import { readGenFile } from "./readers/genfile";
-import { handle_phx_gen } from "./generators/gen_phoenix/phx_gen_handler";
-import { gen_entity_store } from "./generators/gen_react/gen_entity_store";
-import { addReducerToGlobal } from "./injectors/gen_react/add_reducer_to_global";
-import { gen_entity_requests } from "./generators/gen_react/gen_entitiy_requests";
+import { gen_phx } from "./composite/gen_phoenix";
+import { gen_react } from "./composite/gen_react";
 
 setLogLevel(5);
 
@@ -36,8 +34,9 @@ type ImmutableGenerator = {
     tstype?: string;
     appstate?: string;
     factory?: boolean;
+    test?: boolean;
+    demoComponents?: boolean;
   };
-  test?: boolean;
 
   [key: string]: any;
 };
@@ -97,14 +96,12 @@ const main = async () => {
   setUmbrellaDirCache(generator.UmbrellaDir || "./");
 
   log({ level: 2, color: "BLUE" }, `\nGenerating server components...`);
-  log({ level: 3 }, await handle_phx_gen(generator, genTypes));
+  await gen_phx(generator, genTypes)
 
   log({ level: 2, color: "BLUE" }, `\nGenerating front end components...`);
-  log({ level: 3 }, addReducerToGlobal(generator));
-  log({ level: 3 }, await gen_entity_store(generator, genTypes));
-  log({ level: 3 }, await gen_entity_requests(generator, genTypes));
+  await gen_react(generator, genTypes);
 
-  writeLog(generator.UmbrellaDir || "./", `generate_${generator.name}`);
+  writeLog(generator.UmbrellaDir || "./", `generate_${generator.name.singleSnake}`);
 };
 
 main().catch(console.error);

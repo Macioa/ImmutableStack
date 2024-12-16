@@ -1,14 +1,14 @@
-import { gen_schema } from "./phx_gen_schema";
-import { gen_phx_contex } from "./gen_phx_context";
+import { gen_schema } from "../../generators/gen_phoenix/phx_gen_schema";
+import { gen_phx_contex } from "../../generators/gen_phoenix/gen_phx_context";
 import { inject_router } from "../../injectors/gen_phoenix/inject_router";
 import {
   gen_phx_controller,
   gen_fallback_controller,
   gen_json_handler,
-} from "./gen_phx_controller";
+} from "../../generators/gen_phoenix/gen_phx_controller";
 import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
 
-const handle_phx_gen = async (
+const gen_phx = async (
   generator: ImmutableGenerator,
   genTypes: GenTypes,
 ) => {
@@ -30,4 +30,4 @@ const handle_phx_gen = async (
   return res;
 };
 
-export { handle_phx_gen };
+export { gen_phx };

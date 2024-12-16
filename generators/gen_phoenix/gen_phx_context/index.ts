@@ -12,7 +12,7 @@ import { log } from "../../../utils/logger";
 import { plural } from "pluralize";
 
 const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
-  log({ level: 5 }, "Requested Apis: ", requested_apis);
+  log({ level: 7 }, "Requested Apis: ", requested_apis);
   const gen_apis: ApiGenFunction[] = [
     gen_create_apis,
     gen_delete_apis,

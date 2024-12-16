@@ -7,23 +7,18 @@ interface Names {
   singleUpperCamel: string;
   singleSnake: string;
   pluralSnake: string;
+  singleChar: string;
 }
 
 const getNamesFromSingularSnakeCase = (
   singularSnakeStr: string
-): {
-  pluralLowerCamel: string;
-  pluralUpperCamel: string;
-  singleLowerCamel: string;
-  singleUpperCamel: string;
-  singleSnake: string;
-  pluralSnake: string;
-} => {
+): Names => {
   const pluralSnake = pluralizeSnakeCase(singularSnakeStr);
   const singleUpperCamel = toUpperCamel(singularSnakeStr);
   const singleLowerCamel = toLowerCamel(singleUpperCamel);
   const pluralUpperCamel = toUpperCamel(pluralSnake);
   const pluralLowerCamel = toLowerCamel(pluralUpperCamel);
+  const singleChar = singularSnakeStr[0];
 
   return {
     singleSnake: singularSnakeStr,
@@ -32,6 +27,7 @@ const getNamesFromSingularSnakeCase = (
     singleUpperCamel,
     pluralLowerCamel,
     pluralUpperCamel,
+    singleChar,
   };
 };
 
