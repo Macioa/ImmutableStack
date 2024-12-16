@@ -110,7 +110,7 @@ const gen_create_apis: ApiGenFunction = (apis, dict) => {
     def: fn(dict),
     header: header(dict),
   }));
-  log({ level: 2 }, "Gen Create APIS", computed_apis);
+  log({ level: 7 }, "Gen Create APIS", computed_apis);
   const filtered_apis = computed_apis.filter(({ header }) =>
     apis.includes(header),
   );

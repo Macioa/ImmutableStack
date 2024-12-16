@@ -21,9 +21,11 @@ const gen_entity_store = async (
   const stateSource = (typeDict.AppState || typeDict.ImmutableGlobal)["ts"];
   const initialStateSource = typeDict.InitialAppState?.["ts"] || {};
 
-  const typeKeys = Object.keys(typeSource)
-    .map((k) => `${k}: ${typeSource[k]}`)
-    .join(";\n");
+  const typeKeys =
+    "id: number;\n" +
+    Object.keys(typeSource)
+      .map((k) => `${k}: ${typeSource[k]}`)
+      .join(";\n");
   const type = `type ${tstype} = {${typeKeys}}`;
 
   const stateKeys = Object.keys(stateSource)

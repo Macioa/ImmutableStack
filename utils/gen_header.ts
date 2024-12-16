@@ -5,7 +5,7 @@ const compute_header = (
   genFn: (dict: StringOnlyMap) => string,
 ): string => {
   const definition = genFn(dict);
-  log({ level: 5 }, "Generating header for:", definition);
+  log({ level: 6 }, "Generating header for:", definition);
 
   let header = "";
   definition
@@ -15,7 +15,7 @@ const compute_header = (
       (_match: string, _def: string, head: string) => (header = head),
     );
   header = header.replace(/,{0,1}\s*(do){0,1}$/, "").trim();
-  log({ level: 5 }, "Generated header:", header);
+  log({ level: 6 }, "Generated header:", header);
   return header;
 };
 

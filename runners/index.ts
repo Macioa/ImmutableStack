@@ -46,7 +46,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
 
   cacheLogCommand({ command, dir }, caller);
 
-  log({ level: 4, color: "YELLOW" }, `Executing: ${command}`);
+  log({ level: 2, color: "YELLOW" }, `Executing: ${command}`);
   log({ level: 4 }, `      in ${dir}...`);
 
   return new Promise((resolve, reject) => {
