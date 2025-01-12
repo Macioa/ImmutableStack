@@ -12,7 +12,6 @@ import { routes as create_routes } from "./create_route";
 import { routes as update_routes } from "./update_route";
 import { routes as delete_routes } from "./delete_route";
 import { route as custom_route } from "./custom_route";
-import { gen_fallback_controller } from "./gen_fallback_controller";
 import { gen_json_handler } from "./gen_json_handler";
 import { log } from "../../../utils/logger";
 
@@ -81,6 +80,7 @@ const gen_phx_controller = async (
 defmodule ${AppNameCamel}Web.${name} do
 use ${AppNameCamel}Web, :controller
 plug ${AppNameCamel}.Plugs.ListAsJSON
+plug ${AppNameCamel}.Plugs.ValidateBinaryId, fallback: ${AppNameCamel}Web.FallbackController
 
 alias ${AppNameCamel}.Utils.Paginate
 alias ${AppNameCamel}.Utils.MapUtil
@@ -116,4 +116,4 @@ interface ImmRoute {
   header: (args: StringOnlyMap) => string;
 }
 export type { ImmRoute };
-export { gen_phx_controller, gen_fallback_controller, gen_json_handler };
+export { gen_phx_controller, gen_json_handler };

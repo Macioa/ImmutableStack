@@ -1,3 +1,10 @@
+/*
+** Immutable Init **
+    Initialize a new project with Immutable Stack
+      - requires a project name as an argument    
+*/
+
+
 import { join } from "path";
 import { log, setLogLevel } from "./utils/logger";
 import { execute as exec } from "./runners";
