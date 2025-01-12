@@ -11,6 +11,8 @@ import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_
 import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
 import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix/inject_deps_get_aliases_to_mix_exs";
 import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
+import { gen_fallback_controller } from "../../generators/init_phoenix/gen_fallback_controller";
+import { gen_id_validation_plug } from "../../generators/init_phoenix/gen_id_validation_plug";
 
 const init_phoenix_umbrella_app = async ({
   projectName,
@@ -21,7 +23,7 @@ const init_phoenix_umbrella_app = async ({
 }: StringOnlyMap) => {
   validate(
     { projectName, projectNameCamel, umbrellaDir, libdir, webdir },
-    "init_phoenix_umbrella_app",
+    "init_phoenix_umbrella_app"
   );
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
   const init = await exec(
@@ -29,7 +31,7 @@ const init_phoenix_umbrella_app = async ({
       command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
       dir: ".",
     },
-    "init_phoenix_umbrella_app",
+    "init_phoenix_umbrella_app"
   );
   const declarations = await inject_app_declarations(projectName, umbrellaDir);
   const tasks = await Promise.all([
@@ -38,6 +40,12 @@ const init_phoenix_umbrella_app = async ({
     inject_dev_config(projectName, umbrellaDir),
     inject_scrinever({ LibDir: libdir, AppNameSnake: projectName }),
     gen_phx_utils(projectNameCamel, libdir),
+    gen_id_validation_plug(projectNameCamel, libdir),
+    gen_fallback_controller({
+      WebDir: webdir,
+      AppNameCamel: projectNameCamel,
+      AppNameSnake: projectName,
+    }),
   ]);
   const configure = await configure_phoenix_to_serve_react({
     AppName: projectName,
@@ -51,7 +59,7 @@ const init_phoenix_umbrella_app = async ({
   });
   const depsget = await inject_deps_get_aliases_to_mix_exs(
     projectName,
-    umbrellaDir,
+    umbrellaDir
   );
 
   return [init, declarations, tasks, configure, format, depsget].flat();

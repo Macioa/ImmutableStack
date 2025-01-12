@@ -1,18 +1,15 @@
 import { join } from "path";
-import { ImmutableGenerator } from "../../../immutable_gen";
-import { generateFile } from "../../index";
+import { generateFile } from "../index";
+import { StringOnlyMap } from "../../utils/map";
 
-const gen_fallback_controller = async (
-  generator: ImmutableGenerator,
-  _typeDict: any,
-) => {
-  const { WebDir, AppNameCamel, AppNameSnake } = generator;
-  const { generate } = generator;
-  const { http_controller } = generate;
-
+const gen_fallback_controller = async ({
+  WebDir,
+  AppNameCamel,
+  AppNameSnake,
+}: StringOnlyMap) => {
   const fallbackControllerPath = join(
     WebDir || ".",
-    `lib/${AppNameSnake}_web/controllers`,
+    `lib/${AppNameSnake}_web/controllers`
   );
 
   const content = `
@@ -47,6 +44,18 @@ defmodule ${AppNameCamel}Web.FallbackController do
     |> render(:"404")
   end
 
+  def call(conn, {:error, status, error}) when is_atom(error) do
+    conn
+    |> put_status(status)
+    |> json(%{error: Atom.to_string(error)})
+  end
+
+  def call(%Plug.Conn{private: %{plug_error: %{status: status, message: message}}} = conn) do
+    conn
+    |> put_status(status)
+    |> json(%{error: message})
+  end
+
   def error_transform(changesets) when is_list(changesets),
     do: changesets |> Enum.map(&error_transform/1)
 
@@ -59,16 +68,14 @@ defmodule ${AppNameCamel}Web.FallbackController do
 end
 `;
 
-  return http_controller
-    ? generateFile(
-        {
-          dir: fallbackControllerPath,
-          filename: "fallback_controller.ex",
-          content,
-        },
-        "gen_fallback_controller",
-      )
-    : false;
+  return generateFile(
+    {
+      dir: fallbackControllerPath,
+      filename: "fallback_controller.ex",
+      content,
+    },
+    "gen_fallback_controller"
+  );
 };
 
 export { gen_fallback_controller };

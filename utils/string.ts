@@ -7,7 +7,7 @@ interface Names {
   singleUpperCamel: string;
   singleSnake: string;
   pluralSnake: string;
-  singleChar: string;
+  singleChar?: string;
 }
 
 const getNamesFromSingularSnakeCase = (

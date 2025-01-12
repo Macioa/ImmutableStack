@@ -3,7 +3,6 @@ import { gen_phx_contex } from "../../generators/gen_phoenix/gen_phx_context";
 import { inject_router } from "../../injectors/gen_phoenix/inject_router";
 import {
   gen_phx_controller,
-  gen_fallback_controller,
   gen_json_handler,
 } from "../../generators/gen_phoenix/gen_phx_controller";
 import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
@@ -21,7 +20,6 @@ const gen_phx = async (
     res.push(
       Promise.all([
         gen_phx_controller(generator, genTypes),
-        gen_fallback_controller(generator, genTypes),
         gen_json_handler(generator, genTypes),
         inject_router(generator),
       ]),

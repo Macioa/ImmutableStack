@@ -1,76 +1,78 @@
 import { join } from "path";
-import { ImmutableGenerator } from "../../immutable_gen";
-import pluralize from "pluralize";
+import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
 import { generateFile } from "../index";
 
 const gen_entity_requests = async (
   generator: ImmutableGenerator,
-  typeDict: any
+  _typeDict: GenTypes
 ) => {
-  const { name, generate, AppNameCamel, LibDir } = generator;
-  const { singleUpperCamel: entityNameSingleUpperCamel } = name;
-  const { tstype } = generate;
+  const { name, generate, AppNameCaps, LibDir } = generator;
+  const {
+    singleUpperCamel,
+    singleLowerCamel,
+    pluralUpperCamel,
+    singleSnake,
+  } = name;
+  const { requests } = generate;
   const filedir = join(LibDir || "", "lib/typescript/requests/");
 
   const content = `
 import { Dispatch } from "redux";
 import { Request } from "./index";
-import { ${tstype}, set${tstype}, set${pluralize(
-    tstype as string
-  )} } from "../state/${entityNameSingleUpperCamel}";
+import { ${singleUpperCamel}, set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";
 
-const request${tstype} = (id: string, dispatch: Dispatch) => {
+const request${singleUpperCamel} = (id: string, dispatch: Dispatch) => {
   Request.API({
-    name: "fetch${tstype}",
-    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
-    route: \`${pluralize(tstype as string).toLowerCase()}/\${id}\`,
-    callback: (res: any) => dispatch(set${tstype}(res.data))
+    name: "fetch${singleUpperCamel}",
+    api_url_key: "${AppNameCaps}_API_URL",
+    route: \`${singleSnake}/\${id}\`,
+    callback: (res: any) => dispatch(set${singleUpperCamel}(res.data))
   }, dispatch);
 };
 
-const request${pluralize(tstype as string)} = (dispatch: Dispatch) => {
+const request${pluralUpperCamel} = (dispatch: Dispatch) => {
   return Request.API({
-    name: "fetch${pluralize(tstype as string)}",
-    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
-    route: \`${pluralize(tstype as string).toLowerCase()}\`,
-    callback: (res: any) => dispatch(set${pluralize(
-      tstype as string
-    )}(res.data)),
+    name: "fetch${pluralUpperCamel}",
+    api_url_key: "${AppNameCaps}_API_URL",
+    route: \`${singleSnake}\`,
+    callback: (res: any) => dispatch(set${pluralUpperCamel}(res.data)),
   }, dispatch);
 };
 
-const update${tstype} = (${tstype?.toLowerCase()}: ${tstype}, dispatch: Dispatch) => {
+const update${singleUpperCamel} = (${singleLowerCamel}: ${singleUpperCamel}, dispatch: Dispatch) => {
   Request.API({
-    name: "update${tstype}",
-    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
-    route: "${tstype?.toLowerCase()}",
+    name: "update${singleUpperCamel}",
+    api_url_key: "${AppNameCaps}_API_URL",
+    route: "${singleSnake}",
     options: {
       method: "PUT",
-      body: JSON.stringify(${tstype?.toLowerCase()}),
+      body: JSON.stringify(${singleLowerCamel}),
     },
     callback: (_data: any) => null,
   }, dispatch);
 };
 
-const delete${tstype} = (id: string, dispatch: Dispatch) => {
+const delete${singleUpperCamel} = (id: string, dispatch: Dispatch) => {
   Request.API({
-    name: "delete${tstype}",
-    api_url_key: "${AppNameCamel?.toUpperCase()}_API_URL",
-    route: \`${tstype?.toLowerCase()}/\${id}\`,
+    name: "delete${singleUpperCamel}",
+    api_url_key: "${AppNameCaps}_API_URL",
+    route: \`${singleSnake}/\${id}\`,
     options: {
       method: "DELETE",
     },
   }, dispatch);
 };
 
-export { request${tstype}, request${pluralize(
-    tstype as string
-  )}, update${tstype}, delete${tstype} };
+export { request${singleUpperCamel}, request${pluralUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
 `;
-  return generateFile(
-    { dir: filedir, filename: `${entityNameSingleUpperCamel}.tsx`, content },
-    "gen_entity_requests"
-  );
+
+
+  return requests
+    ? generateFile(
+        { dir: filedir, filename: `${singleUpperCamel}.tsx`, content },
+        "gen_entity_requests"
+      )
+    : null;
 };
 
 export { gen_entity_requests };

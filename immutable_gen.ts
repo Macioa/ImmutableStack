@@ -1,3 +1,9 @@
+/*
+** Immutable Generator **
+    Generate elixir and react code from a genfile
+      - requires a genfile path as an argument
+*/
+
 import * as path from "path";
 
 import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";

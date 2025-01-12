@@ -1,3 +1,9 @@
+/*
+** Immutable GenFile **
+    Generate a genfile for the immutable generator
+          - requires a entity name as an argument
+*/
+
 import fs from "fs";
 import { join } from "path";
 import { getNamesFromSingularSnakeCase as getNames } from "./utils/string";
