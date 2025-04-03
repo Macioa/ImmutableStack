@@ -98,12 +98,18 @@ const update_single = ({ genName }: StringOnlyMap) => {
   validate({ genName }, "update_single");
   return `
 def update_${genName}(attrs) when is_map(attrs) do
-  changeset =
-    MapUtil.get(attrs, :id)
-    |> get_${genName}!()
-    |> change_${genName}(attrs)
+  id = MapUtil.get(attrs, :id)
 
-  if changeset.valid?, do: Repo.update(changeset)
+  if id == nil do
+    create_${genName}(attrs)
+  else
+    changeset =
+      MapUtil.get(attrs, :id)
+      |> get_${genName}!()
+      |> change_${genName}(attrs)
+
+    if changeset.valid?, do: Repo.update(changeset)
+  end
 end
 `;
 };

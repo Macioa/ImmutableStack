@@ -74,7 +74,7 @@ const defaultOptions = {
   },
 };
 
-const requestAPI = async (details: requestAPIinterface, dispatch: Dispatch) => {
+const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
   const { name, api_url_key, route, options, callback } = details;
   const req = new Promise<any>(async (resolve, reject) => {
 
@@ -84,7 +84,6 @@ const requestAPI = async (details: requestAPIinterface, dispatch: Dispatch) => {
       dispatch(completeRequest(name));
     };
     const handleSuccess = (data: any, res: Function) => {
-        callback && callback(["hello"])
       if (callback) callback(data);
       res(data);
       dispatch(completeRequest(name));
@@ -110,9 +109,10 @@ const requestAPI = async (details: requestAPIinterface, dispatch: Dispatch) => {
   });
 
   dispatch(addRequest({ name, details, request: req }));
+  return (await req).data;
 };
 
-const Request = { API: requestAPI };
+const Request = { API };
 
 export const { addRequest, completeRequest } = requestSlice.actions;
 export type { AppRequest, RequestsStoreState, requestAPIinterface, GenericAppState };

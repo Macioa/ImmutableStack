@@ -27,7 +27,7 @@ const gen_show_demo_component = async (
     .join(" ");
 
   const content = `
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { Dispatch } from "redux";
 import { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
@@ -41,7 +41,7 @@ export const ${singleUpperCamel}Render = ({ ${singleLowerCamel} }: ${singleUpper
   <div>
     <h4>${singleUpperCamel}:</h4>
     <p>
-      \`${properties}\`
+      {\`${properties}\`}
     </p>
   </div>
 );

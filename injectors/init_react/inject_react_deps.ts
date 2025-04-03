@@ -11,7 +11,8 @@ const inject_react_deps = async (UiDir: string) => {
     "@reduxjs/toolkit": "^2.3.0",
     "@types/react-redux": "^7.1.34",
     "deepmerge": "^4.3.1",
-    "react-redux": "^9.1.2",`,
+    "react-redux": "^9.1.2",
+    "mincurrypipe": "^3.0.0",`,
     ],
     [
       InjectType.AFTER,

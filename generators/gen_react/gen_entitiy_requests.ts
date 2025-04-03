@@ -21,25 +21,25 @@ import { Dispatch } from "redux";
 import { Request } from "./index";
 import { ${singleUpperCamel}, set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";
 
-const request${singleUpperCamel} = (id: string, dispatch: Dispatch) => {
+const request${singleUpperCamel} = (id: string, dispatch: Dispatch) => 
   Request.API({
     name: "fetch${singleUpperCamel}",
     api_url_key: "${AppNameCaps}_API_URL",
     route: \`${singleSnake}/\${id}\`,
     callback: (res: any) => dispatch(set${singleUpperCamel}(res.data))
   }, dispatch);
-};
 
-const request${pluralUpperCamel} = (dispatch: Dispatch) => {
-  return Request.API({
+
+const request${pluralUpperCamel} = (dispatch: Dispatch) => 
+  Request.API({
     name: "fetch${pluralUpperCamel}",
     api_url_key: "${AppNameCaps}_API_URL",
     route: \`${singleSnake}\`,
     callback: (res: any) => dispatch(set${pluralUpperCamel}(res.data)),
   }, dispatch);
-};
 
-const update${singleUpperCamel} = (${singleLowerCamel}: ${singleUpperCamel}, dispatch: Dispatch) => {
+
+const update${singleUpperCamel} = (${singleLowerCamel}: ${singleUpperCamel}, dispatch: Dispatch) => 
   Request.API({
     name: "update${singleUpperCamel}",
     api_url_key: "${AppNameCaps}_API_URL",
@@ -50,9 +50,9 @@ const update${singleUpperCamel} = (${singleLowerCamel}: ${singleUpperCamel}, dis
     },
     callback: (_data: any) => null,
   }, dispatch);
-};
 
-const delete${singleUpperCamel} = (id: string, dispatch: Dispatch) => {
+
+const delete${singleUpperCamel} = (id: string, dispatch: Dispatch) => 
   Request.API({
     name: "delete${singleUpperCamel}",
     api_url_key: "${AppNameCaps}_API_URL",
@@ -61,7 +61,7 @@ const delete${singleUpperCamel} = (id: string, dispatch: Dispatch) => {
       method: "DELETE",
     },
   }, dispatch);
-};
+
 
 export { request${singleUpperCamel}, request${pluralUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
 `;
