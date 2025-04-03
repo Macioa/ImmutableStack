@@ -21,7 +21,7 @@ const addReducerToGlobal = async (generator: ImmutableGenerator) => {
     ],
     [
       InjectType.AFTER,
-      /type\s+[A-Za-z]+State\s+\=\s+\{/,
+      /type\s+[A-Za-z0-9_]+State\s+\=\s+\{/,
       `\n  ${singleUpperCamel}Store: ${appstate};`,
     ],
   ];

@@ -21,7 +21,7 @@ const createPropertyField = (
   <input
     type="${JsToInputType[type as keyof typeof JsToInputType] || "text"}"
     name="${name}"
-    value={${singleLowerCamel}?.${name}}
+    value={${singleLowerCamel}?.${name} ?? ""}
     onChange={onChange}
   />
   `;
