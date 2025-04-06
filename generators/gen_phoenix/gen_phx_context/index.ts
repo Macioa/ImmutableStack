@@ -9,7 +9,6 @@ import { gen_list_apis } from "./list";
 import { gen_update_apis } from "./update";
 import { api as custom_api } from "./custom";
 import { log } from "../../../utils/logger";
-import { plural } from "pluralize";
 
 const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
   log({ level: 7 }, "Requested Apis: ", requested_apis);
@@ -43,7 +42,7 @@ const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
   return computed + "\n" + custom_apis;
 };
 
-const gen_phx_contex = async (
+const gen_phx_context = async (
   generator: ImmutableGenerator,
   _typeDict: any,
 ) => {
@@ -125,7 +124,7 @@ end
       filename: `${snakeController}.ex`,
       content,
     },
-    "gen_phx_contex",
+    "gen_phx_context",
   );
 };
 
@@ -149,4 +148,4 @@ interface ApiGenFunction {
   };
 }
 export type { ImmAPI, ApiIdMap, ApiGenFunction };
-export { gen_phx_contex };
+export { gen_phx_context };
