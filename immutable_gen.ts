@@ -101,13 +101,26 @@ const main = async () => {
   const { generator, genTypes } = await readGenFile(filePath);
   setUmbrellaDirCache(generator.UmbrellaDir || "./");
 
-  log({ level: 2, color: "BLUE" }, `\nGenerating server components...`);
-  await gen_phx(generator, genTypes)
-
   log({ level: 2, color: "BLUE" }, `\nGenerating front end components...`);
   await gen_react(generator, genTypes);
 
-  writeLog(generator.UmbrellaDir || "./", `generate_${generator.name.singleSnake}`);
+  log({ level: 2, color: "BLUE" }, `\nGenerating server components...`);
+  await gen_phx(generator, genTypes);
+
+  writeLog(
+    generator.UmbrellaDir || "./",
+    `generate_${generator.name.singleSnake}`
+  );
+
+  log(
+    { level: 1, color: "GREEN" },
+    `\n\Generation Complete.\n\nGenerated ${generator.name.pluralUpperCamel}\n`
+  );
+  log({ level: 1, color: "BLUE" }, `    in ${generator.LibDir}/lib\n\n`);
+  log(
+    { level: 2, color: "YELLOW" },
+    "\nDon't forget to update your repository by running migrations:\n    mix ecto.migrate"
+  );
 };
 
 main().catch(console.error);
