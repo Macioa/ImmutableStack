@@ -119,8 +119,9 @@ const main = async () => {
   log({ level: 1, color: "BLUE" }, `    in ${generator.LibDir}/lib\n\n`);
   log(
     { level: 2, color: "YELLOW" },
-    "\nDon't forget to update your repository by running migrations:\n    mix ecto.migrate"
+    "\nDon't forget to update your repository by running migrations:"
   );
+  log({ level: 3, color: "BLUE" }, `    mix ecto.migrate\n`);
 };
 
 main().catch(console.error);
