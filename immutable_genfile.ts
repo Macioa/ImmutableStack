@@ -7,6 +7,7 @@
 import fs from "fs";
 import { join } from "path";
 import { getNamesFromSingularSnakeCase as getNames } from "./utils/string";
+import { log } from "./utils/logger";
 
 const [, , genName] = process.argv;
 const file = join(process.cwd(), `.genfile_${genName}.ts`);
@@ -283,7 +284,8 @@ export type {
 `;
   fs.writeFileSync(`.genfile_${genName}.ts`, tsContent, "utf8");
 
-  console.log(`Created .genfile_${genName}.ts`);
+  log({ level: 1, color: "GREEN" }, `\nCreated .genfile_${genName}.ts`);
+  log({ level: 1, color: "BLUE" }, `    in ${file}\n\n`);
 };
 
 const update_genfile = () => {
@@ -321,7 +323,8 @@ const update_genfile = () => {
 
   fs.writeFileSync(`.genfile_${genName}.ts`, updatedContent, "utf8");
 
-  console.log(`Updated .genfile_${genName}.ts`);
+  log({ level: 1, color: "GREEN" }, `\nUpdated .genfile_${genName}.ts`);
+  log({ level: 1, color: "BLUE" }, `    in ${file}\n\n`);
 };
 
 main();
