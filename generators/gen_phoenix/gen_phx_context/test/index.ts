@@ -31,7 +31,7 @@ const gen_api_tests = (
       const { computed, remaining_apis } = acc;
       log({ level: 8 }, "APIFN COM", computed);
       log({ level: 8 }, "APIFN REM", remaining_apis);
-      log({ level: 1 }, "APIFN RES", apiFn(remaining_apis, gen_ref_data));
+      log({ level: 8 }, "APIFN RES", apiFn(remaining_apis, gen_ref_data));
             const { result, remaining_apis: new_remaining } = apiFn(
         remaining_apis,
         gen_ref_data
