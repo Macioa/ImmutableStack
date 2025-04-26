@@ -36,7 +36,7 @@ const gen_entity_store = async (
   const factoryFunKeys = Object.keys(typeSource)
     .map((k) => `${k}: ${loremFunctions(typeSource[k])}`)
     .join(",\n");
-  const factoryFun = `const ${tstype}Factory = (params: object): ${tstype} => {
+  const factoryFun = `const ${tstype}Factory = (params: object = {}): ${tstype} => {
     const ${entityNameSingleUpperCamel} = {${factoryFunKeys}};
     return Object.assign(${entityNameSingleUpperCamel}, params) as ${tstype};
 }`;

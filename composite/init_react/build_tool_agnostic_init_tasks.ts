@@ -5,6 +5,10 @@ import { inject_redux_provider } from "../../injectors/init_react/inject_redux_p
 import { StringOnlyMap, validate } from "../../utils/map";
 import { inject_package_scripts } from "../../injectors/init_react/inject_package_scripts";
 import { inject_react_deps } from "../../injectors/init_react/inject_react_deps";
+import {
+  gen_jest_config,
+  gen_jest_setup,
+} from "../../generators/init_react/gen_jest_configs";
 
 const build_tool_agnostic_init_tasks = async ({
   projectName,
@@ -14,7 +18,7 @@ const build_tool_agnostic_init_tasks = async ({
 }: StringOnlyMap) => {
   validate(
     { projectName, projectNameCamel, uidir, libdir },
-    "build_tool_agnostic_init_tasks",
+    "build_tool_agnostic_init_tasks"
   );
   const tasks = await Promise.all([
     gen_store(projectNameCamel, uidir),
@@ -23,6 +27,8 @@ const build_tool_agnostic_init_tasks = async ({
     gen_request_lib(libdir),
     inject_package_scripts(projectName, uidir),
     inject_react_deps(uidir),
+    gen_jest_config(projectName, uidir),
+    gen_jest_setup(uidir),
   ]).catch(console.error);
 
   return [tasks].flat();

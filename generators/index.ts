@@ -16,13 +16,9 @@ const generateFile = async (
   caller: string | null = null,
 ) => {
   cacheLog({ filename, dir }, caller);
-  const fileWithSubtext = filename.replace(
-    /(.*)\.(\w+)$/,
-    (_match, file, extension) => `${file.replace(/\./g, "/")}.${extension}`,
-  );
   const path = resolve(dir),
-    file = join(dir, fileWithSubtext);
-  log({ level: 3 }, `Generating ${fileWithSubtext} ...`);
+    file = join(dir, filename);
+  log({ level: 3 }, `Generating ${filename} ...`);
   log({ level: 9 }, content);
 
   mkdirSync(path, { recursive: true });
