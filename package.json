@@ -11,7 +11,7 @@
     "b_links": "esbuild immutable_links.ts --bundle --minify --outfile=.build/links.js --platform=node",
     "b_bash": "mkdir -p .build && cp start_macos.sh dev_kit_macos.sh versions.sh gen_toolkit.sh .build/",
     "build": "tsc && npm run b_genhandle && npm run b_genfile && npm run b_init && npm run b_bash && npm run b_gentemplate && npm run b_links",
-    "zip": "VERSION=\"v0.3.221\"; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_IMM_PATH\"",
+    "zip": "VERSION=\"v0.3.245\"; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_IMM_PATH\"",
     "p": "npm run build && npm run zip"
   },
   "keywords": [],
