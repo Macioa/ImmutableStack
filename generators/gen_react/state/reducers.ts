@@ -1,6 +1,7 @@
+import { randomUUID } from "crypto";
 import { ImmutableGenerator } from "../../../immutable_gen";
-import { StringOnlyMap } from "../../../utils/map";
 import { log } from "../../../utils/logger";
+import { StringOnlyMap } from "../../../utils/map";
 
 const setOne = ({
   singleUpperCamel,
@@ -81,36 +82,54 @@ const get_reducers = (generator: ImmutableGenerator) => {
   );
   log({ level: 8 }, { generatedReducers });
 
-  const red = reducers?.map(
+  const processedReducers = reducers?.map(
     (reducer) =>
       generatedReducers.find((r) => reducer === r.header)?.definition ||
       customReducer(reducer)
   ) as string[];
-  log({ level: 8 }, { red });
-  return red;
+  log({ level: 8 }, { processedReducers });
+  return processedReducers;
 };
+
+const mark_reducers = (reducers: string[]) =>
+  reducers.map((r) => {
+    const id = randomUUID();
+    const tag = `\n// ** IMMUTABLE  REDUCER #${id} **\n`;
+    return `${tag}${r}${tag}`;
+  });
 
 const get_reducer_exports = (reducers: string[]) =>
   reducers?.map((r) => typeof r === "string" && r.match(/^\w+/)?.[0]);
 
-const get_reducer_tests = async (generator: ImmutableGenerator) => {
+const get_reducer_tests = (generator: ImmutableGenerator) => {
   const { name, generate } = generator;
   const reducers = generate?.stateSlice?.reducers,
     appstate = generate?.appstate || "";
-  log({ level: 1 }, { reducers });
+  log({ level: 8 }, { reducers });
   const generatedReducerTests = [setOneTest, setManyTest].map((reducer) =>
     reducer({ ...name, appstate })
   );
-  log({ level: 1 }, { generatedReducerTests });
-  const red = reducers?.map(
+  log({ level: 8 }, { generatedReducerTests });
+  const processedReducerTests = reducers?.map(
     (reducer) =>
       generatedReducerTests.find(({ header }) => reducer === header)
         ?.definition || customReducerTest(reducer)
   ) as string[];
 
-  log({ level: 1 }, { red });
-
-  return red;
+  log({ level: 8 }, { processedReducerTests });
+  return processedReducerTests;
 };
+const mark_reducer_tests = (reducerTests: string[]) =>
+  reducerTests.map((r) => {
+    const id = randomUUID();
+    const tag = `\n// ** IMMUTABLE  REDUCER TEST #${id} **\n`;
+    return `${tag}${r}${tag}`;
+  });
 
-export { get_reducer_exports, get_reducer_tests, get_reducers };
+export {
+  get_reducer_exports,
+  get_reducer_tests,
+  get_reducers,
+  mark_reducer_tests,
+  mark_reducers,
+};

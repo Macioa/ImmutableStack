@@ -1,6 +1,7 @@
+import { randomUUID } from "crypto";
 import { ImmutableGenerator } from "../../../immutable_gen";
-import { StringOnlyMap } from "../../../utils/map";
 import { log } from "../../../utils/logger";
+import { StringOnlyMap } from "../../../utils/map";
 
 const getOne = ({ singleUpperCamel, singleLowerCamel }: StringOnlyMap) => ({
   header: `select${singleUpperCamel} = (state: GenericAppState)`,
@@ -61,15 +62,26 @@ const get_selectors = (generator: ImmutableGenerator) => {
     selector({ ...name, appstate })
   );
 
-  return selectors?.map(
+  const processedSelectors = selectors?.map(
     (selector) =>
       generatedSelectors.find((r) => selector === r.header)?.definition ||
       customSelector(selector)
-  ) as string[];
+  );
+
+  return processedSelectors;
 };
 
+const mark_selectors = (selectors: string[]) =>
+  selectors.map((s) => {
+    const id = randomUUID();
+    const tag = `\n// ** IMMUTABLE  SELECTOR #${id} **\n`;
+    return `${tag}${s}${tag}`;
+  });
+
 const get_selector_exports = (selectors: string[]) =>
-  selectors?.map((r) => typeof r === "string" && r.match(/(?<=\bconst\s)\w+/)?.[0]);
+  selectors?.map(
+    (r) => typeof r === "string" && r.match(/(?<=\bconst\s)\w+/)?.[0]
+  );
 
 const get_selector_tests = async (generator: ImmutableGenerator) => {
   const { name, generate } = generator;
@@ -82,15 +94,28 @@ const get_selector_tests = async (generator: ImmutableGenerator) => {
   );
 
   log({ level: 8 }, { generatedSelectorTests });
-  const sel = selectors?.map(
+  const processedSelectorTests = selectors?.map(
     (selector) =>
       generatedSelectorTests.find((r) => selector === r.header)?.definition ||
       customSelectorTest(selector)
-  ) as string[];
+  );
 
-  log({ level: 8 }, { sel });
+  log({ level: 8 }, { processedSelectorTests });
 
-  return sel;
+  return processedSelectorTests;
 };
 
-export { get_selector_exports, get_selector_tests, get_selectors };
+const mark_selector_tests = (selector_tests: string[]) =>
+  selector_tests.map((s) => {
+    const id = randomUUID();
+    const tag = `\n// ** IMMUTABLE  SELECTOR TEST #${id} **\n`;
+    return `${tag}${s}${tag}`;
+  });
+
+export {
+  get_selector_exports,
+  get_selector_tests,
+  get_selectors,
+  mark_selector_tests,
+  mark_selectors,
+};

@@ -1,10 +1,15 @@
+import { randomUUID } from "crypto";
 import { join } from "path";
 import { GenTypes, ImmutableGenerator } from "../../../immutable_gen";
 import { log } from "../../../utils/logger";
 import { loremFunctions } from "../../../utils/lorem";
 import { generateFile } from "../../index";
-import { get_reducer_exports, get_reducers } from "./reducers";
-import { get_selector_exports, get_selectors } from "./selectors";
+import { get_reducer_exports, get_reducers, mark_reducers } from "./reducers";
+import {
+  get_selector_exports,
+  get_selectors,
+  mark_selectors,
+} from "./selectors";
 import { generate_entity_state_tests } from "./test";
 
 const gen_entity_store = async (
@@ -26,45 +31,52 @@ const gen_entity_store = async (
   const reducers = get_reducers(generator);
   const reducerExports = get_reducer_exports(reducers);
   const selectors = get_selectors(generator);
-  const selectorExports = get_selector_exports(selectors);
+  const selectorExports = get_selector_exports(selectors || []);
 
   const typeKeys =
     "id: number;\n" +
     Object.keys(typeSource || {})
       .map((k) => `${k}: ${typeSource?.[k]}`)
       .join(";\n");
-  const type = `type ${tstype} = {${typeKeys}}`;
+  const typeInit = `type ${tstype} = {${typeKeys}}`;
+  const typeId = randomUUID();
+  const type = `\n// ** IMMUTABLE ${name.singleUpperCamel} TYPEDEF ${typeId} **\n${typeInit}\n// ** IMMUTABLE ${name.singleUpperCamel} TYPEDEF ${typeId} **\n`;
 
   const stateKeys = Object.keys(stateSource || {})
     .map((k) => `${k}: ${stateSource?.[k]}`)
     .join(";\n");
-  const state = `interface ${appstate} {${stateKeys}}`;
+  const stateid = randomUUID();
+  const state = `\n// ** IMMUTABLE ${name.singleUpperCamel} APPSTATE ${stateid} **\ninterface ${appstate} {${stateKeys}}\n// ** IMMUTABLE ${name.singleUpperCamel} APPSTATE ${stateid} **\n`;
 
   const factoryFunKeys = Object.keys(typeSource || {})
     //@ts-ignore
     .map((k) => `${k}: ${loremFunctions(typeSource?.[k])}`)
     .join(",\n");
-  const factoryFun = `const ${tstype}Factory = (params: object = {}): ${tstype} => {
+  const factoryFunInit = `const ${tstype}Factory = (params: object = {}): ${tstype} => {
     const ${entityNameSingleUpperCamel} = {${factoryFunKeys}};
     return Object.assign(${entityNameSingleUpperCamel}, params) as ${tstype};
 }`;
+  const factoryId = randomUUID();
+  const factoryFun = `\n// ** IMMUTABLE ${name.singleUpperCamel} FACTORY ${factoryId} **\n${factoryFunInit}\n// ** IMMUTABLE ${name.singleUpperCamel} FACTORY ${factoryId} **\n`;
 
   const initialStateKeys = Object.keys(initialStateSource)
     .map((k) => `${k}: ${(initialStateSource as { [key: string]: any })[k]}`)
     .join(",\n");
-  const initialState = `const initial${appstate}State: ${entityNameSingleUpperCamel}StoreState = {${initialStateKeys}}`;
+  const initialStateInit = `const initial${appstate}State: ${entityNameSingleUpperCamel}StoreState = {${initialStateKeys}}`;
+  const initialStateId = randomUUID();
+  const initialState = `\n// ** IMMUTABLE ${name.singleUpperCamel} INITIAL STATE ${initialStateId} **\n${initialStateInit}\n// ** IMMUTABLE ${name.singleUpperCamel} INITIAL STATE ${initialStateId} **\n`;
 
   const Slice = `
 const ${sliceName} = createSlice({
       name: "${entityNameSingleUpperCamel}",
       initialState: initial${appstate}State,
       reducers: {
-        ${get_reducers(generator)}
+        ${mark_reducers(get_reducers(generator))}
       },
     });
 const ${entityNameSingleUpperCamel}Reducer = ${sliceName}.reducer;
 
-${selectors.join("\n")}
+${mark_selectors(selectors || [])?.join("\n")}
 `;
 
   const exportVars = [
@@ -91,6 +103,13 @@ ${selectors.join("\n")}
     .filter((v) => !!v)
     .join("\n");
 
+  const genericAppStateInit = `
+  interface GenericAppState {
+    ${entityNameSingleUpperCamel}Store: ${entityNameSingleUpperCamel}StoreState;
+    [key: string]: any;
+}`;
+const genericAppStateId = randomUUID();
+  const genericAppState = `\n// ** IMMUTABLE ${name.singleUpperCamel} GENERIC APPSTATE ${genericAppStateId} **\n${genericAppStateInit}\n// ** IMMUTABLE ${name.singleUpperCamel} GENERIC APPSTATE ${genericAppStateId} **\n`;
   // ****** File Summary ******
 
   const content = `
@@ -103,10 +122,7 @@ ${appstate ? `\n${initialState}\n` : ""}
 ${factory ? `\n${factoryFun}\n` : ""}
 ${sliceName ? `\n${Slice}\n` : ""}
 
-interface GenericAppState {
-    ${entityNameSingleUpperCamel}Store: ${entityNameSingleUpperCamel}StoreState;
-    [key: string]: any;
-}
+${genericAppState}
 
 ${exports}
 `;
@@ -116,7 +132,7 @@ ${exports}
       { dir: filedir, filename: `${entityNameSingleUpperCamel}.tsx`, content },
       "gen_entity_store"
     ),
-    generate_entity_state_tests(generator, reducers, selectors),
+    generate_entity_state_tests(generator, reducers, selectors || []),
   ]);
 };
 
