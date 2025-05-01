@@ -1,12 +1,10 @@
-import { join } from "path";
-import {
-  clearSettings,
-  readSettings,
-  updateSetting,
-  getSetting,
-} from "./utils/settings/settings";
 import { log, setLogLevel } from "./utils/logger";
-import { get } from "http";
+import {
+    clearSettings,
+    getSetting,
+    readSettings,
+    updateSetting,
+} from "./utils/settings";
 
 setLogLevel(3);
 
@@ -34,7 +32,7 @@ const main = async () => {
     return;
   }
   const newSettings: [string, string][] = chunk2(
-    args.map((a) => a.replace(/[:-]/g, ""))
+    args.map((a) => a.replace(/[:,]/g, ""))
   );
   const stngs = newSettings.reduce(
     (acc: Record<string, string>, [key, value]) => {

@@ -94,7 +94,7 @@ const get_reducers = (generator: ImmutableGenerator) => {
 const mark_reducers = (reducers: string[]) =>
   reducers.map((r) => {
     const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  REDUCER #${id} **\n`;
+    const tag = `\n// ** IMMUTABLE  REDUCER ${id} **\n`;
     return `${tag}${r}${tag}`;
   });
 
@@ -122,7 +122,7 @@ const get_reducer_tests = (generator: ImmutableGenerator) => {
 const mark_reducer_tests = (reducerTests: string[]) =>
   reducerTests.map((r) => {
     const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  REDUCER TEST #${id} **\n`;
+    const tag = `\n// ** IMMUTABLE  REDUCER TEST ${id} **\n`;
     return `${tag}${r}${tag}`;
   });
 

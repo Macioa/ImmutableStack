@@ -1,8 +1,8 @@
-import { RepairFn } from '..'
+import { API_Fn } from '..'
 import openai from './openai'
 
 interface Adapters {
-    [key: string]: RepairFn
+    [key: string]: API_Fn
 }
 
 const adapters: Adapters = {
@@ -10,4 +10,4 @@ const adapters: Adapters = {
 }
 
 export default adapters
-export type { RepairFn }
+export type { API_Fn }

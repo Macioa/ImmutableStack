@@ -17,7 +17,7 @@ const defaults = {
 
 const client = (async function () {
   if ((await getSetting("llm")) != key) {
-    log({ level: 11 }, "openia not selected as llm");
+    log({ level: 11, color: "YELLOW" }, `WARNING: ${key} not selected as llm`);
     return null;
   }
   return new OpenAI({
@@ -30,7 +30,11 @@ const query: API_Fn = async ({
   context,
   target,
   output,
-}: RepairRequest): Promise<RepairRequestReply> => {
+}: RepairRequest): Promise<RepairRequestReply | null> => {
+  if (!(await client)) {
+    log({ level: 2, color: "RED" }, `Error: openai client not available`);
+    return null;
+  }
   const request = {
     messages: [
       { role: "user", content: JSON.stringify({ prompt }), name: "prompt" },

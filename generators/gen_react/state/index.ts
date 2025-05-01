@@ -103,8 +103,8 @@ ${mark_selectors(selectors || [])?.join("\n")}
     .filter((v) => !!v)
     .join("\n");
 
-  const genericAppStateInit = `
-  interface GenericAppState {
+  const genericAppStateInit = 
+`interface GenericAppState {
     ${entityNameSingleUpperCamel}Store: ${entityNameSingleUpperCamel}StoreState;
     [key: string]: any;
 }`;

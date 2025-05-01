@@ -74,7 +74,7 @@ const get_selectors = (generator: ImmutableGenerator) => {
 const mark_selectors = (selectors: string[]) =>
   selectors.map((s) => {
     const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  SELECTOR #${id} **\n`;
+    const tag = `\n// ** IMMUTABLE  SELECTOR ${id} **\n`;
     return `${tag}${s}${tag}`;
   });
 
@@ -108,7 +108,7 @@ const get_selector_tests = async (generator: ImmutableGenerator) => {
 const mark_selector_tests = (selector_tests: string[]) =>
   selector_tests.map((s) => {
     const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  SELECTOR TEST #${id} **\n`;
+    const tag = `\n// ** IMMUTABLE  SELECTOR TEST ${id} **\n`;
     return `${tag}${s}${tag}`;
   });
 
