@@ -1,17 +1,10 @@
 import { join } from "path";
 import { ImmutableGenerator } from "../../../immutable_gen";
+import { mark } from "../../../repair/index";
 import { generateFile } from "../../index";
 
-import {
-  get_reducer_exports,
-  get_reducer_tests,
-  mark_reducer_tests,
-} from "./reducers";
-import {
-  get_selector_exports,
-  get_selector_tests,
-  mark_selector_tests,
-} from "./selectors";
+import { get_reducer_exports, get_reducer_tests } from "./reducers";
+import { get_selector_exports, get_selector_tests } from "./selectors";
 
 const generate_entity_state_tests = async (
   generator: ImmutableGenerator,
@@ -38,9 +31,17 @@ const generate_entity_state_tests = async (
 } from "./${singleUpperCamel}";
     ` +
       "\n\n" +
-      mark_reducer_tests(reducerTests).join("\n") +
+      reducerTests
+        .map((test) =>
+          mark({ str: test, entity: singleUpperCamel, type: "REDUCER TEST" })
+        )
+        .join("\n") +
       "\n\n" +
-      mark_selector_tests(selectorTests || [])?.join("\n");
+      selectorTests
+        ?.map((test) =>
+          mark({ str: test, entity: singleUpperCamel, type: "SELECTOR TEST" })
+        )
+        ?.join("\n");
 
     return generateFile({
       filename: `${name.singleUpperCamel}.test.tsx`,

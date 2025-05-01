@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { ImmutableGenerator } from "../../../immutable_gen";
 import { log } from "../../../utils/logger";
 import { StringOnlyMap } from "../../../utils/map";
@@ -71,13 +70,6 @@ const get_selectors = (generator: ImmutableGenerator) => {
   return processedSelectors;
 };
 
-const mark_selectors = (selectors: string[]) =>
-  selectors.map((s) => {
-    const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  SELECTOR ${id} **\n`;
-    return `${tag}${s}${tag}`;
-  });
-
 const get_selector_exports = (selectors: string[]) =>
   selectors?.map(
     (r) => typeof r === "string" && r.match(/(?<=\bconst\s)\w+/)?.[0]
@@ -105,17 +97,4 @@ const get_selector_tests = async (generator: ImmutableGenerator) => {
   return processedSelectorTests;
 };
 
-const mark_selector_tests = (selector_tests: string[]) =>
-  selector_tests.map((s) => {
-    const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  SELECTOR TEST ${id} **\n`;
-    return `${tag}${s}${tag}`;
-  });
-
-export {
-  get_selector_exports,
-  get_selector_tests,
-  get_selectors,
-  mark_selector_tests,
-  mark_selectors,
-};
+export { get_selector_exports, get_selector_tests, get_selectors };

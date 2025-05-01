@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { ImmutableGenerator } from "../../../immutable_gen";
 import { log } from "../../../utils/logger";
 import { StringOnlyMap } from "../../../utils/map";
@@ -91,13 +90,6 @@ const get_reducers = (generator: ImmutableGenerator) => {
   return processedReducers;
 };
 
-const mark_reducers = (reducers: string[]) =>
-  reducers.map((r) => {
-    const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  REDUCER ${id} **\n`;
-    return `${tag}${r}${tag}`;
-  });
-
 const get_reducer_exports = (reducers: string[]) =>
   reducers?.map((r) => typeof r === "string" && r.match(/^\w+/)?.[0]);
 
@@ -119,17 +111,5 @@ const get_reducer_tests = (generator: ImmutableGenerator) => {
   log({ level: 8 }, { processedReducerTests });
   return processedReducerTests;
 };
-const mark_reducer_tests = (reducerTests: string[]) =>
-  reducerTests.map((r) => {
-    const id = randomUUID();
-    const tag = `\n// ** IMMUTABLE  REDUCER TEST ${id} **\n`;
-    return `${tag}${r}${tag}`;
-  });
 
-export {
-  get_reducer_exports,
-  get_reducer_tests,
-  get_reducers,
-  mark_reducer_tests,
-  mark_reducers,
-};
+export { get_reducer_exports, get_reducer_tests, get_reducers };

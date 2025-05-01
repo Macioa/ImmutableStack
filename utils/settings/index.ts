@@ -32,17 +32,17 @@ interface Key {
 }
 
 async function SHA(filePath: string): Promise<string> {
-  log({ level: 8 }, "Hashing file", { dir: await IMM_DIR });
+  log({ level: 38 }, "Hashing file", { dir: await IMM_DIR });
   const hash = createHash("sha256");
-  log({ level: 8 }, "Hashing file", { filePath });
-  log({ level: 8 }, "Hashing file", {
+  log({ level: 38 }, "Hashing file", { filePath });
+  log({ level: 38 }, "Hashing file", {
     dir: join(await IMM_DIR, "bin/" + filePath),
   });
   const stream = createReadStream(join(await IMM_DIR, "bin/" + filePath));
   return new Promise((resolve, reject) => {
     stream.on("data", (chunk) => hash.update(chunk));
     stream.on("end", () => {
-      log({ level: 8 }, "Hashed file", { hash });
+      log({ level: 38 }, "Hashed file", { hash });
       resolve(hash.digest("hex"));
     });
     stream.on("error", (err) => reject(err));
@@ -60,13 +60,13 @@ async function fromSeed(
 }
 
 async function salt(files: StringOnlyMap) {
-  // log({ level: 8 }, "Salting files", files);
+  // log({ level: 38 }, "Salting files", files);
   Object.keys(files).forEach(
     //@ts-ignore
     async (file) => (files[file] = SHA(files[file]))
   );
   await Promise.all(Object.values(files));
-  log({ level: 8 }, "Salted files", files);
+  log({ level: 38 }, "Salted files", files);
   return JSON.stringify({ home: homedir(), ...files });
 }
 
@@ -96,11 +96,11 @@ const decrypt = (
   }
 };
 
-let SETTINGS_CACHE: StringOnlyMap = {  };
+let SETTINGS_CACHE: StringOnlyMap = {};
 const clearSettingsCache = () => (SETTINGS_CACHE = {});
 
 const readSettings = async (): Promise<StringOnlyMap> => {
-  log({ level: 7 }, "Reading settings", { home: homedir(), SETTINGS });
+  log({ level: 37 }, "Reading settings", { home: homedir(), SETTINGS });
   if (Object.keys(SETTINGS_CACHE).length) return SETTINGS_CACHE;
 
   if (!existsSync(join(homedir(), SETTINGS))) {
@@ -113,11 +113,11 @@ const readSettings = async (): Promise<StringOnlyMap> => {
 };
 
 const writeSettings = async (settings: StringOnlyMap) => {
-  log({ level: 7 }, "Writing settings");
+  log({ level: 37 }, "Writing settings");
   SETTINGS_CACHE = settings;
   const raw = JSON.stringify(settings);
-  log({ level: 8 }, "Write Data", { home: homedir(), SETTINGS, raw });
-  log({ level: 8 }, { SETTINGS_CACHE, body: encrypt(await cred, raw) });
+  log({ level: 38 }, "Write Data", { home: homedir(), SETTINGS, raw });
+  log({ level: 38 }, { SETTINGS_CACHE, body: encrypt(await cred, raw) });
   return writeFileSync(
     join(homedir(), SETTINGS),
     encrypt(await cred, raw),
@@ -129,7 +129,7 @@ const updateSetting = async (settings: StringOnlyMap) => {
   const source = existsSync(join(homedir(), SETTINGS))
     ? await readSettings()
     : {};
-    log({ level: 3 }, "Update settings", { source, settings });
+  log({ level: 33 }, "Update settings", { source, settings });
   return writeSettings({ ...source, ...settings });
 };
 

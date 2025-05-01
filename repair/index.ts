@@ -1,10 +1,10 @@
-import { getSetting } from "../utils/settings";
-import adapters from "./adapters";
+import { randomUUID } from "crypto";
 import * as fs from "fs/promises";
 import { join } from "path";
 import { log } from "../utils/logger";
 import { StringOnlyMap } from "../utils/map";
-import { randomUUID } from "crypto";
+import { getSetting } from "../utils/settings";
+import adapters from "./adapters";
 
 const repairFn: Promise<API_Fn> = (async function () {
   return adapters[await getSetting("llm")];
@@ -103,99 +103,73 @@ const getTarget = async ({
   });
 };
 
-const mark = ({ str, entity, type }: StringOnlyMap) => {
+const mark = ({ str, type, entity = "" }: StringOnlyMap) => {
   const id = randomUUID();
   const tag = `// ** IMMUTABLE ${entity} ${type} ${id} **`;
-  return `${tag}\n${str}\n${tag}`;
+  return ["", tag, str, tag, ""].join("\n");
 };
 
 const marked = ({
   entity,
   type,
   regX,
-}: { [key: string]: string | RegExp | null } = {}) => {
+}: { [key: string]: RegExp | string } = {}) => {
   let {
     entity: e,
     type: t,
     regX: r,
   } = {
-    entity: entity || null,
-    type: type || `\\w+`,
+    entity: entity || "\\w*",
+    type: type || "",
     regX: regX || `.*`,
   };
   //@ts-ignore
-  [e, t, r] = [e, t, r].map((v) => {
-    switch (typeof v) {
-      case "string":
-        return new RegExp(v).source;
-      case "object":
-        return v?.source;
-      default:
-        return "";
-    }
-  });
-  const id = new RegExp("[a-z\\d\\-]{36}", "g");
-  const fixedPrefix = new RegExp(
-    `[\\s\\/]{3}\\*\\*\\sIMMUTABLE\\s${e || ""}\\s${t}\\s${id.source}\\s\\*\\*`,
-    "gs"
-  );
-  const _variablePrefix = new RegExp(
-    `[\\s\\/]+\\*\\*\\s{1,5}IMMUTABLE\\s{0,5}${e}\\s{0,5}${t} ${id.source} \\*\\*\\n`,
-    "gs"
+  [e, t, r] = [e, t, r]
+    // convert type
+    .map((v) => {
+      switch (typeof v) {
+        case "string":
+          return new RegExp(v).source;
+        case "object":
+          return v?.source || "";
+        default:
+          return "";
+      }
+    })
+    // Nullify capture grouops (necessary for ID match)
+    .map((v) => v.replace(/(\()(?!\?)/g, "(?:"))
+    // Recapture
+    .map((v) => `(${v})`);
+  const id = new RegExp("([a-z\\d\\-]{36})", "g");
+  const prefix = new RegExp(
+    `[\\s\\/]{3}\\*\\*\\sIMMUTABLE\\s${e}\\s${t}\\s${id.source}\\s\\*\\*\\n`, //\\s\\*\\*\\n`,
+    "gsm"
   );
   const suffix = new RegExp(
-    `\\n[\\s\\/]+\\*\\*\\s+IMMUTABLE\\s{0,5}${e || ""}\\s{0,5}${t} ${
-      id.source
-    } \\*\\*`,
-    "gs"
+    `[\\s\\/]{3}\\*\\*\\s+IMMUTABLE\\s${e}\\s${t}\\s\\3\\s\\*\\*`,
+    "gsm"
   );
-
   const pattern = new RegExp(
-    `(?<=${fixedPrefix.source})(.*)(?=${suffix.source})`,
-    "gms"
+    `(?<=${prefix.source})(.*)(?=${suffix.source})`,
+    "gsm"
   );
   return (str: string) => {
-    console.log({ prefix: fixedPrefix, suffix, pattern });
-    console.log({
-      id: str.match(id),
-      prefix: str.match(fixedPrefix),
-      suffix: str.match(suffix),
-      pattern: str.match(pattern),
-    });
+    // // High computational debugging
+    // console.log({ prefix, suffix, pattern });
+    // console.log({
+    //   id: str.match(id),
+    //   prefix: str.match(prefix),
+    //   suffix: str.match(suffix),
+    //   pattern: str.match(pattern),
+    // });
     return str.match(pattern)?.[0];
   };
-
-  //   return (str: string) => {
-  //     console.log({ prefix: fixedPrefix, suffix, pattern });
-  //     console.log({
-  //       id: str.match(id),
-  //       prefix: str.match(fixedPrefix),
-  //       suffix: str.match(suffix),
-  //       pattern: str.match(pattern),
-  //     });
-
-  //     return str.replace(
-  //       pattern,
-  //       (
-  //         match: string,
-  //         _pre: string,
-  //         selection: string,
-  //         _suf: string
-  //       ): string => {
-  //         console.log({ match, selection, _pre, _suf });
-  //         return selection;
-  //       }
-  //     );
-  //   };
 };
 
 export default repair;
-export { repairFn, getContext, getTarget, marked, mark };
+export { getContext, getTarget, mark, marked, repairFn };
 export type {
-  RepairRequest,
-  Repair,
-  RepairI,
-  RepairRequestReply,
-  API_Fn,
-  TypeFn,
+  API_Fn, Repair,
+  RepairI, RepairRequest, RepairRequestReply, TypeFn
 };
+
