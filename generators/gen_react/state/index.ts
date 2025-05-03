@@ -88,11 +88,9 @@ const ${sliceName} = createSlice({
     });
 const ${entityNameSingleUpperCamel}Reducer = ${sliceName}.reducer;
 
-${get_selectors(generator)
-  ?.map((sel) =>
-    mark({ str: sel, type: "SELECTOR", entity: name.singleUpperCamel })
-  )
-  .join(",\n")}
+${get_selectors(generator)?.map((sel) =>
+  mark({ str: sel, type: "SELECTOR", entity: name.singleUpperCamel })
+).join("\n")}
 `;
 
   const exportVars = [
@@ -125,7 +123,7 @@ ${get_selectors(generator)
 }`;
   const genericAppState = mark({
     str: genericAppStateInit,
-    type: "APPSTATE",
+    type: "GENERIC_APPSTATE",
     entity: name.singleUpperCamel,
   });
 

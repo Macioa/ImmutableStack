@@ -1,8 +1,17 @@
-import { get } from "http";
 import { getContext, getTarget, repairFn, RepairI } from "../";
 import { log } from "../../utils/logger";
+import { API_Fn } from "../adapters";
+import { resolve } from "path";
+import { promises as FSPROM } from "fs";
+const { readFile, writeFile } = FSPROM;
 
-const fullFileRepair = async ( params: RepairI ) => {
+const fullFileRepair = async (query: API_Fn, params: RepairI) => {
+  log(
+    { level: 6, color: "YELLOW" },
+    "fullFileRepair",
+    { ...params },
+    await Promise.all(params.context || [])
+  );
   if (!(await repairFn)) {
     log(
       { level: 1, color: "RED" },
@@ -11,9 +20,30 @@ const fullFileRepair = async ( params: RepairI ) => {
     );
     return null;
   }
-  log({ level: 1, color: "GREEN" }, {...params})
-  console.log( "TARGET", await getTarget(params) );
-  console.log( "CONTEXT", await getContext(params) );
+  log({ level: 7, color: "GREEN" }, { ...params });
+  let { prompt, output } = params;
+  prompt ||= "";
+  output ||= [];
+  const targets = await getTarget(params);
+  const updates = await Promise.all(
+    targets.map(async (target) =>
+      query({
+        prompt,
+        context: await getContext(params),
+        target: target,
+        output: output || [],
+      })
+    )
+  );
+
+  const results = (await Promise.all(updates)).map((r) => r?.result);
+  const fileContent = await readFile(resolve(params.dir || ""), "utf-8");
+  const fileContentWithUpdates = targets.reduce(
+    (acc, target, i) => acc.replace(target, results[i] || target),
+    fileContent
+  );
+  log({level:9}, {fileContentWithUpdates});
+  return writeFile(resolve(params.dir || ""), fileContentWithUpdates, "utf-8");
 };
 
 export default fullFileRepair;

@@ -53,12 +53,11 @@ const query: API_Fn = async ({
     ...defaults,
   } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming;
 
-  const repsonse = (await client)?.chat.completions.create(request);
-  log({ level: 7 }, "OpenAI response:", repsonse);
-  const { id, model, usage } = (await repsonse) || {};
-  const result = (await repsonse)?.choices[0].message.content;
-
-  log({ level: 1, color: "GREEN" }, "OpenAI result:", result);
+  const response = (await client)?.chat.completions.create(request);
+  const { id, model, usage } = (await response) || {};
+  const result = (await response)?.choices[0].message.content
+    ?.replace(/^```typescript/g, "")
+    ?.replace(/```$/g, "");
   return { id, model, result, usage, api: key } as RepairRequestReply;
 };
 
