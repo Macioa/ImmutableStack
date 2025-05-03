@@ -121,12 +121,12 @@ const getContext = async ({
           regex ||= /.*/gms;
           if (typeof regex === "function") return regex(fileContent);
           const match = fileContent.match(regex);
-          return match ? match[0] : null;
-        });
+          return match || [];
+        }).flat();
 
       return {
         name,
-        body: matchedSections.join("\n\n"),
+        body: JSON.stringify(matchedSections),
         desc,
       };
     });
