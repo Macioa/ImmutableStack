@@ -25,7 +25,7 @@ const new_genfile = () => {
     singleLowerCamel,
     pluralUpperCamel,
     pluralLowerCamel,
-  } = getNames(genName);
+  } = getNames(genName) || {};
   const tsContent = `
 /*
                     *****************************

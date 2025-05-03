@@ -6,8 +6,6 @@ import {
     updateSetting,
 } from "./utils/settings";
 
-setLogLevel(3);
-
 const [, , , ...args] = process.argv;
 
 const chunk2 = (a: (string | number)[]) =>
