@@ -1,9 +1,8 @@
+import { readFile, writeFile } from "fs/promises";
+import { resolve } from "path";
 import { getContext, getTarget, repairFn, RepairI } from "../";
 import { log } from "../../utils/logger";
 import { API_Fn } from "../adapters";
-import { resolve } from "path";
-import { promises as FSPROM } from "fs";
-const { readFile, writeFile } = FSPROM;
 
 const fullFileRepair = async (query: API_Fn, params: RepairI) => {
   log(
