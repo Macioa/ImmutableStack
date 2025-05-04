@@ -1,12 +1,10 @@
-import { randomUUID } from "crypto";
-import * as fs from "fs/promises";
+import { readFile } from "fs/promises";
 import { join } from "path";
-import { log } from "../utils/logger";
-import { StringOnlyMap } from "../utils/map";
-import { getSetting } from "../utils/settings";
-import adapters from "./adapters";
-import { getNamesFromSingularSnakeCase, Names } from "../utils/string";
 import { getAppData } from "../readers/get_app_data";
+import { log } from "../utils/logger";
+import { getSetting } from "../utils/settings";
+import { getNamesFromSingularSnakeCase } from "../utils/string";
+import adapters from "./adapters";
 import fullFileRepair from "./types/full";
 
 const repairFn: Promise<API_Fn> = (async function () {
@@ -62,11 +60,27 @@ enum TARGETS {
   APPSTATE = "APPSTATE",
   INITIAL_APPSTATE = "INITIAL_APPSTATE",
   GENERIC_APPSTATE = "GENERIC_APPSTATE",
+
   REDUCER = "REDUCER",
-  SELECTOR = "SELECTOR",
   REDUCER_TEST = "REDUCER_TEST",
+  SELECTOR = "SELECTOR",
   SELECTOR_TEST = "SELECTOR_TEST",
+
+  FACTORY = "FACTORY",
   TYPEDEF = "TYPEDEF",
+
+  REQUEST_API = "REQUEST_API",
+
+  API_RESPONSE = "API_RESPONSE",
+
+  SCHEMA = "SCHEMA",
+  CONTEXT = "CONTEXT",
+  CONTEXT_TEST = "CONTEXT_TEST",
+  CONTROLLER = "CONTROLLER",
+  JSON_HANDLER = "JSON_HANDLER",
+  FALLBACK_CONTROLLER = "FALLBACK_CONTROLLER",
+
+  ROUTER = "ROUTER",
 }
 
 type TARGET_DICT = {
@@ -75,17 +89,46 @@ type TARGET_DICT = {
 
 const TARGET_ROUTES = async function (entity: string): Promise<TARGET_DICT> {
   const { AppNameSnake } = (await APP_DATA) || {};
-  const { singleUpperCamel } = getNamesFromSingularSnakeCase(entity) || {};
+  const { singleUpperCamel, singleSnake } =
+    getNamesFromSingularSnakeCase(entity) || {};
   return {
     APPSTATE: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
     INITIAL_APPSTATE: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
     GENERIC_APPSTATE: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
     REDUCER: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
-    SELECTOR: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
     REDUCER_TEST: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.test.tsx`,
+    SELECTOR: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
     SELECTOR_TEST: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.test.tsx`,
     TYPEDEF: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
+    FACTORY: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
+    REQUEST_API: `apps/${AppNameSnake}/lib/typescript/requests/${singleUpperCamel}.tsx`,
+    //
+    API_RESPONSE: `apps/${AppNameSnake}/lib/typescript/requests/${singleUpperCamel}.tsx`,
+    //
+    SCHEMA: `apps/${AppNameSnake}/lib/${AppNameSnake}/${singleSnake}.ex`,
+    //
+    CONTEXT: `apps/${AppNameSnake}/lib/${singleSnake}_context.ex`,
+    CONTEXT_TEST: `apps/${AppNameSnake}/test/${singleSnake}_context_test.exs`,
+    CONTROLLER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}_web/controllers/${singleSnake}_controller.ex`,
+    JSON_HANDLER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}_web/controllers/${singleSnake}_json.ex`,
+    FALLBACK_CONTROLLER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}/controllers/fallback_controller.ex`,
+    //
+    ROUTER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}_web/router.ex`,
   };
+};
+
+enum CommentType {
+  EX = "EX",
+  JS = "JS",
+  TS = "TS",
+}
+type CommentDict = {
+  [key in CommentType]: string;
+};
+const COMMENT_TYPES: CommentDict = {
+  EX: "#",
+  JS: "//",
+  TS: "//",
 };
 
 const get_target_routes = async (entity: string, targets: TARGETS[]) => {
@@ -113,7 +156,7 @@ const getContext = async ({
       const { name, filename, dir, targets, desc } = await con;
       if (!dir) return Promise.resolve(null);
       const filePath = join(dir, filename || "");
-      const fileContent = await fs.readFile(filePath, "utf8");
+      const fileContent = await readFile(filePath, "utf8");
 
       const matchedSections = targets
         ?.filter((regex: Function | RegExp | null) => !!regex)
@@ -122,7 +165,8 @@ const getContext = async ({
           if (typeof regex === "function") return regex(fileContent);
           const match = fileContent.match(regex);
           return match || [];
-        }).flat();
+        })
+        .flat();
 
       return {
         name,
@@ -141,27 +185,36 @@ const getTarget = async ({
   target = [/.+/],
 }: RepairI): Promise<string[]> => {
   const filePath = join(dir, filename);
-  const fileContent = await fs.readFile(filePath, "utf8");
+  const fileContent = await readFile(filePath, "utf8");
   log({ level: 7 }, "getting target", { filename, dir, target, fileContent });
 
   return target.map((regex: RegExp | Function) => {
     if (typeof regex === "function") return regex(fileContent);
-    const match = fileContent.match(regex);
-    return match || [];
+    return fileContent.match(regex) || [];
   });
 };
 
-const mark = ({ str, type, entity = "" }: StringOnlyMap) => {
-  const id = randomUUID();
-  const tag = `// ** IMMUTABLE ${entity} ${type} ${id} **`;
+const mark = (
+  {
+    str,
+    type,
+    entity = "",
+  }: {
+    str: string;
+    type: string;
+    entity?: string;
+  },
+  lang = CommentType.TS
+) => {
+  const id = crypto.randomUUID();
+  const tag = `${COMMENT_TYPES[lang]} ** IMMUTABLE ${entity} ${type} ${id} **`;
   return ["", tag, str, tag, ""].join("\n");
 };
 
-const marked = ({
-  entity,
-  type,
-  regX,
-}: { [key: string]: RegExp | string } = {}) => {
+const marked = (
+  { entity, type, regX }: { [key: string]: RegExp | string },
+  lang = CommentType.TS
+) => {
   let {
     entity: e,
     type: t,
@@ -188,9 +241,11 @@ const marked = ({
     .map((v) => v.replace(/(\()(?!\?)/g, "(?:"))
     // Recapture
     .map((v) => `(${v})`);
-  const id = new RegExp("([a-z\\d\\-]{36})", "g");
+  const id = new RegExp("([a-z\\d\\-]{36})", "g").source;
+  const commentType = new RegExp(`[\\s\\${COMMENT_TYPES[lang]}]{3}`, "g")
+    .source;
   const prefix = new RegExp(
-    `[\\s\\/]{3}\\*\\*\\sIMMUTABLE\\s${e}\\s${t}\\s${id.source}\\s\\*\\*\\n`,
+    `${commentType}\\*\\*\\sIMMUTABLE\\s${e}\\s${t}\\s${id}\\s\\*\\*\\n`,
     "gsm"
   );
   const suffix = new RegExp(
@@ -216,20 +271,21 @@ const marked = ({
 
 export default repair;
 export {
+  get_target_routes,
   getContext,
   getTarget,
-  get_target_routes,
-  TARGET_ROUTES,
   mark,
   marked,
   repairFn,
+  TARGET_ROUTES,
 };
 export type {
   API_Fn,
+  CommentType,
   Repair,
   RepairI,
   RepairRequest,
   RepairRequestReply,
-  TypeFn,
   TARGETS,
+  TypeFn,
 };

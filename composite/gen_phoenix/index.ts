@@ -7,6 +7,7 @@ import {
   gen_json_handler,
 } from "../../generators/gen_phoenix/gen_phx_controller";
 import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
+import { mark_schema } from "../../injectors/gen_phoenix/mark_schema";
 
 const gen_phx = async (
   generator: ImmutableGenerator,
@@ -16,7 +17,11 @@ const gen_phx = async (
   let res: any = [];
 
     
-  if (gen.schema) res.push(await gen_schema(generator, genTypes));
+  if (gen.schema) {
+    const schema = await gen_schema(generator, genTypes)
+    await mark_schema(generator);
+    res.push(schema);
+  }
 
   if (gen.context) { 
     res.push(await gen_phx_context(generator, genTypes));

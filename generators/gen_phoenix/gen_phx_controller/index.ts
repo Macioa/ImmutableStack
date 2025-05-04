@@ -1,19 +1,20 @@
 import { join } from "path";
-import {
-  ImmutableGenerator,
-  ImmutableController,
-  ImmutableContext,
-} from "../../../immutable_gen";
 import { generateFile } from "../..";
-import { StringOnlyMap } from "../../../utils/map";
-import { routes as show_routes } from "./show_route";
-import { routes as index_routes } from "./index_route";
-import { routes as create_routes } from "./create_route";
-import { routes as update_routes } from "./update_route";
-import { routes as delete_routes } from "./delete_route";
-import { route as custom_route } from "./custom_route";
-import { gen_json_handler } from "./gen_json_handler";
+import {
+  ImmutableContext,
+  ImmutableController,
+  ImmutableGenerator,
+} from "../../../immutable_gen";
+import { CommentType, mark } from "../../../repair";
 import { log } from "../../../utils/logger";
+import { StringOnlyMap } from "../../../utils/map";
+import { routes as create_routes } from "./create_route";
+import { route as custom_route } from "./custom_route";
+import { routes as delete_routes } from "./delete_route";
+import { gen_json_handler } from "./gen_json_handler";
+import { routes as index_routes } from "./index_route";
+import { routes as show_routes } from "./show_route";
+import { routes as update_routes } from "./update_route";
 
 const route_data = [
   show_routes,
@@ -41,6 +42,7 @@ const gen_routes = (
       log({ level: 7 }, "Header: ", header);
       return route_data_computed[header] || custom_route.fn({ header });
     })
+    .map((route) => mark({str: route, type: "CONTROLLER", entity: gen_ref_data.genName},"EX" as CommentType))
     .join("\n\n");
 };
 
@@ -115,5 +117,6 @@ interface ImmRoute {
   fn: (args: StringOnlyMap) => string;
   header: (args: StringOnlyMap) => string;
 }
+export { gen_json_handler, gen_phx_controller };
 export type { ImmRoute };
-export { gen_phx_controller, gen_json_handler };
+

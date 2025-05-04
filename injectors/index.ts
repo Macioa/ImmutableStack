@@ -4,7 +4,7 @@ import { log } from "../utils/logger";
 import { format } from "../utils/format";
 import { cacheLogByPath as cacheLog } from "../utils/history_cache";
 
-type Injection = [InjectType, RegExp, string];
+type Injection = [InjectType, RegExp, string | ((s: string) => string)];
 
 enum InjectType {
   BEFORE = "BEFORE",
@@ -19,7 +19,7 @@ type FileInjection = {
 
 const inject_file = async (
   { file, injections }: FileInjection,
-  caller: string | null = null,
+  caller: string | null = null
 ) => {
   log({ level: 3 }, `Injecting into ${file}....`);
 
@@ -33,7 +33,10 @@ const inject_file = async (
       log({ level: 9 }, "File: ", new_file);
       switch (type) {
         case InjectType.REPLACE:
-          const replaced = new_file.replace(regex, new_content);
+          const replaced =
+            typeof new_content == "function"
+              ? new_content(new_file)
+              : new_file.replace(regex, new_content);
           if (replaced == new_file || replaced == "") {
             error(regex, file, reject);
             return;
@@ -67,7 +70,7 @@ const error = (regex: RegExp, file: string, reject: Function) => {
 const insert = (
   content: string,
   file: string,
-  [type, regex, new_content]: Injection,
+  [type, regex, new_content]: Injection
 ) => {
   const match = content.match(regex);
   if (!match) return null;
