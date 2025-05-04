@@ -103,16 +103,14 @@ const TARGET_ROUTES = async function (entity: string): Promise<TARGET_DICT> {
     FACTORY: `apps/${AppNameSnake}/lib/typescript/state/${singleUpperCamel}.tsx`,
     REQUEST_API: `apps/${AppNameSnake}/lib/typescript/requests/${singleUpperCamel}.tsx`,
     //
-    API_RESPONSE: `apps/${AppNameSnake}/lib/typescript/requests/${singleUpperCamel}.tsx`,
+    API_RESPONSE: `apps/${AppNameSnake}/lib/typescript/requests/${singleUpperCamel}Response.tsx`,
     //
     SCHEMA: `apps/${AppNameSnake}/lib/${AppNameSnake}/${singleSnake}.ex`,
-    //
     CONTEXT: `apps/${AppNameSnake}/lib/${singleSnake}_context.ex`,
     CONTEXT_TEST: `apps/${AppNameSnake}/test/${singleSnake}_context_test.exs`,
     CONTROLLER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}_web/controllers/${singleSnake}_controller.ex`,
     JSON_HANDLER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}_web/controllers/${singleSnake}_json.ex`,
     FALLBACK_CONTROLLER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}/controllers/fallback_controller.ex`,
-    //
     ROUTER: `apps/${AppNameSnake}_web/lib/${AppNameSnake}_web/router.ex`,
   };
 };

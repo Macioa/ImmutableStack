@@ -40,7 +40,9 @@ const gen_entity_requests = async (
   const imports = `
 import { Dispatch } from "redux";
 import { Request } from "./index";
-import { ${singleUpperCamel}, set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";\n`;
+import { ${singleUpperCamel}, set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";
+import { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
+
 
   const exports = `export { request${singleUpperCamel}, request${pluralUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
 `;
@@ -64,12 +66,13 @@ const gen_request_show = ({
       api_url_key: "${AppNameCaps}_API_URL",
       route: \`${singleSnake}/\${id}\`,
       callback: (res: any) => dispatch(set${singleUpperCamel}(res.data))
-    }, dispatch);`;
+    }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_list = ({
   pluralUpperCamel,
   AppNameCaps,
   singleSnake,
+  singleUpperCamel
 }: StringOnlyMap) =>
   `const request${pluralUpperCamel} = (dispatch: Dispatch) => 
     Request.API({
@@ -77,7 +80,7 @@ const gen_request_list = ({
       api_url_key: "${AppNameCaps}_API_URL",
       route: \`${singleSnake}\`,
       callback: (res: any) => dispatch(set${pluralUpperCamel}(res.data)),
-    }, dispatch);`;
+    }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_update = ({
   singleUpperCamel,
@@ -95,7 +98,7 @@ const gen_request_update = ({
         body: JSON.stringify(${singleLowerCamel}),
       },
       callback: (_data: any) => null,
-    }, dispatch);`;
+    }, dispatch) as Promise<Partial${singleUpperCamel}Response>;`;
 
 const gen_request_delete = ({
   singleUpperCamel,
@@ -110,6 +113,6 @@ const gen_request_delete = ({
       options: {
         method: "DELETE",
       },
-    }, dispatch);`;
+    }, dispatch) as Promise<Count${singleUpperCamel}Response>;`;
 
 export { gen_entity_requests };
