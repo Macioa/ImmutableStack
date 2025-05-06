@@ -46,6 +46,11 @@ const argv = yargs(hideBin(process.argv))
       log({ level: 11 }, "Parsed Args", argv);
     }
   )
+  .option("prompt", {
+    alias: "p",
+    type: "string",
+    describe: "Prompt for the repair",
+  })
   .option("targets", {
     alias: "t",
     type: "string",
@@ -75,7 +80,7 @@ const argv = yargs(hideBin(process.argv))
 
 const main = async () => {
   //@ts-ignore
-  const { file, entity, targets, context, contexttargets, options } = argv;
+  const { file, entity, prompt, targets, context, contexttargets, options } = argv;
   log({ level: 8 }, "Processed Args", {
     file,
     targets,
@@ -85,7 +90,7 @@ const main = async () => {
   });
   const result = await repair({
     filename: "",
-    prompt: "Fix the target code in this file.",
+    prompt: prompt || "Fix the target code in this file.",
     context: (await contextsFromArgs(argv)) || [],
     target: (await targetsFromArgs(argv)) || "",
     dir: file,
