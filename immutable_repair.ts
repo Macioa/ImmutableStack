@@ -7,7 +7,8 @@ import repair, {
   TARGET_ROUTES,
   TARGETS
 } from "./repair";
-import { log, setLogLevel } from "./utils/logger";
+import { log, setLogLevel, log_level } from "./utils/logger";
+import { spawn } from 'child_process';
 
 setLogLevel(5);
 
@@ -87,6 +88,7 @@ const main = async () => {
     context,
     contexttargets,
     options,
+    prompt
   });
   const result = await repair({
     filename: "",
@@ -101,8 +103,13 @@ const main = async () => {
     ],
   });
 
-  log({ level: 1, color: "GREEN" }, "Repair complete");
-  log({ level: 3, color: "BLUE" }, `           in ${file}`);
+  log({ level: 4, color: "GREEN" }, "Repair complete");
+  log({ level: 4, color: "BLUE" }, `           in ${file}`);
+  spawn('git', ['--paginate', 'diff', file], {
+    stdio: 'inherit',
+  });
+  log({ level: 4, color: "GREEN" }, "Revert changes with");
+  log({ level: 4, color: "BLUE" }, `           git checkout -- ${file}`);
 };
 
 const contextsFromArgs = async (args: ARGS) => {
