@@ -128,7 +128,8 @@ ${get_selectors(generator)?.map((sel) =>
   });
 
   const content = `
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 import Lorem from "../utils/lorem";
 
 ${tstype ? `\n${type}\n` : ""}

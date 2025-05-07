@@ -38,10 +38,11 @@ const gen_entity_requests = async (
     .join("\n");
 
   const imports = `
-import { Dispatch } from "redux";
+import type { Dispatch } from "redux";
 import { Request } from "./index";
-import { ${singleUpperCamel}, set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";
-import { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
+import { set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";
+import type { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
+import type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
 
 
   const exports = `export { request${singleUpperCamel}, request${pluralUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };

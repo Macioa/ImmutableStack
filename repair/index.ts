@@ -180,8 +180,9 @@ const getContext = async ({
 const getTarget = async ({
   filename = "",
   dir = "",
-  target = [/.+/],
+  target = [/.+/gsm],
 }: RepairI): Promise<string[]> => {
+  target = target.length ? target : [/.+/gsm]
   const filePath = join(dir, filename);
   const fileContent = await readFile(filePath, "utf8");
   log({ level: 7 }, "getting target", { filename, dir, target, fileContent });

@@ -6,7 +6,8 @@ const gen_store = async (AppName: string, UiDir: string) => {
 
   const content = `
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
-import { RequestsStoreState, requestReducer } from "@requests/index"; 
+import { requestReducer } from "@requests/index"; 
+import type { RequestsStoreState } from "@requests/index";
 
 
 type ${AppName}State = {
