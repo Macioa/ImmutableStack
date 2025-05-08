@@ -15,6 +15,7 @@ import { init_phoenix_umbrella_app } from "./composite/init_phoenix/init_phoenix
 import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
 import { init_react_app_with_vite } from "./composite/init_react/init_react_app_with_vite";
 import { ImmutableGenerator } from "./immutable_gen";
+import { inject_sample_release_mix } from "./injectors/init_docker/inject_sample_release_mix";
 
 setLogLevel(5);
 
@@ -57,6 +58,7 @@ async function main() {
     { level: 1, color: "GREEN" },
     `\n\n Generating ${projectName} App with Immutable Stack\n\n`
   );
+  await init_docker(gen);
 
   await init_phoenix_umbrella_app({
     projectName,
@@ -80,7 +82,7 @@ async function main() {
     uidir,
     libdir,
   });
-  await init_docker(gen);
+  await inject_sample_release_mix(gen)
 
   writeLog(umbrellaDir, `init_project_${projectName}`);
 
