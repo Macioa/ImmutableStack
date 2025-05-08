@@ -7,7 +7,7 @@ const inject_package_scripts = async (AppName: string, UiDir: string) => {
     [
       InjectType.AFTER,
       /\"scripts\":\s+\{/,
-      `\n    "postinstall": "ln -s $(pwd)/node_modules ../${AppName}/lib/typescript/node_modules",`,
+      `\n    "postinstall": "ln -sf $(pwd)/node_modules ../${AppName}/lib/typescript/node_modules",`,
     ],
   ];
 

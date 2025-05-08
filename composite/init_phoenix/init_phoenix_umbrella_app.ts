@@ -29,7 +29,7 @@ const init_phoenix_umbrella_app = async ({
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
   const init = await exec(
     {
-      command: `mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
+      command: `yes | mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
       dir: ".",
     },
     "init_phoenix_umbrella_app"

@@ -4,16 +4,17 @@
       - requires a project name as an argument    
 */
 
-
 import { join } from "path";
-import { log, setLogLevel } from "./utils/logger";
 import { execute as exec } from "./runners";
+import { log, setLogLevel } from "./utils/logger";
 
 import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
 
-import { init_react_app_with_vite } from "./composite/init_react/init_react_app_with_vite";
-import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
+import { init_docker } from "./composite/init_docker";
 import { init_phoenix_umbrella_app } from "./composite/init_phoenix/init_phoenix_umbrella_app";
+import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
+import { init_react_app_with_vite } from "./composite/init_react/init_react_app_with_vite";
+import { ImmutableGenerator } from "./immutable_gen";
 
 setLogLevel(5);
 
@@ -22,7 +23,7 @@ const args = process.argv.slice(2);
 async function main() {
   if (args.length < 1) {
     console.error(
-      "Usage: node init_proj.js <project_name>\n   Or: immutable -init <project_name>",
+      "Usage: node init_proj.js <project_name>\n   Or: immutable -init <project_name>"
     );
     process.exit(1);
   }
@@ -45,11 +46,16 @@ async function main() {
     libdir = join(appdir, projectName),
     uidir = join(appdir, `${projectName}_ui`),
     webdir = join(appdir, `${projectName}_web`);
+  const gen = {
+    appName: { snake: projectName, camel: projectNameCamel },
+    dir: { ProjectDir: umbrellaDir },
+  } as unknown as ImmutableGenerator;
+
   setUmbrellaDirCache(umbrellaDir);
 
   log(
     { level: 1, color: "GREEN" },
-    `\n\n Generating ${projectName} App with Immutable Stack\n\n`,
+    `\n\n Generating ${projectName} App with Immutable Stack\n\n`
   );
 
   await init_phoenix_umbrella_app({
@@ -74,6 +80,7 @@ async function main() {
     uidir,
     libdir,
   });
+  await init_docker(gen);
 
   writeLog(umbrellaDir, `init_project_${projectName}`);
 
@@ -82,7 +89,7 @@ async function main() {
       command: `mix deps.get`,
       dir: umbrellaDir,
     },
-    "init_proj",
+    "init_proj"
   );
 
   const compile = await exec(
@@ -90,12 +97,12 @@ async function main() {
       command: `mix compile`,
       dir: umbrellaDir,
     },
-    "init_proj",
+    "init_proj"
   );
 
   log(
     { level: 1, color: "GREEN" },
-    `\n\nInitialization Complete.\n\nGenerated ${projectName}_umbrella`,
+    `\n\nInitialization Complete.\n\nGenerated ${projectName}_umbrella`
   );
   log({ level: 1, color: "BLUE" }, `    in ${currentDir}\n\n`);
 }

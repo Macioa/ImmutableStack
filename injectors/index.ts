@@ -72,7 +72,7 @@ const insert = (
   file: string,
   [type, regex, new_content]: Injection
 ) => {
-  const match = content.match(regex);
+  const match = new RegExp(regex.source, regex.flags).exec(content);
   if (!match) return null;
   let index = match.index as number;
   log({ level: 8 }, `Found ${regex} at ${index} in ${file}`);
