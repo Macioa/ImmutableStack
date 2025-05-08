@@ -4,7 +4,7 @@ import { generateFile } from "../index";
 const gen_docker_compose = async (generator: ImmutableGenerator) => {
   let dir = generator.dir?.ProjectDir || "";
   dir += "/docker";
-  const filename = "docker-compose.yml";
+  const filename = "compose.yaml";
   const AppNameSnake = generator.appName.snake;
   const content = `services:
   ${AppNameSnake}_dev:
