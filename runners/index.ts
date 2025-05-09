@@ -4,6 +4,8 @@ import { resolve as pathResolve } from "path";
 import { log } from "../utils/logger";
 import { chunkArray } from "../utils/chunk";
 import { cacheLogCommand } from "../utils/history_cache";
+import mixOrDocker from "./nomix";
+import { appDataFromAppnNameSnake, getAppData, setAppData } from "../readers/get_app_data";
 
 type Execution = {
   dir: string;
@@ -33,7 +35,11 @@ enum Arrow {
 }
 
 const execute = async (execution: Execution, caller: string | null = null) => {
-  const { dir, command, options } = { ...ExecutionDefaults, ...execution };
+  const {
+    dir,
+    command: cInit,
+    options,
+  } = { ...ExecutionDefaults, ...execution };
   const {
     timeoutResolve,
     timeoutReject,
@@ -43,6 +49,11 @@ const execute = async (execution: Execution, caller: string | null = null) => {
     ...ExecutionDefaults.options,
     ...options,
   };
+
+  const command = await mixOrDocker(
+    cInit,
+    (await getAppData())?.AppNameSnake || ""
+  );
 
   cacheLogCommand({ command, dir }, caller);
 
@@ -75,7 +86,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
     child.on("close", (exitcode) => {
       if (!resolveOnErrorCode && exitcode) {
         console.error(
-          `Process exited with exit code ${exitcode}:\n       ${command}`,
+          `Process exited with exit code ${exitcode}:\n       ${command}`
         );
         reject(`Process exited with ${exitcode}`);
       } else resolve(dir);
@@ -89,10 +100,10 @@ const execute = async (execution: Execution, caller: string | null = null) => {
 
 const executeChunk = async (
   executions: Execution[],
-  caller: string | null = null,
+  caller: string | null = null
 ) => {
   const promises = executions.map((execution) =>
-    execute(execution, caller).catch(console.error),
+    execute(execution, caller).catch(console.error)
   );
   return Promise.all(promises);
 };
@@ -100,7 +111,7 @@ const executeChunk = async (
 const executeAll = async (
   executions: Execution[],
   chunkSize = 5,
-  caller: string | null = null,
+  caller: string | null = null
 ) => {
   const queue = chunkArray(executions, chunkSize);
   let res: any[] = [];
@@ -112,7 +123,7 @@ const executeAll = async (
 
 const executeAllSync = async (
   executions: Execution[],
-  caller: string | null = null,
+  caller: string | null = null
 ) => {
   let res: any[] = [];
   for (const exec of executions) {

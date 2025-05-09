@@ -19,7 +19,10 @@ RUN apk add --no-cache \
 
 # Install Hex and Rebar
 RUN mix local.hex --force && \
-    mix local.rebar --force
+    mix local.rebar --force && \
+    mix archive.install hex phx_new --force
+
+ENV PATH="$MIX_HOME/archives:$PATH"
 
 # Set working directory
 WORKDIR /app`;

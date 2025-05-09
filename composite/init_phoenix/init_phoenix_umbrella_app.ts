@@ -2,18 +2,19 @@ import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
 import { StringOnlyMap, validate } from "../../utils/map";
 
-import { inject_app_declarations } from "../../injectors/init_phoenix/inject_app_declarations";
-import { inject_dev_config } from "../../injectors/init_phoenix/inject_dev_config";
-import { inject_phoenix_libs } from "../../injectors/init_phoenix/inject_phoenix_libs";
-import { inject_web_endpoint } from "../../injectors/init_phoenix/inject_web_endpoint";
-import { gen_phx_utils } from "../../generators/init_phoenix/phx_utils";
-import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_to_repo";
-import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
-import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix/inject_deps_get_aliases_to_mix_exs";
-import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
+import { join } from "path";
 import { gen_fallback_controller } from "../../generators/init_phoenix/gen_fallback_controller";
 import { gen_id_validation_plug } from "../../generators/init_phoenix/gen_id_validation_plug";
+import { gen_phx_utils } from "../../generators/init_phoenix/phx_utils";
+import { inject_app_declarations } from "../../injectors/init_phoenix/inject_app_declarations";
+import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix/inject_deps_get_aliases_to_mix_exs";
+import { inject_dev_config } from "../../injectors/init_phoenix/inject_dev_config";
+import { inject_phoenix_libs } from "../../injectors/init_phoenix/inject_phoenix_libs";
+import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_to_repo";
+import { inject_web_endpoint } from "../../injectors/init_phoenix/inject_web_endpoint";
 import { mark_router } from "../../injectors/init_phoenix/mark_router";
+import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
+import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
 
 const init_phoenix_umbrella_app = async ({
   projectName,
@@ -30,7 +31,7 @@ const init_phoenix_umbrella_app = async ({
   const init = await exec(
     {
       command: `yes | mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
-      dir: ".",
+      dir: join(umbrellaDir, '..'),
     },
     "init_phoenix_umbrella_app"
   );
