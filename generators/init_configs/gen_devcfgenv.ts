@@ -2,19 +2,23 @@ import { join } from "path";
 import { ImmutableGenerator } from "../../immutable_gen";
 import { generateFile } from "../index";
 
-const gen_docker_config_env = async (generator: ImmutableGenerator) => {
-    const filename = "docker.exs";
+const gen_dev_config_env = async (generator: ImmutableGenerator) => {
+    const filename = "dev.exs";
     let dir = generator.dir?.ProjectDir || "";
     dir = join(dir, "config");
     const AppNameSnake = generator.appName.snake;
     const AppNameCamel = generator.appName.camel;
     const content = `import Config
 
+# Set UI variables
+config :${AppNameSnake}, :ui,
+  app_name: "${AppNameCamel}"
+
 # Configure your database
 config :${AppNameSnake}, ${AppNameCamel}.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "${AppNameSnake}_db",
+  hostname: "localhost",
   database: "${AppNameSnake}_db",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
@@ -80,7 +84,7 @@ config :phoenix, :stacktrace_depth, 20
 
     return generateFile({
         filename, dir, content
-    }, "gen_docker_config_env");
+    }, "gen_dev_config_env");
 }
 
-export { gen_docker_config_env };
+export { gen_dev_config_env };

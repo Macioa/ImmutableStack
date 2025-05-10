@@ -31,7 +31,7 @@ const init_phoenix_umbrella_app = async ({
   const init = await exec(
     {
       command: `yes | mix phx.new ${projectName} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
-      dir: join(umbrellaDir, '..'),
+      dir: umbrellaDir,
     },
     "init_phoenix_umbrella_app"
   );

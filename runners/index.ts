@@ -5,7 +5,7 @@ import { log } from "../utils/logger";
 import { chunkArray } from "../utils/chunk";
 import { cacheLogCommand } from "../utils/history_cache";
 import mixOrDocker from "./nomix";
-import { appDataFromAppnNameSnake, getAppData, setAppData } from "../readers/get_app_data";
+import { getAppData } from "../readers/get_app_data";
 
 type Execution = {
   dir: string;

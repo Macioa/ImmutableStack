@@ -35,7 +35,7 @@ const gen_docker_compose = async (generator: ImmutableGenerator) => {
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=${AppNameSnake}_db
     volumes:
-      - .pgdata:/var/lib/postgresql/data
+      - ./pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"`;
 
