@@ -4,14 +4,14 @@ import { getSetting } from "../utils/settings";
 const mixOrDocker = async (cmd: string, appNameSnake: string) => {
   const usemix = (await getSetting("nomix")) != "true";
   if (usemix) return cmd;
-  const hasmix = !!cmd.match(/.*\smix\s.*/g);
-  const hasnew = !!cmd.match(/.*\sphx.new\s.*/g);
+  const hasmix = !!cmd.match(/\bmix\b/g);
+  const hasnew = !!cmd.match(/\bphx.new\b/g);
   let pref = ""
   if (hasmix) { 
     log({ level: 2, color: "BLUE" }, `Running MIX in Docker...`)
   }
   if (hasnew) {
-    pref = `cd ${appNameSnake}_umbrella && `
+    pref = `mkdir -p ${appNameSnake}_umbrella && cd ${appNameSnake}_umbrella && `
     cmd = `${cmd} && cp -rf ${appNameSnake}_umbrella/* . && rm -rf ${appNameSnake}_umbrella`;
   }
 

@@ -1,7 +1,11 @@
 import { join } from "path";
 import { generateFile } from "../index";
 
-const gen_custom_compiler = async (AppName: string, LibDir: string) => {
+const gen_custom_compiler = async (
+  AppNameCamel: string,
+  AppNameSnake: string,
+  LibDir: string
+) => {
   const compilerPath = join(LibDir, `/lib/mix/tasks`);
 
   const content = `
@@ -10,7 +14,8 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
 
   @impl Mix.Task.Compiler
   def run(_args) do
-    case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: "apps/${AppName}_ui") do
+    ${AppNameCamel}.Tasks.ExportConfig.generate_env_file()
+    case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: "apps/${AppNameSnake}_ui") do
       {output, 0} ->
         IO.puts(output)
         {:ok, []}
@@ -31,7 +36,7 @@ end
       filename: "custom_compiler.ex",
       content,
     },
-    "gen_custom_compiler",
+    "gen_custom_compiler"
   );
 };
 

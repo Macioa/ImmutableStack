@@ -4,7 +4,7 @@ import { inject_file, Injection, InjectType } from "../../injectors/index";
 
 const inject_sample_release_mix = async (generator: ImmutableGenerator) => {
   const file = join(generator.dir?.ProjectDir || "", "mix.exs");
-  console.log("ASDF", file)
+
   const AppNameSnake = generator.appName.snake;
   const content = `\n      releases: [
         your_release_name: [
