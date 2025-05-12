@@ -1,18 +1,20 @@
 import { join } from "path";
-import { ImmutableGenerator } from "../../immutable_gen";
 import { inject_file, Injection, InjectType } from "../../injectors/index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_sample_release_mix = async (generator: ImmutableGenerator) => {
-  const file = join(generator.dir?.ProjectDir || "", "mix.exs");
+const inject_sample_release_mix = async ({
+  UmbrellaDir,
+  AppNameSnake,
+}: AppData) => {
+  const file = join(UmbrellaDir || "", "mix.exs");
 
-  const AppNameSnake = generator.appName.snake;
   const content = `\n      releases: [
         your_release_name: [
           applications: [${AppNameSnake}_web: :permanent, ${AppNameSnake}: :permanent],
           include_erts: true,
           include_src: false
         ]
-      ],\n`
+      ],\n`;
   const injections: Injection[] = [
     [InjectType.AFTER, /\s*def\s+project\s+do\s+\[/gm, content],
   ];

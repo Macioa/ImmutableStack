@@ -1,11 +1,10 @@
-import { ImmutableGenerator } from "../../immutable_gen";
+import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_docker_prod = async (generator: ImmutableGenerator) => {
-  let dir = generator.dir?.ProjectDir || "";
+const gen_docker_prod = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
+  let dir = UmbrellaDir || "";
   dir += "/docker";
   const filename = "prod.dockerfile";
-  const AppNameSnake = generator.appName.snake;
   const content = `# Stage 1: Build Elixir/Phoenix
 FROM elixir:1.18-alpine AS builder
 

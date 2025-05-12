@@ -1,8 +1,8 @@
-import { ImmutableGenerator } from "../../immutable_gen";
+import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_docker_ignore = async (generator: ImmutableGenerator) => {
-  let dir = generator.dir?.ProjectDir || "";
+const gen_docker_ignore = async ({ UmbrellaDir }: AppData) => {
+  let dir = UmbrellaDir || "";
   const filename = ".dockerignore";
   const content = `_build
 deps

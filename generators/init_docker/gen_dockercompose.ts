@@ -1,11 +1,10 @@
-import { ImmutableGenerator } from "../../immutable_gen";
+import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_docker_compose = async (generator: ImmutableGenerator) => {
-  let dir = generator.dir?.ProjectDir || "";
+const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
+  let dir = UmbrellaDir || "";
   dir += "/docker";
   const filename = "compose.yaml";
-  const AppNameSnake = generator.appName.snake;
   const content = `services:
   ${AppNameSnake}_dev:
     build:

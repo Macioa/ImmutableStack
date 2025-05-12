@@ -1,10 +1,12 @@
 import { join } from "path";
-import { ImmutableGenerator } from "../../immutable_gen";
 import { inject_file, Injection, InjectType } from "../../injectors/index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_docker_scripts_package = (generator: ImmutableGenerator) => {
-  const file = join(generator.dir?.ProjectDir || "", "package.json");
-  const AppNameSnake = generator.appName.snake;
+const inject_docker_scripts_package = ({
+  UmbrellaDir,
+  AppNameSnake,
+}: AppData) => {
+  const file = join(UmbrellaDir || "", "package.json");
   const content = `\n"APP MAINTENANCE DOCKERIZED": "echo 'APP MAINTENANCE'",
     "d.deps": "m='Fetching Dependencies (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml run --rm ${AppNameSnake}_dev mix deps.get",
     "d.comp": "m='Compiling Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml run --rm ${AppNameSnake}_dev mix compile",
@@ -20,6 +22,7 @@ const inject_docker_scripts_package = (generator: ImmutableGenerator) => {
     "BUILD, RUN, STOP, DESTROY CONTAINERS": "echo 'BUILD, RUN, STOP, DESTROY CONTAINERS'",
     "d.up": "m='Stopping Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up",
     "d.down": "m='Stopping Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml down",
+    "d.db": "m='Starting Only the Database (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up -d ${AppNameSnake}_db",
     "HOLD OR KILL CONTAINERS": "echo 'HOLD OR KILL CONTAINERS'",
     "d.hold": "m='Holding Containers (** Docker **) ...' && echo $m && yarn d.up && docker compose -f docker/compose.yaml exec ${AppNameSnake}_dev sleep 1000000",
     "d.kill": "m='Killing Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml kill",

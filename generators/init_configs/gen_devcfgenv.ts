@@ -1,14 +1,17 @@
 import { join } from "path";
 import { ImmutableGenerator } from "../../immutable_gen";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_dev_config_env = async (generator: ImmutableGenerator) => {
-    const filename = "dev.exs";
-    let dir = generator.dir?.ProjectDir || "";
-    dir = join(dir, "config");
-    const AppNameSnake = generator.appName.snake;
-    const AppNameCamel = generator.appName.camel;
-    const content = `import Config
+const gen_dev_config_env = async ({
+  UmbrellaDir,
+  AppNameCamel,
+  AppNameSnake,
+}: AppData) => {
+  const filename = "dev.exs";
+  let dir = UmbrellaDir || "";
+  dir = join(dir, "config");
+  const content = `import Config
 
 # Set UI variables
 config :${AppNameSnake}, :ui,
@@ -80,11 +83,16 @@ config :swoosh, :api_client, false
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
-`
+`;
 
-    return generateFile({
-        filename, dir, content
-    }, "gen_dev_config_env");
-}
+  return generateFile(
+    {
+      filename,
+      dir,
+      content,
+    },
+    "gen_dev_config_env"
+  );
+};
 
 export { gen_dev_config_env };
