@@ -64,13 +64,7 @@ async function main() {
   );
   await init_docker(gen);
 
-  await init_phoenix_umbrella_app({
-    projectName,
-    projectNameCamel,
-    umbrellaDir,
-    libdir,
-    webdir,
-  });
+  await init_phoenix_umbrella_app(AppData);
 
   await init_react_app_with_vite({
     projectName,
@@ -80,12 +74,7 @@ async function main() {
     webdir,
     libdir,
   });
-  await build_tool_agnostic_init_tasks({
-    projectName,
-    projectNameCamel,
-    uidir,
-    libdir,
-  });
+  await build_tool_agnostic_init_tasks(AppData);
   await inject_sample_release_mix(gen);
 
   writeLog(umbrellaDir, `init_project_${projectName}`);
