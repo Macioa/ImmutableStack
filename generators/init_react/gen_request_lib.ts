@@ -1,7 +1,8 @@
 import { join } from "path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_request_lib = async (LibDir: string) => {
+const gen_request_lib = async ({ LibDir }: AppData) => {
   const dir = join(LibDir, "lib/typescript/requests");
   const literalFetchRoute = "`${API_URL}/${route}`";
   const literalErrorString =
@@ -128,7 +129,7 @@ export default requestSlice;
 
   return generateFile(
     { dir, filename: "index.tsx", content },
-    "gen_request_lib",
+    "gen_request_lib"
   );
 };
 

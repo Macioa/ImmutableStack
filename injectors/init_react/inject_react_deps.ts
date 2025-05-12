@@ -1,7 +1,8 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_react_deps = async (UiDir: string) => {
+const inject_react_deps = async ({UiDir}:AppData) => {
   const file = path.join(UiDir, "package.json");
   const injections: Injection[] = [
     [InjectType.AFTER, /\"scripts\":\s+\{/, `"test": "jest",`],

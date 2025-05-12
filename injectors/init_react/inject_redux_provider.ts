@@ -1,7 +1,8 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_redux_provider = async (AppNameCamel: string, UiDir: string) => {
+const inject_redux_provider = async ({ AppNameCamel, UiDir }: AppData) => {
   const file = path.join(UiDir, "src/App.tsx");
   const injections: Injection[] = [
     [
