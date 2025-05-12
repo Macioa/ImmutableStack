@@ -1,7 +1,8 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "..";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_dev_config = async (AppNameCamel: string, UmbrellaDir: string) => {
+const inject_dev_config = async ({ AppNameCamel, UmbrellaDir }: AppData) => {
   const file = path.join(UmbrellaDir, `config/dev.exs`);
   const injections: Injection[] = [
     [

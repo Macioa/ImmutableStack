@@ -1,7 +1,8 @@
 import { join } from "path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_id_validation_plug = async (AppNameCamel: string, LibDir: string) => {
+const gen_id_validation_plug = async ({ AppNameCamel, LibDir }: AppData) => {
   const plug_path = join(LibDir, `/lib/mix/plugs/`);
 
   const content = `

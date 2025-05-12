@@ -1,8 +1,8 @@
 import { join } from "path";
 import { generateFile } from "../../index";
 
-const gen_chunk_util = async (AppNameCamel: string, AppDir: string) => {
-  const utilsPath = join(AppDir || "", "/lib/utils");
+const gen_chunk_util = async (AppNameCamel: string, LibDir: string) => {
+  const utilsPath = join(LibDir || "", "/lib/utils");
 
   const content = `
 defmodule ${AppNameCamel}.Utils.Chunk do

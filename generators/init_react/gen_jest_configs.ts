@@ -1,3 +1,4 @@
+import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
 const gen_jest_config = async (AppName: string, UiDir: string) => {
@@ -27,7 +28,7 @@ export default {
   );
 };
 
-const gen_jest_setup = async (UiDir: string) => {
+const gen_jest_setup = async ({ UiDir }: AppData) => {
   const content = `
 require("@testing-library/jest-dom");
             `;

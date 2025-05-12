@@ -4,10 +4,11 @@ import { generateFile } from "../index";
 const gen_docker_ignore = async (generator: ImmutableGenerator) => {
   let dir = generator.dir?.ProjectDir || "";
   const filename = ".dockerignore";
-  const content = `**/.pgdata
-**/_build
-**/deps
-**/node_modules`;
+  const content = `_build
+deps
+node_modules
+*/node_modules
+docker`;
 
   return generateFile({ filename, dir, content }, "gen_docker_ignore");
 };
