@@ -1,13 +1,14 @@
 var log_level = 3;
 
 const COLOR = {
-  GREEN: "\x1b[32m%s\x1b[0m",
-  RED: "\x1b[31m%s\x1b[0m",
-  YELLOW: "\x1b[33m%s\x1b[0m",
-  BLUE: "\x1b[34m%s\x1b[0m",
-  TEAL: "\x1b[96m%s\x1b[0m", // Bright Teal (Bright Cyan)
-  PURPLE: "\x1b[35m%s\x1b[0m", // Rich Purple (Magenta)
-  TAN: "\x1b[2;33m%s\x1b[0m", // Dim Yellow (soft tan-like hue)
+  GREEN: "\x1b[38;2;0;255;0m%s\x1b[0m",       // #00FF00
+  RED: "\x1b[38;2;255;0;0m%s\x1b[0m",         // #FF0000
+  YELLOW: "\x1b[38;2;255;255;0m%s\x1b[0m",    // #FFFF00
+  BLUE: "\x1b[38;2;0;0;255m%s\x1b[0m",        // #0000FF
+  TEAL: "\x1b[38;2;0;255;255m%s\x1b[0m",      // #00FFFF
+  PURPLE: "\x1b[38;2;255;0;255m%s\x1b[0m",    // #FF00FF
+  TAN: "\x1b[38;2;210;180;140m%s\x1b[0m",     // #D2B48C
+  PINK: "\x1b[38;2;255;0;127m%s\x1b[0m"       // #FF007F
 };
 
 interface LogOptions {

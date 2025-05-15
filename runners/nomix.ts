@@ -9,12 +9,12 @@ const mixOrDocker = async (cmd: string, appNameSnake: string) => {
   let pref = ""
   let dockerdir = "docker/compose.yaml";
   if (hasmix) { 
-    log({ level: 2, color: "BLUE" }, `Running MIX in Docker...`)
+    log({ level: 2, color: "PINK" }, `Running MIX in Docker...`)
   }
   if (hasnew) {
     pref = `mkdir -p ${appNameSnake}_umbrella && cd ${appNameSnake}_umbrella && `
     cmd = `${cmd} && cp -rf ${appNameSnake}_umbrella/* . && rm -rf ${appNameSnake}_umbrella`;
-    dockerdir = "../docker/compose.yaml";
+    dockerdir = "docker/compose.yaml";
   }
 
   return hasmix
