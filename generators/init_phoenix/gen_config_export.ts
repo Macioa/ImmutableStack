@@ -1,11 +1,12 @@
-import { join } from "path";
+import { join } from "../../utils/path";
+import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_config_export = async (
-  AppNameCamel: string,
-  AppNameSnake: string,
-  LibDir: string
-) => {
+const gen_config_export = async ({
+  AppNameCamel,
+  AppNameSnake,
+  LibDir,
+}: AppData) => {
   const compilerPath = join(LibDir, `/lib/mix/tasks`);
 
   const content = `defmodule ${AppNameCamel}.Tasks.ExportConfig do
@@ -13,7 +14,10 @@ const gen_config_export = async (
   @configs [:ui]
 
 
-  def generate_env_file do
+  def generate_env_file(env_path) do
+    env_path = env_path |> Path.join(".env")
+    env_path |> Path.dirname() |> File.mkdir_p!()
+
     configs = @configs |> Enum.map(fn c ->
         (Application.get_env(:${AppNameSnake}, c) || [])
         |> Enum.map(fn {k, v} -> {c, k, v} end)
@@ -30,7 +34,7 @@ const gen_config_export = async (
       end)
       |> Enum.join("\n")
 
-    File.write!("apps/${AppNameSnake}_ui/.env", env_content <> "\n")
+    File.write!(env_path, env_content <> "\\n")
   end
 
   defp encode_value(value) when is_binary(value), do: value
