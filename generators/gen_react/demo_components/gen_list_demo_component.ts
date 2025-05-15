@@ -24,8 +24,8 @@ const gen_list_demo_component = async (
   const content = `
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Dispatch } from "redux";
-import {
+import type { Dispatch } from "redux";
+import type {
   ${singleUpperCamel} as ${singleUpperCamel}T,
 } from "../../state/${singleUpperCamel}";
 import { ${singleUpperCamel} } from "./show";

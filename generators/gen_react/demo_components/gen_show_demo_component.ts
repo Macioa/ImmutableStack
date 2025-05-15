@@ -31,8 +31,8 @@ const gen_show_demo_component = async (
   const content = `
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Dispatch } from "redux";
-import { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
+import type { Dispatch } from "redux";
+import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
 
 interface ${singleUpperCamel}Props {
   ${singleLowerCamel}?: ${singleUpperCamel}T | null;

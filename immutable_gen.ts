@@ -111,7 +111,9 @@ const main = async () => {
     { level: 2, color: "YELLOW" },
     "\nDon't forget to update your repository by running migrations:"
   );
-  log({ level: 3, color: "BLUE" }, `    mix ecto.migrate\n`);
+  log({ level: 4, color: "BLUE" }, `    yarn d.mig\n`);
+  log({ level: 4, color: "BLUE" }, `          or\n`);
+  log({ level: 4, color: "BLUE" }, `    mix ecto.migrate\n`);
 };
 
 main().catch(console.error);

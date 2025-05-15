@@ -1,4 +1,5 @@
-import { join } from "../../utils/path";
+import { gen_dev_config_env } from "../../generators/init_configs/gen_devcfgenv";
+import { gen_docker_config_env } from "../../generators/init_configs/gen_dockercfgenv";
 import { gen_fallback_controller } from "../../generators/init_phoenix/gen_fallback_controller";
 import { gen_id_validation_plug } from "../../generators/init_phoenix/gen_id_validation_plug";
 import { gen_user_socket } from "../../generators/init_phoenix/gen_user_socket";
@@ -14,6 +15,7 @@ import { mark_router } from "../../injectors/init_phoenix/mark_router";
 import { AppData } from "../../readers/get_app_data";
 import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
+import { join } from "../../utils/path";
 import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
 import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
 
@@ -37,6 +39,8 @@ const init_phoenix_umbrella_app = async (appdata: AppData) => {
     gen_id_validation_plug(appdata),
     gen_fallback_controller(appdata),
     mark_router(appdata),
+    gen_docker_config_env(appdata),
+    gen_dev_config_env(appdata),
   ]);
   const configure = await configure_phoenix_to_serve_react(appdata);
   const format = await configure_phoenix_to_format_react(appdata);

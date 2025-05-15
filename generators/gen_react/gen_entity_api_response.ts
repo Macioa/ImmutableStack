@@ -14,7 +14,7 @@ const gen_entity_api_response = async (
   const dir = join(LibDir || "", "lib/typescript/requests");
   const filename = `${singleUpperCamel}Response.tsx`;
 
-  const contentInit = `import { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
+  const contentInit = `import type { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
 
 type BaseQuery = {
   query?: Record<string, any>;

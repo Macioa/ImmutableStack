@@ -24,9 +24,10 @@ const gen_full_demo_component = async (
   const content = `
 import React from "react";
 import { useSelector } from "react-redux";
-import { Dispatch } from "redux";
+import type { Dispatch } from "redux";
 import { pipe } from "mincurrypipe";
-import { ${singleUpperCamel} as ${singleUpperCamel}T, select${singleUpperCamel}, select${pluralUpperCamel}, setFrog } from "../../state/${singleUpperCamel}";
+import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
+import { select${singleUpperCamel}, select${pluralUpperCamel}, setFrog } from "../../state/${singleUpperCamel}";
 import { request${pluralUpperCamel}, update${singleUpperCamel} } from "../../requests/${singleLowerCamel}";
 import { Create${singleUpperCamel} } from "./create";
 import { ${pluralUpperCamel} } from "./list";

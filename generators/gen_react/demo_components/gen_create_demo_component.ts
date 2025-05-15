@@ -55,8 +55,8 @@ const gen_create_demo_component = async (
   const content = `
   import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { Dispatch } from "redux";
-import { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
+import type { Dispatch } from "redux";
+import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
 
 interface CreateProps {
   onSubmit?: (
