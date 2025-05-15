@@ -1,12 +1,15 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 import { Names } from "../../immutable_gen";
 
-const gen_react_channel = ({singleUpperCamel}: Names, {LibDir}: AppData) => {
-    const filename = `${singleUpperCamel}Channel.ts`
-    const dir = join(LibDir, 'lib/typescript/requests')
-    const content = `import { useEffect, useRef, useState } from "react";
+const gen_react_channel = (
+  { singleUpperCamel }: Names,
+  { LibDir }: AppData
+) => {
+  const filename = `${singleUpperCamel}Channel.ts`;
+  const dir = join(LibDir, "lib/typescript/requests");
+  const content = `import { useEffect, useRef, useState } from "react";
 import { Channel } from "phoenix";
 import { usePhoenixSocket } from "@utils";
 
@@ -51,8 +54,8 @@ export function use${singleUpperCamel}Channel(topic: string, params = {}) {
     off: (event: string) =>
       channel?.off(event),
   };
-}`
-  return generateFile({filename, dir, content}, "gen_react_channel");
+}`;
+  return generateFile({ filename, dir, content }, "gen_react_channel");
 };
 
 export { gen_react_channel };

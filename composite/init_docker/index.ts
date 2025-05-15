@@ -12,7 +12,7 @@ import { execute } from "../../runners/index";
 const init_package_json = async ({ UmbrellaDir }: AppData) =>
   execute(
     {
-      dir: UmbrellaDir || "",
+      dir: UmbrellaDir,
       command: "npm init -y",
     },
     "init_package_json"
@@ -22,7 +22,7 @@ const init_docker = async (appdata: AppData) => {
   const { UmbrellaDir } = appdata;
   await execute(
     {
-      dir: UmbrellaDir || "",
+      dir: UmbrellaDir,
       command: "mkdir -p docker/pgdata",
     },
     "init_docker"

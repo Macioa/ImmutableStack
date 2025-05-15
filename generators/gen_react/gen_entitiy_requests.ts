@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
 import { generateFile } from "../index";
 import { StringOnlyMap } from "../../utils/map";
@@ -8,10 +8,11 @@ const gen_entity_requests = async (
   generator: ImmutableGenerator,
   _typeDict: GenTypes
 ) => {
-  const { name, generate, AppNameCaps, LibDir } = generator;
-  const { singleUpperCamel, singleLowerCamel, pluralUpperCamel, singleSnake } =
-    name;
-  const { requests } = generate;
+  const {
+    name: { singleUpperCamel, singleLowerCamel, pluralUpperCamel, singleSnake },
+    generate: { requests },
+    AppData: { AppNameCamel, LibDir },
+  } = generator;
   const filedir = join(LibDir || "", "lib/typescript/requests/");
 
   const APIS = [
@@ -25,7 +26,7 @@ const gen_entity_requests = async (
         singleUpperCamel,
         singleLowerCamel,
         pluralUpperCamel,
-        AppNameCaps,
+        AppNameCamel,
         singleSnake,
       });
     })
@@ -43,7 +44,6 @@ import { Request } from "./index";
 import { set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";
 import type { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
 import type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
-
 
   const exports = `export { request${singleUpperCamel}, request${pluralUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
 `;
@@ -73,7 +73,7 @@ const gen_request_list = ({
   pluralUpperCamel,
   AppNameCaps,
   singleSnake,
-  singleUpperCamel
+  singleUpperCamel,
 }: StringOnlyMap) =>
   `const request${pluralUpperCamel} = (dispatch: Dispatch) => 
     Request.API({

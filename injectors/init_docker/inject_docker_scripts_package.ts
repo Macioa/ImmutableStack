@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { inject_file, Injection, InjectType } from "../../injectors/index";
 import { AppData } from "../../readers/get_app_data";
 
@@ -13,14 +13,14 @@ const inject_docker_scripts_package = ({
     "d.mig": "m='Running Database Migrations (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml run --rm ${AppNameSnake}_dev mix ecto.migrate",
     "APP STARTUP DOCKERIZED": "echo 'APP STARTUP'",
     "d.test": "m='Running Tests (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml run --rm test mix test",
-    "d.serv": "m='Starting Server (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up ${AppNameSnake}_dev",
+    "d.serv": "m='Starting Server (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up -d",
     "SERVICE LOGS": "echo 'SERVICE LOGS'",
     "d.logs": "m='Fetching Logs (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml logs --follow",
     "COMPOSE UTILITIES": "echo 'COMPOSE UTILITIES'",
     "d.build": "m='Building Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml build",
-    "d.restart": "m='Restarting Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml restart",
+    "d.restart": "m='Restarting Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml restart -d",
     "BUILD, RUN, STOP, DESTROY CONTAINERS": "echo 'BUILD, RUN, STOP, DESTROY CONTAINERS'",
-    "d.up": "m='Stopping Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up",
+    "d.up": "m='Stopping Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up -d",
     "d.down": "m='Stopping Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml down",
     "d.db": "m='Starting Only the Database (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up -d ${AppNameSnake}_db",
     "HOLD OR KILL CONTAINERS": "echo 'HOLD OR KILL CONTAINERS'",

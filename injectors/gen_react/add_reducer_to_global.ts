@@ -3,9 +3,11 @@ import { inject_file, Injection, InjectType } from "../index";
 import { ImmutableGenerator } from "../../immutable_gen";
 
 const addReducerToGlobal = async (generator: ImmutableGenerator) => {
-  const { name, generate, UiDir } = generator;
-  const { singleUpperCamel } = name;
-  const { appstate } = generate;
+  const {
+    name: { singleUpperCamel },
+    generate: { appstate },
+    AppData: { UiDir },
+  } = generator;
   const file = path.join(UiDir as string, "src/store/index.tsx");
 
   const injections: Injection[] = [

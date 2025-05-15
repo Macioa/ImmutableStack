@@ -1,7 +1,8 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { generateFile } from "../../index";
+import { AppData } from "../../../readers/get_app_data";
 
-const gen_chunk_util = async (AppNameCamel: string, LibDir: string) => {
+const gen_chunk_util = async ({ AppNameCamel, LibDir }: AppData) => {
   const utilsPath = join(LibDir || "", "/lib/utils");
 
   const content = `
@@ -79,7 +80,7 @@ end
 
   return generateFile(
     { dir: utilsPath, filename: "chunk.ex", content },
-    "gen_chunk_util",
+    "gen_chunk_util"
   );
 };
 

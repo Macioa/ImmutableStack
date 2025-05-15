@@ -5,15 +5,14 @@
           - use "null" as entity name if code is not entity specific (files created from init project)
 */
 
-import * as path from "path";
 import fs from "fs/promises";
-
-import { getAppData, AppData, AppNames } from "./readers/get_app_data";
+import * as path from "path";
+import { AppData, AppNames, getAppData } from "./readers/get_app_data";
+import { log, setLogLevel } from "./utils/logger";
 import {
   getNamesFromSingularSnakeCase as getNames,
   Names,
 } from "./utils/string";
-import { log, setLogLevel } from "./utils/logger";
 
 setLogLevel(5);
 

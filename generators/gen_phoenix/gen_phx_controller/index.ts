@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { generateFile } from "../..";
 import {
   ImmutableContext,
@@ -27,14 +27,14 @@ const route_data = [
 const gen_routes = (
   requested_routes: string[],
   route_data: ImmRoute[],
-  gen_ref_data: StringOnlyMap,
+  gen_ref_data: StringOnlyMap
 ) => {
   log({ level: 7 }, "Requested Routes: ", requested_routes);
   const route_data_computed: { [key: string]: string } = route_data.reduce(
     (acc, route) => {
       return { ...acc, [route.header(gen_ref_data)]: route.fn(gen_ref_data) };
     },
-    {},
+    {}
   );
   log({ level: 7 }, "Route Data Computed: ", route_data_computed);
   return requested_routes
@@ -42,27 +42,30 @@ const gen_routes = (
       log({ level: 7 }, "Header: ", header);
       return route_data_computed[header] || custom_route.fn({ header });
     })
-    .map((route) => mark({str: route, type: "CONTROLLER", entity: gen_ref_data.genName},"EX" as CommentType))
+    .map((route) =>
+      mark(
+        { str: route, type: "CONTROLLER", entity: gen_ref_data.genName },
+        "EX" as CommentType
+      )
+    )
     .join("\n\n");
 };
 
 const gen_phx_controller = async (
   generator: ImmutableGenerator,
-  _typeDict: any,
+  _typeDict: any
 ) => {
   const {
-    AppNameSnake,
-    AppNameCamel,
-    WebDir,
-    generate,
-    name: genNames,
+    AppData: { AppNameSnake, AppNameCamel, WebDir },
+    generate: { http_controller, context },
+    name: { singleSnake: genName, singleUpperCamel: camelName, pluralSnake },
   } = generator;
-  const {singleSnake: genName, singleUpperCamel: camelName, pluralSnake } = genNames
-  const { name, routes } = generate.http_controller as ImmutableController;
-  const { name: contextName } = generate.context as ImmutableContext;
+
+  const { name, routes } = http_controller as ImmutableController;
+  const { name: contextName } = context as ImmutableContext;
   const controllerPath = join(
     WebDir || "",
-    `/lib/${AppNameSnake}_web/controllers/`,
+    `/lib/${AppNameSnake}_web/controllers/`
   );
   const snakeController = name
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -108,7 +111,7 @@ end
       filename: `${snakeController}.ex`,
       content,
     },
-    "gen_phx_controller",
+    "gen_phx_controller"
   );
 };
 
@@ -119,4 +122,3 @@ interface ImmRoute {
 }
 export { gen_json_handler, gen_phx_controller };
 export type { ImmRoute };
-

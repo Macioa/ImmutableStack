@@ -1,8 +1,8 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_store = async ({ AppNameSnake, UiDir }: AppData) => {
+const gen_store = async ({ AppNameCamel, UiDir }: AppData) => {
   const storePath = join(UiDir, "/src/store");
 
   const content = `
@@ -11,11 +11,11 @@ import { requestReducer } from "@requests/index";
 import type { RequestsStoreState } from "@requests/index";
 
 
-type ${AppNameSnake}State = {
+type ${AppNameCamel}State = {
     requestsStore: RequestsStoreState;
 };
 
-const ${AppNameSnake}Store = configureStore({
+const ${AppNameCamel}Store = configureStore({
   reducer: combineReducers({
     requestsStore: requestReducer,
   }),
@@ -30,8 +30,8 @@ const ${AppNameSnake}Store = configureStore({
     // },
 });
 
-export { ${AppNameSnake}Store };
-export type { ${AppNameSnake}State };
+export { ${AppNameCamel}Store };
+export type { ${AppNameCamel}State };
         `;
 
   return generateFile(

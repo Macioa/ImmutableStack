@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../";
 
@@ -6,13 +6,15 @@ const gen_full_demo_component = async (
   generator: ImmutableGenerator,
   genTypes: GenTypes
 ) => {
-  const { name, LibDir } = generator;
   const {
-    singleUpperCamel,
-    singleLowerCamel,
-    pluralLowerCamel,
-    pluralUpperCamel,
-  } = name || {};
+    name: {
+      singleUpperCamel,
+      singleLowerCamel,
+      pluralLowerCamel,
+      pluralUpperCamel,
+    },
+    AppData: { LibDir },
+  } = generator;
 
   const filedir = join(
     LibDir || "",

@@ -1,3 +1,4 @@
+import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { GenTypes, ImmutableGenerator } from "../../immutable_gen";
 import { mark } from "../../repair";
@@ -6,10 +7,12 @@ const gen_entity_api_response = async (
   generator: ImmutableGenerator,
   _typeDict: GenTypes
 ) => {
-  const { name, LibDir } = generator;
-  const { singleUpperCamel } = name;
-  const dir = `${LibDir || ""}/lib/typescript/requests/`;
-  const filename = `${name.singleUpperCamel}Response.tsx`;
+  const {
+    name: { singleUpperCamel },
+    AppData: { LibDir },
+  } = generator;
+  const dir = join(LibDir || "", "lib/typescript/requests");
+  const filename = `${singleUpperCamel}Response.tsx`;
 
   const contentInit = `import { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
 
@@ -41,13 +44,13 @@ type All${singleUpperCamel}Response =
 
   export type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response, All${singleUpperCamel}Response };
   `;
-  const content = mark(
-    { str: contentInit, entity: singleUpperCamel, type: "API_RESPONSE" })
+  const content = mark({
+    str: contentInit,
+    entity: singleUpperCamel,
+    type: "API_RESPONSE",
+  });
 
-  return generateFile(
-    { dir, filename, content },
-    "gen_entity_api_response"
-  );
+  return generateFile({ dir, filename, content }, "gen_entity_api_response");
 };
 
 export { gen_entity_api_response };

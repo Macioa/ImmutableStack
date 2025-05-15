@@ -7,15 +7,15 @@ import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
 
 const init_react_app_with_vite = async (appdata: AppData) => {
-  const { AppNameSnake, LibDir } = appdata;
+  const { AppNameSnake, AppDir } = appdata;
   log(
-    { level: 2, color: "BLUE" },
-    `\nGenerating React app: ${AppNameSnake}_ui with vite ...`
+    { level: 1, color: "BLUE" },
+    `\nGenerating React App: ${AppNameSnake}_ui with Vite ...`
   );
   const init = await exec(
     {
       command: `npx create-vite@latest ${AppNameSnake}_ui --template react-ts --no-install`,
-      dir: LibDir,
+      dir: AppDir,
       // options: {
       //   timeoutResolve: 1000 * 30,
       // }
@@ -24,7 +24,7 @@ const init_react_app_with_vite = async (appdata: AppData) => {
   );
 
   log(
-    { level: 2, color: "BLUE" },
+    { level: 1, color: "BLUE" },
     "\nConfiguring Vite build output and aliases..."
   );
 

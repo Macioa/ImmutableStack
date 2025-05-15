@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from "fs";
 import { homedir } from "os";
-import { join } from "path";
+import { join } from "../../utils/path";
 import { StringOnlyMap } from "../map";
 import { log } from "../logger";
 

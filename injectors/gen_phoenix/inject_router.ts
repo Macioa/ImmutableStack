@@ -3,7 +3,11 @@ import { inject_file, InjectType, Injection } from "../index";
 import { ImmutableGenerator } from "../../immutable_gen";
 
 const inject_router = async (generator: ImmutableGenerator) => {
-  const { WebDir, generate, AppNameSnake, name } = generator || {};
+  const {
+    generate,
+    name,
+    AppData: { AppNameSnake, WebDir },
+  } = generator || {};
   const { singleSnake: resource } = name || {};
   const { http_controller } = generate || {};
   const { name: controller } = http_controller || {};

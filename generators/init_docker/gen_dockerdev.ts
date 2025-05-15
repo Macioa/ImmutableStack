@@ -1,5 +1,4 @@
-import { join } from "path";
-import { ImmutableGenerator } from "../../immutable_gen";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
 

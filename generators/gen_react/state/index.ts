@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { GenTypes, ImmutableGenerator } from "../../../immutable_gen";
 import { mark } from "../../../repair/index";
 import { log } from "../../../utils/logger";
@@ -14,10 +14,12 @@ const gen_entity_store = async (
 ) => {
   log({ level: 7 }, "GEN ENTITY STORE", generator);
   log({ level: 7 }, "TYPE DICT", typeDict);
-  const { name, generate, LibDir } = generator;
-  const { singleUpperCamel: entityNameSingleUpperCamel } = name;
-  const { tstype, appstate, factory } = generate;
-  const sliceName = generate.stateSlice?.name;
+  const {
+    name: { singleUpperCamel },
+    generate: { tstype, appstate, factory, stateSlice },
+    AppData: { LibDir },
+  } = generator;
+  const sliceName = stateSlice?.name;
   const filedir = join(LibDir as string, "lib/typescript/state/");
 
   const typeSource = (typeDict.TsType || typeDict.ImmutableGlobal)?.["ts"];
@@ -38,7 +40,7 @@ const gen_entity_store = async (
   const type = mark({
     str: `type ${tstype} = {${typeKeys}}`,
     type: "TYPEDEF",
-    entity: name.singleUpperCamel,
+    entity: singleUpperCamel,
   });
 
   const stateKeys = Object.keys(stateSource || {})
@@ -47,7 +49,7 @@ const gen_entity_store = async (
   const state = mark({
     str: `interface ${appstate} {${stateKeys}}`,
     type: "APPSTATE",
-    entity: name.singleUpperCamel,
+    entity: singleUpperCamel,
   });
 
   const factoryFunKeys = Object.keys(typeSource || {})
@@ -55,13 +57,13 @@ const gen_entity_store = async (
     .map((k) => `${k}: ${loremFunctions(typeSource?.[k])}`)
     .join(",\n");
   const factoryFunInit = `const ${tstype}Factory = (params: object = {}): ${tstype} => {
-    const ${entityNameSingleUpperCamel} = {${factoryFunKeys}};
-    return Object.assign(${entityNameSingleUpperCamel}, params) as ${tstype};
+    const ${singleUpperCamel} = {${factoryFunKeys}};
+    return Object.assign(${singleUpperCamel}, params) as ${tstype};
 }`;
   const factoryFun = mark({
     str: factoryFunInit,
     type: "FACTORY",
-    entity: name.singleUpperCamel,
+    entity: singleUpperCamel,
   });
 
   const initialStateKeys = Object.keys(initialStateSource)
@@ -69,34 +71,36 @@ const gen_entity_store = async (
     .join(",\n");
 
   const initialState = mark({
-    str: `const initial${appstate}State: ${entityNameSingleUpperCamel}StoreState = {${initialStateKeys}}`,
+    str: `const initial${appstate}State: ${singleUpperCamel}StoreState = {${initialStateKeys}}`,
     type: "INITIAL_APPSTATE",
-    entity: name.singleUpperCamel,
+    entity: singleUpperCamel,
   });
 
   const Slice = `
 const ${sliceName} = createSlice({
-      name: "${entityNameSingleUpperCamel}",
+      name: "${singleUpperCamel}",
       initialState: initial${appstate}State,
       reducers: {
         ${get_reducers(generator)
           .map((rdcr) =>
-            mark({ str: rdcr, type: "REDUCER", entity: name.singleUpperCamel })
+            mark({ str: rdcr, type: "REDUCER", entity: singleUpperCamel })
           )
           .join(",\n")}
       },
     });
-const ${entityNameSingleUpperCamel}Reducer = ${sliceName}.reducer;
+const ${singleUpperCamel}Reducer = ${sliceName}.reducer;
 
-${get_selectors(generator)?.map((sel) =>
-  mark({ str: sel, type: "SELECTOR", entity: name.singleUpperCamel })
-).join("\n")}
+${get_selectors(generator)
+  ?.map((sel) =>
+    mark({ str: sel, type: "SELECTOR", entity: singleUpperCamel })
+  )
+  .join("\n")}
 `;
 
   const exportVars = [
     appstate ? `initial${appstate}State` : null,
     factory ? `${tstype}Factory` : null,
-    sliceName ? `${entityNameSingleUpperCamel}Reducer` : null,
+    sliceName ? `${singleUpperCamel}Reducer` : null,
     ...selectorExports,
   ]
     .filter((v) => !!v)
@@ -118,13 +122,13 @@ ${get_selectors(generator)?.map((sel) =>
     .join("\n");
 
   const genericAppStateInit = `interface GenericAppState {
-    ${entityNameSingleUpperCamel}Store: ${entityNameSingleUpperCamel}StoreState;
+    ${singleUpperCamel}Store: ${singleUpperCamel}StoreState;
     [key: string]: any;
 }`;
   const genericAppState = mark({
     str: genericAppStateInit,
     type: "GENERIC_APPSTATE",
-    entity: name.singleUpperCamel,
+    entity: singleUpperCamel,
   });
 
   const content = `
@@ -145,7 +149,7 @@ ${exports}
 
   return Promise.all([
     generateFile(
-      { dir: filedir, filename: `${entityNameSingleUpperCamel}.tsx`, content },
+      { dir: filedir, filename: `${singleUpperCamel}.tsx`, content },
       "gen_entity_store"
     ),
     generate_entity_state_tests(generator, reducers, selectors || []),

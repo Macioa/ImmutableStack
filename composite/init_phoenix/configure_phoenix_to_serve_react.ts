@@ -5,20 +5,14 @@ import { inject_custom_compile_to_mix_exs } from "../../injectors/init_phoenix/i
 import { inject_page_to_router } from "../../injectors/init_phoenix/inject_page_to_router";
 import { inject_static_output_to_endpoint } from "../../injectors/init_phoenix/inject_static_ouput_to_endpoint";
 import { AppData } from "../../readers/get_app_data";
-import { StringOnlyMap, validate } from "../../utils/map";
 
 const configure_phoenix_to_serve_react = async (appdata: AppData) => {
- const { AppNameSnake, AppNameCamel, WebDir, LibDir } = appdata;
   const page_controller = await gen_page_controller(appdata);
-  const endpoint = await inject_static_output_to_endpoint(AppNameSnake, WebDir);
-  const router = await inject_page_to_router(AppNameSnake, AppNameCamel, WebDir);
-  const custom_compile = await gen_custom_compiler(
-    AppNameCamel,
-    AppNameSnake,
-    LibDir
-  );
-  const export_config = await gen_config_export(AppNameCamel, AppNameSnake, LibDir);
-  const mix = await inject_custom_compile_to_mix_exs(AppNameSnake, WebDir);
+  const endpoint = await inject_static_output_to_endpoint(appdata);
+  const router = await inject_page_to_router(appdata);
+  const custom_compile = await gen_custom_compiler(appdata);
+  const export_config = await gen_config_export(appdata);
+  const mix = await inject_custom_compile_to_mix_exs(appdata);
 
   return [
     page_controller,

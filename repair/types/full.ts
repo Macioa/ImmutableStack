@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "fs/promises";
-import { resolve } from "path";
+import { resolve } from "../../utils/path";
 import { getContext, getTarget, repairFn, RepairI } from "../";
 import { log } from "../../utils/logger";
 import { API_Fn } from "../adapters";

@@ -1,8 +1,7 @@
-import { join } from "path";
-import { CommentType, mark } from "../../repair";
-import { StringOnlyMap } from "../../utils/map";
-import { generateFile } from "../index";
+import { join } from "../../utils/path";
 import { AppData } from "../../readers/get_app_data";
+import { CommentType, mark } from "../../repair";
+import { generateFile } from "../index";
 
 const gen_fallback_controller = async ({
   WebDir,

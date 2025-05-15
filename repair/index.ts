@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { join } from "path";
+import { join } from "../utils/path";
 import { getAppData } from "../readers/get_app_data";
 import { log } from "../utils/logger";
 import { getSetting } from "../utils/settings";

@@ -1,7 +1,8 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_custom_formatter = async (AppName: string, LibDir: string) => {
+const gen_custom_formatter = async ({ AppNameSnake, LibDir }: AppData) => {
   const formatterPath = join(LibDir, `/lib/mix/tasks/`);
 
   const content = `
@@ -13,11 +14,11 @@ defmodule Mix.Tasks.CustomFormatter do
 
     {js_paths, ex_paths} =
       Enum.split_with(args, fn path ->
-        String.contains?(path, "apps/${AppName}_ui") || String.ends_with?(path, ".ts") ||
+        String.contains?(path, "apps/${AppNameSnake}_ui") || String.ends_with?(path, ".ts") ||
           String.ends_with?(path, ".tsx")
       end)
 
-    js_paths = Enum.map(js_paths, &String.replace(&1, ~r/(.*){0,1}apps\\/${AppName}_ui\\//, ""))
+    js_paths = Enum.map(js_paths, &String.replace(&1, ~r/(.*){0,1}apps\\/${AppNameSnake}_ui\\//, ""))
 
     IO.puts("Formatting Elixir files...")
     Mix.Task.run("format", ex_paths)
@@ -32,7 +33,7 @@ defmodule Mix.Tasks.CustomFormatter do
     js_paths = Enum.join(paths, " ")
 
     {_result, 0} =
-      System.cmd("bash", ["-c", "npm run format #{js_paths}"], cd: "./apps/${AppName}_ui")
+      System.cmd("bash", ["-c", "npm run format #{js_paths}"], cd: "./apps/${AppNameSnake}_ui")
 
     # IO.puts(result)
   end
@@ -45,7 +46,7 @@ end
       filename: "custom_formatter.ex",
       content,
     },
-    "gen_custom_formatter",
+    "gen_custom_formatter"
   );
 };
 

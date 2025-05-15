@@ -1,10 +1,8 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "..";
-import { ImmutableGenerator } from "../../immutable_gen";
-import { StringOnlyMap } from "../../utils/map";
+import { AppData } from "../../readers/get_app_data";
 
-
-const gen_socket_context = async ({LibDir}: StringOnlyMap) => {
+const gen_socket_context = async ({ LibDir }: AppData) => {
   const dir = join(LibDir, "typescript/utils");
   const filename = "PhoenixSocketContext.tsx";
   const content = `import { createContext, useContext, useEffect, useRef, useState } from "react";
@@ -60,5 +58,5 @@ export const PhoenixSocketProvider = ({ children, socketUrl, token }: Props) => 
 };`;
 
   return generateFile({ filename, dir, content }, "gen_socket_context");
-}
+};
 export { gen_socket_context };

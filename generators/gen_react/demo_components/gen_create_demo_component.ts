@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../";
 import { StringOnlyMap } from "../../../utils/map";
@@ -31,8 +31,10 @@ const gen_create_demo_component = async (
   generator: ImmutableGenerator,
   genTypes: GenTypes
 ) => {
-  const { name, LibDir } = generator;
-  const { singleUpperCamel, singleLowerCamel } = name || {};
+  const {
+    name: { singleUpperCamel, singleLowerCamel },
+    AppData: { LibDir },
+  } = generator;
   const sourceType = genTypes.TsType || genTypes.ImmutableGlobal;
   const source = sourceType?.ts || {};
   const filedir = join(

@@ -34,17 +34,17 @@ async function main() {
   setAppData(AppData);
   const { AppNameSnake, UmbrellaDir } = AppData;
 
-  const _dir = await exec(
-    { command: `mkdir -p ${AppNameSnake}_umbrella`, dir: "." },
-    "init_proj"
-  );
-
-  setUmbrellaDirCache(UmbrellaDir);
-
   log(
     { level: 1, color: "GREEN" },
     `\n\n Generating ${AppNameSnake} App with Immutable Stack\n\n`
   );
+  setUmbrellaDirCache(UmbrellaDir);
+
+  const _dir = await exec(
+    { command: `mkdir -p ${AppNameSnake}_umbrella`, dir: UmbrellaDir },
+    "init_proj"
+  );
+
   const _docker = await init_docker(AppData);
   const _init = await init_phoenix_umbrella_app(AppData);
   const _react = await init_react_app_with_vite(AppData);
@@ -52,7 +52,10 @@ async function main() {
   const _release = await inject_sample_release_mix(AppData);
 
   writeLog(UmbrellaDir, `init_project_${projectName}`);
-
+  log(
+    { level: 1, color: "BLUE" },
+    `\n\n Retreiving dependencies for React and Phoenix...\n\n`
+  );
   const _deps = await exec(
     {
       command: `mix deps.get`,
@@ -60,7 +63,7 @@ async function main() {
     },
     "init_proj"
   );
-
+  log({ level: 1, color: "BLUE" }, `\n\n Compiling React and Phoenix...\n\n`);
   const _compile = await exec(
     {
       command: `mix compile`,

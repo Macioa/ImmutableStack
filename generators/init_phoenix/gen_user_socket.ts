@@ -1,11 +1,8 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "..";
-import { ImmutableGenerator } from "../../immutable_gen";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_user_socket = async ({
-LibDir, AppNameCamel
-}: AppData) => {
+const gen_user_socket = async ({ LibDir, AppNameCamel }: AppData) => {
   const filename = "user_socket.ex";
   const dir = join(LibDir || "", "lib/channels");
   const content = `defmodule ${AppNameCamel}.UserSocket do

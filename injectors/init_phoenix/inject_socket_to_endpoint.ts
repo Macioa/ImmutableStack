@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { Injection, InjectType, inject_file } from "..";
 import { AppData } from "../../readers/get_app_data";
 

@@ -1,8 +1,9 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { generateFile } from "../../index";
+import { AppData } from "../../../readers/get_app_data";
 
-const gen_dynamic_query_util = async (AppNameCamel: string, AppDir: string) => {
-  const utilsPath = join(AppDir || "", "/lib/utils");
+const gen_dynamic_query_util = async ({ AppNameCamel, LibDir }: AppData) => {
+  const utilsPath = join(LibDir || "", "/lib/utils");
 
   const content = `
 defmodule ${AppNameCamel}.Utils.DynamicQuery do
@@ -137,7 +138,7 @@ end
       filename: "dynamic_query.ex",
       content,
     },
-    "gen_dynamic_query_util",
+    "gen_dynamic_query_util"
   );
 };
 

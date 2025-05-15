@@ -1,7 +1,8 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { generateFile } from "../../index";
+import { AppData } from "../../../readers/get_app_data";
 
-const gen_paginate_util = async (AppNameCamel: string, LibDir: string) => {
+const gen_paginate_util = async ({ AppNameCamel, LibDir }: AppData) => {
   const utilsPath = join(LibDir || "", "/lib/utils");
 
   const content = `
@@ -37,7 +38,7 @@ end
 
   return generateFile(
     { dir: utilsPath, filename: "paginate.ex", content },
-    "gen_paginate_util",
+    "gen_paginate_util"
   );
 };
 
