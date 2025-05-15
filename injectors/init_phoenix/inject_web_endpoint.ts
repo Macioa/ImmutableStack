@@ -3,7 +3,6 @@ import { inject_file, Injection, InjectType } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
 const inject_web_endpoint = async ({
-  AppNameCamel,
   AppNameSnake,
   WebDir,
 }: AppData) => {
@@ -12,7 +11,7 @@ const inject_web_endpoint = async ({
     [
       InjectType.BEFORE,
       /plug\sPlug\.MethodOverride/,
-      `plug CORSPlug, origin: Application.compile_env(:${AppNameCamel}, CORSPlug)[:origin]\n`,
+      `plug CORSPlug, origin: Application.compile_env(:${AppNameSnake}, CORSPlug)[:origin]\n`,
     ],
   ];
 
