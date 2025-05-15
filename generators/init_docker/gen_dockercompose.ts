@@ -12,8 +12,9 @@ const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
       dockerfile: docker/dev.dockerfile
     volumes:
       - ../:/app:cached
+      - /app/_build
     working_dir: /app
-    command: bash -c "mix deps.get && mix ecto.migrate; iex -S mix phx.server"
+    command: bash -c "iex -S mix phx.server"
     ports:
       - "4000:4000"
       - "5173:5173"
