@@ -4,9 +4,8 @@ import { AppData } from "../../readers/get_app_data";
 
 const gen_request_lib = async ({ LibDir }: AppData) => {
   const dir = join(LibDir, "lib/typescript/requests");
-  const literalFetchRoute = "`${API_URL}/${route}`";
   const literalErrorString =
-    "`${API_URL} request failed: ${res?.status}\\n${res?.statusText}`";
+    "`${FULL_URL} request failed: ${res?.status}\\n${res?.statusText}`";
   const content = `
 import type { Dispatch } from "redux";
 import { createSlice } from "@reduxjs/toolkit";
@@ -79,6 +78,7 @@ const defaultOptions = {
 
 const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
   const { name, route, options, callback } = details;
+  const FULL_URL = new URL(route, API_URL)
   const req = new Promise<any>(async (resolve, reject) => {
 
     const handleError = (err: string, rej: Function) => {
@@ -95,7 +95,7 @@ const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
     try {
       const reqOptions = merge(defaultOptions, options || {});
 
-      const res = await fetch(${literalFetchRoute}, reqOptions)
+      const res = await fetch(FULL_URL, reqOptions)
         .catch((err) => handleError(String(err), reject));
 
       if (!res?.ok)
