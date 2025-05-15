@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync, existsSync, unlinkSync } from "fs";
-import { resolve, join } from "path";
+import { resolve, join } from "../utils/path";
 import { log } from "../utils/logger";
 import { format } from "../utils/format";
 
@@ -13,20 +13,25 @@ type FileGeneration = {
 
 const generateFile = async (
   { filename, dir, content }: FileGeneration,
-  caller: string | null = null,
+  caller: string | null = null
 ) => {
-  cacheLog({ filename, dir }, caller);
-  const path = resolve(dir),
-    file = join(dir, filename);
-  log({ level: 3 }, `Generating ${filename} ...`);
-  log({ level: 9 }, content);
+  try {
+    cacheLog({ filename, dir }, caller);
+    const path = resolve(dir),
+      file = join(dir, filename);
+    if (!!caller) log({ level: 5, color: "TAN" }, caller);
+    log({ level: 5 }, `Generating ${filename} ...`);
+    log({ level: 9 }, content);
 
-  mkdirSync(path, { recursive: true });
-  if (existsSync(file)) unlinkSync(file);
-  writeFileSync(file, content, "utf8");
-  await format(file);
+    mkdirSync(path, { recursive: true });
+    if (existsSync(file)) unlinkSync(file);
+    writeFileSync(file, content, "utf8");
+    await format(file);
 
-  return [file];
+    return [file];
+  } catch (e) {
+    throw new Error(`Error in ${caller}`, { cause: e });
+  }
 };
 
 export { generateFile };
