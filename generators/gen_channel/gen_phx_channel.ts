@@ -5,21 +5,20 @@ import { Names } from "../../immutable_gen";
 
 const gen_phx_channel = (
   { singleSnake, singleUpperCamel }: Names,
-  { LibDir, AppNameCamel }: AppData
+  { WebDir, AppNameCamel }: AppData
 ) => {
   const filename = `${singleSnake}_channel.ex`;
-  const dir = join(LibDir, "lib/channels");
-  const content = `defmodule ${AppNameCamel}.${singleUpperCamel}Channel do
-  use ${AppNameCamel}, :channel
+  const dir = join(WebDir, "lib/channels");
+  const content = `defmodule ${AppNameCamel}Web.${singleUpperCamel}Channel do
+  use ${AppNameCamel}Web, :channel
 
-  def join("room:lobby", _payload, socket) do
+  def join("room:" <> _room_id, _params, socket) do
     {:ok, socket}
   end
 
   def handle_in("message", %{"body" => body}, socket) do
     broadcast!(socket, "message", %{
       body: body,
-      user: socket.assigns[:user_id] || "anonymous"
     })
 
     {:noreply, socket}

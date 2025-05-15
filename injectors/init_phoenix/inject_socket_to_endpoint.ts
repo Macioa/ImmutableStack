@@ -12,7 +12,7 @@ const inject_socket_to_endpoint = async ({
     [
       InjectType.AFTER,
       /\s*use\sPhoenix.Endpoint,\sotp_app:\s:\w+_web/gm,
-      `\nsocket "/socket", ${AppNameCamel}.UserSocket,
+      `\nsocket "/socket", ${AppNameCamel}Web.UserSocket,
   websocket: true,
   longpoll: false\n`,
     ],

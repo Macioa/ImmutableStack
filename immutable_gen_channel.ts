@@ -1,8 +1,9 @@
 import { gen_phx_channel } from "./generators/gen_channel/gen_phx_channel";
 import { gen_react_channel } from "./generators/gen_channel/gen_react_channel";
+import { inject_channel_to_socket } from "./injectors/gen_channel/inject_channel_to_socket";
 import { AppData, getAppData } from "./readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
-import { setLogLevel } from "./utils/logger";
+import { log, setLogLevel } from "./utils/logger";
 import { getNamesFromSingularSnakeCase, Names } from "./utils/string";
 
 setLogLevel(5);
@@ -17,12 +18,16 @@ const main = async () => {
   }
   setUmbrellaDirCache(appdata.UmbrellaDir);
 
+  log({ level: 1, color: "GREEN" }, `\n\n Generating ${name.singleSnake} Channel...\n\n`);
+
   const operations = await Promise.all([
     gen_phx_channel(name, appdata),
     gen_react_channel(name, appdata),
+    inject_channel_to_socket(name, appdata),
   ]);
 
   writeLog(appdata.UmbrellaDir, `generate_${name.singleSnake}_channel`);
+  log({ level: 1, color: "GREEN" }, `\n\n ${name.singleSnake} Channel Complete\n\n`);
 };
 
 main().catch(console.error);

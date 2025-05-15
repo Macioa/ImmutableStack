@@ -2,11 +2,16 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_socket_context = async ({ LibDir }: AppData) => {
-  const dir = join(LibDir, "typescript/utils");
+const gen_socket_context = async ({ LibDir, AppNameSnake }: AppData) => {
+  const dir = join(LibDir, `lib/typescript/utils`);
   const filename = "PhoenixSocketContext.tsx";
-  const content = `import { createContext, useContext, useEffect, useRef, useState } from "react";
+  const content = `import { createContext, useContext, useEffect, useState } from "react";
 import { Socket } from "phoenix";
+
+const SOCKET_URL =
+  (import.meta as any).env["VITE_UI_SOCKET_URL"] ||
+  "ws://localhost:4000/socket";
+const TOKEN = "";
 
 type PhoenixSocketContextType = {
   socket: Socket | null;
@@ -22,36 +27,31 @@ export const usePhoenixSocket = () => useContext(PhoenixSocketContext);
 
 type Props = {
   children: React.ReactNode;
-  socketUrl: string;
-  token?: string;
 };
 
-export const PhoenixSocketProvider = ({ children, socketUrl, token }: Props) => {
-  const socketRef = useRef<Socket | null>(null);
+export const PhoenixSocketProvider = ({ children }: Props) => {
   const [connected, setConnected] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const socket = new Socket(socketUrl, {
-      params: { token },
+    const socketInstance = new Socket(SOCKET_URL, {
+      params: { TOKEN },
     });
 
-    socket.connect();
+    socketInstance.connect();
+    setSocket(socketInstance);
 
-    socket.onOpen(() => setConnected(true));
-    socket.onClose(() => setConnected(false));
-    socket.onError(() => setConnected(false));
-
-    socketRef.current = socket;
+    socketInstance.onOpen(() => setConnected(true));
+    socketInstance.onClose(() => setConnected(false));
+    socketInstance.onError(() => setConnected(false));
 
     return () => {
-      socket.disconnect();
+      socketInstance.disconnect();
     };
-  }, [socketUrl, token]);
+  }, []);
 
   return (
-    <PhoenixSocketContext.Provider
-      value={{ socket: socketRef.current, connected }}
-    >
+    <PhoenixSocketContext.Provider value={{ socket, connected }}>
       {children}
     </PhoenixSocketContext.Provider>
   );

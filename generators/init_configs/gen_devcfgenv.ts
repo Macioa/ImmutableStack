@@ -16,7 +16,8 @@ const gen_dev_config_env = async ({
 # Set UI variables
 config :${AppNameSnake}, :ui,
   app_name: "${AppNameCamel}",
-  API_URL: "http://localhost:4000/api"
+  API_URL: "http://localhost:4000/api/",
+  SOCKET_URL: "ws://localhost:4000/socket"
 
 # Configure your database
 config :${AppNameSnake}, ${AppNameCamel}.Repo,

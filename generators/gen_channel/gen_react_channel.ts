@@ -11,9 +11,9 @@ const gen_react_channel = (
   const dir = join(LibDir, "lib/typescript/requests");
   const content = `import { useEffect, useRef, useState } from "react";
 import { Channel } from "phoenix";
-import { usePhoenixSocket } from "@utils";
+import { usePhoenixSocket } from "../utils/PhoenixSocketContext";
 
-export function use${singleUpperCamel}Channel(topic: string, params = {}) {
+export default function use${singleUpperCamel}Channel(topic: string, params = {}) {
   const { socket, connected } = usePhoenixSocket();
   const [channel, setChannel] = useState<Channel | null>(null);
   const [joined, setJoined] = useState(false);
@@ -30,10 +30,12 @@ export function use${singleUpperCamel}Channel(topic: string, params = {}) {
     chan
       .join()
       .receive("ok", () => {
+        console.log(\`[Phoenix] Channel joined: \${topic}\`);
         setJoined(true);
         setError(null);
       })
       .receive("error", (e) => {
+        console.log(\`[Phoenix] Channel join error: \${topic}\`, e);
         setJoined(false);
         setError(e?.reason || "join error");
       });
@@ -47,14 +49,13 @@ export function use${singleUpperCamel}Channel(topic: string, params = {}) {
     channel,
     joined,
     error,
-    push: (event: string, payload: any) =>
-      channel?.push(event, payload),
+    push: (event: string, payload: any) => channel?.push(event, payload),
     on: (event: string, callback: (payload: any) => void) =>
       channel?.on(event, callback),
-    off: (event: string) =>
-      channel?.off(event),
+    off: (event: string) => channel?.off(event),
   };
-}`;
+};`;
+
   return generateFile({ filename, dir, content }, "gen_react_channel");
 };
 
