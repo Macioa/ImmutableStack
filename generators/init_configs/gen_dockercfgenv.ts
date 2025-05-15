@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
@@ -14,7 +14,8 @@ const gen_docker_config_env = async ({
 
 # Set UI variables
 config :${AppNameSnake}, :ui,
-  app_name: "${AppNameCamel}"
+  app_name: "${AppNameCamel}",
+  API_URL: "${AppNameSnake}_dev:4000/api"
 
 # Configure your database
 config :${AppNameSnake}, ${AppNameCamel}.Repo,
