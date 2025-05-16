@@ -1,13 +1,13 @@
-import { join } from "path";
+import { join } from "../../utils/path";
+import { AppData } from "../../readers/get_app_data";
 import { CommentType, mark } from "../../repair";
-import { StringOnlyMap } from "../../utils/map";
 import { generateFile } from "../index";
 
 const gen_fallback_controller = async ({
   WebDir,
   AppNameCamel,
   AppNameSnake,
-}: StringOnlyMap) => {
+}: AppData) => {
   const fallbackControllerPath = join(
     WebDir || ".",
     `lib/${AppNameSnake}_web/controllers`

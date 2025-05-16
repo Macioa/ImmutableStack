@@ -1,11 +1,12 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_app_declarations = async (
-  AppNameSnake: string,
-  AppDir: string,
-) => {
-  const file = path.join(AppDir, "mix.exs");
+const inject_app_declarations = async ({
+  AppNameSnake,
+  UmbrellaDir,
+}: AppData) => {
+  const file = path.join(UmbrellaDir, "mix.exs");
   const injections: Injection[] = [
     [
       InjectType.AFTER,

@@ -1,11 +1,11 @@
 import { spawn } from "child_process";
 import { mkdirSync } from "fs";
 import { resolve as pathResolve } from "path";
-import { log } from "../utils/logger";
+import { getAppData } from "../readers/get_app_data";
 import { chunkArray } from "../utils/chunk";
 import { cacheLogCommand } from "../utils/history_cache";
+import { log } from "../utils/logger";
 import mixOrDocker from "./nomix";
-import { appDataFromAppnNameSnake, getAppData, setAppData } from "../readers/get_app_data";
 
 type Execution = {
   dir: string;
@@ -57,8 +57,8 @@ const execute = async (execution: Execution, caller: string | null = null) => {
 
   cacheLogCommand({ command, dir }, caller);
 
-  log({ level: 2, color: "YELLOW" }, `Executing: ${command}`);
-  log({ level: 4 }, `      in ${dir}...`);
+  log({ level: 1, color: "PURPLE" }, `Executing: ${command}`);
+  log({ level: 1, color: "TEAL" }, `      in ${dir}...\n\n`);
 
   return new Promise((resolve, reject) => {
     const executedDir = pathResolve(dir);
@@ -136,5 +136,6 @@ const executeAllSync = async (
   }
 };
 
+export { Arrow, execute, executeAll, executeAllSync };
 export type { Execution };
-export { execute, executeAll, executeAllSync, Arrow };
+

@@ -1,5 +1,6 @@
+import { spawn } from 'child_process';
 import { existsSync } from "fs";
-import { resolve } from "path";
+import { resolve } from "./utils/path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import repair, {
@@ -8,7 +9,6 @@ import repair, {
   TARGETS
 } from "./repair";
 import { log, setLogLevel } from "./utils/logger";
-import { spawn } from 'child_process';
 
 setLogLevel(5);
 

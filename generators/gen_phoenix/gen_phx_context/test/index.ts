@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../../utils/path";
 import {
   ImmutableGenerator,
   ImmutableContext,
@@ -66,7 +66,11 @@ const gen_phx_context_test = async (
   generator: ImmutableGenerator,
   _typeDict: any
 ) => {
-  const { AppNameCamel, LibDir, generate, name } = generator;
+  const {
+    AppData: { AppNameCamel, LibDir },
+    generate,
+    name,
+  } = generator;
   const {
     singleSnake: genName,
     singleUpperCamel: genCamelName,

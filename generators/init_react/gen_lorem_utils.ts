@@ -1,7 +1,8 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_lorem_utils = async (LibDir: string) => {
+const gen_lorem_utils = async ({ LibDir }: AppData) => {
   const utilsPath = join(LibDir, "/lib/typescript/utils/");
 
   const content = `
@@ -13,7 +14,7 @@ export default Lorem;
 
   return generateFile(
     { dir: utilsPath, filename: "lorem.ts", content },
-    "gen_lorem_utils",
+    "gen_lorem_utils"
   );
 };
 

@@ -1,23 +1,24 @@
+import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_jest_config = async (AppName: string, UiDir: string) => {
+const gen_jest_config = async ({ AppNameSnake, UiDir }: AppData) => {
   const content = `
 export default {
     globals: {
         "ts-jest": {
-        tsconfig: "<rootDir>/../${AppName}_ui/tsconfig.app.json",
+        tsconfig: "<rootDir>/../${AppNameSnake}_ui/tsconfig.app.json",
         },
     },
     preset: "ts-jest",
     testEnvironment: "jsdom",
     moduleNameMapper: {
-      "^@utils/(.*)$": "<rootDir>/../${AppName}/lib/typescript/utils/$1",
-      "^@state/(.*)$": "<rootDir>/../${AppName}/lib/typescript/state/$1",
-      "^@requests/(.*)$": "<rootDir>/../${AppName}/lib/typescript/requests/$1",
-      "^@components/(.*)$": "<rootDir>/../${AppName}/lib/typescript/components/$1",
+      "^@utils/(.*)$": "<rootDir>/../${AppNameSnake}/lib/typescript/utils/$1",
+      "^@state/(.*)$": "<rootDir>/../${AppNameSnake}/lib/typescript/state/$1",
+      "^@requests/(.*)$": "<rootDir>/../${AppNameSnake}/lib/typescript/requests/$1",
+      "^@components/(.*)$": "<rootDir>/../${AppNameSnake}/lib/typescript/components/$1",
     },
     setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-    roots: ["<rootDir>", "../${AppName}/lib/typescript/state"],
+    roots: ["<rootDir>", "../${AppNameSnake}/lib/typescript/state"],
   };
         `;
 
@@ -27,7 +28,7 @@ export default {
   );
 };
 
-const gen_jest_setup = async (UiDir: string) => {
+const gen_jest_setup = async ({ UiDir }: AppData) => {
   const content = `
 require("@testing-library/jest-dom");
             `;

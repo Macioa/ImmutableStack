@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
 import { generateFile } from "../index";
 import { StringOnlyMap } from "../../utils/map";
@@ -8,10 +8,11 @@ const gen_entity_requests = async (
   generator: ImmutableGenerator,
   _typeDict: GenTypes
 ) => {
-  const { name, generate, AppNameCaps, LibDir } = generator;
-  const { singleUpperCamel, singleLowerCamel, pluralUpperCamel, singleSnake } =
-    name;
-  const { requests } = generate;
+  const {
+    name: { singleUpperCamel, singleLowerCamel, pluralUpperCamel, singleSnake },
+    generate: { requests },
+    AppData: { AppNameCamel, LibDir },
+  } = generator;
   const filedir = join(LibDir || "", "lib/typescript/requests/");
 
   const APIS = [
@@ -25,7 +26,7 @@ const gen_entity_requests = async (
         singleUpperCamel,
         singleLowerCamel,
         pluralUpperCamel,
-        AppNameCaps,
+        AppNameCamel,
         singleSnake,
       });
     })
@@ -44,7 +45,6 @@ import { set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singl
 import type { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
 import type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
 
-
   const exports = `export { request${singleUpperCamel}, request${pluralUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
 `;
   const content = [imports, APIS, exports].join("\n");
@@ -56,29 +56,22 @@ import type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Par
     : null;
 };
 
-const gen_request_show = ({
-  singleUpperCamel,
-  AppNameCaps,
-  singleSnake,
-}: StringOnlyMap) =>
+const gen_request_show = ({ singleUpperCamel, singleSnake }: StringOnlyMap) =>
   `const request${singleUpperCamel} = (id: string, dispatch: Dispatch) => 
     Request.API({
       name: "fetch${singleUpperCamel}",
-      api_url_key: "${AppNameCaps}_API_URL",
       route: \`${singleSnake}/\${id}\`,
       callback: (res: any) => dispatch(set${singleUpperCamel}(res.data))
     }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_list = ({
   pluralUpperCamel,
-  AppNameCaps,
   singleSnake,
-  singleUpperCamel
+  singleUpperCamel,
 }: StringOnlyMap) =>
   `const request${pluralUpperCamel} = (dispatch: Dispatch) => 
     Request.API({
       name: "fetch${pluralUpperCamel}",
-      api_url_key: "${AppNameCaps}_API_URL",
       route: \`${singleSnake}\`,
       callback: (res: any) => dispatch(set${pluralUpperCamel}(res.data)),
     }, dispatch) as Promise<${singleUpperCamel}Response>;`;
@@ -86,13 +79,11 @@ const gen_request_list = ({
 const gen_request_update = ({
   singleUpperCamel,
   singleLowerCamel,
-  AppNameCaps,
   singleSnake,
 }: StringOnlyMap) =>
   `const update${singleUpperCamel} = (${singleLowerCamel}: ${singleUpperCamel}, dispatch: Dispatch) => 
     Request.API({
       name: "update${singleUpperCamel}",
-      api_url_key: "${AppNameCaps}_API_URL",
       route: "${singleSnake}",
       options: {
         method: "PUT",
@@ -101,15 +92,10 @@ const gen_request_update = ({
       callback: (_data: any) => null,
     }, dispatch) as Promise<Partial${singleUpperCamel}Response>;`;
 
-const gen_request_delete = ({
-  singleUpperCamel,
-  AppNameCaps,
-  singleSnake,
-}: StringOnlyMap) =>
+const gen_request_delete = ({ singleUpperCamel, singleSnake }: StringOnlyMap) =>
   `const delete${singleUpperCamel} = (id: string, dispatch: Dispatch) => 
     Request.API({
       name: "delete${singleUpperCamel}",
-      api_url_key: "${AppNameCaps}_API_URL",
       route: \`${singleSnake}/\${id}\`,
       options: {
         method: "DELETE",

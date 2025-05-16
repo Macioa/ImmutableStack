@@ -1,9 +1,9 @@
-import { join } from "path";
 import { generateFile } from "../..";
 import { ImmutableContext, ImmutableGenerator } from "../../../immutable_gen";
 import { CommentType, mark } from "../../../repair";
 import { log } from "../../../utils/logger";
 import { StringOnlyMap } from "../../../utils/map";
+import { join } from "../../../utils/path";
 import { gen_create_apis } from "./create";
 import { api as custom_api } from "./custom";
 import { gen_delete_apis } from "./delete";
@@ -61,7 +61,11 @@ const gen_phx_context = async (
   generator: ImmutableGenerator,
   _typeDict: any
 ) => {
-  const { AppNameCamel, LibDir, generate, name } = generator;
+  const {
+    AppData: { AppNameCamel, LibDir },
+    generate,
+    name,
+  } = generator;
   const {
     singleSnake: genName,
     singleUpperCamel: genCamelName,
@@ -70,7 +74,7 @@ const gen_phx_context = async (
   } = name;
   const { name: camelName, apiFunctions } =
     generate.context as ImmutableContext;
-  const contextPath = join(LibDir || "", `/lib/`);
+  const contextPath = join(LibDir, `/lib/`);
   const snakeController = camelName
     .replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, "$1_$2")
     .replace(/^_/, "")

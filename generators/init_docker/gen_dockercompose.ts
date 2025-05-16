@@ -1,11 +1,10 @@
-import { ImmutableGenerator } from "../../immutable_gen";
+import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_docker_compose = async (generator: ImmutableGenerator) => {
-  let dir = generator.dir?.ProjectDir || "";
+const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
+  let dir = UmbrellaDir || "";
   dir += "/docker";
   const filename = "compose.yaml";
-  const AppNameSnake = generator.appName.snake;
   const content = `services:
   ${AppNameSnake}_dev:
     build:
@@ -13,8 +12,9 @@ const gen_docker_compose = async (generator: ImmutableGenerator) => {
       dockerfile: docker/dev.dockerfile
     volumes:
       - ../:/app:cached
+      - /app/_build
     working_dir: /app
-    command: bash -c "mix deps.get && mix ecto.migrate; iex -S mix phx.server"
+    command: bash -c "iex -S mix phx.server"
     ports:
       - "4000:4000"
       - "5173:5173"
@@ -35,7 +35,7 @@ const gen_docker_compose = async (generator: ImmutableGenerator) => {
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=${AppNameSnake}_db
     volumes:
-      - .pgdata:/var/lib/postgresql/data
+      - ./pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"`;
 

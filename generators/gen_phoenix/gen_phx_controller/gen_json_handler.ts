@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../index";
 import { CommentType, mark } from "../../../repair";
@@ -7,7 +7,7 @@ const gen_json_handler = async (
   generator: ImmutableGenerator,
   typeDict: GenTypes
 ) => {
-  const { WebDir, AppNameCamel, AppNameSnake, generate, name } = generator;
+  const { AppData: {WebDir, AppNameCamel, AppNameSnake}, generate, name } = generator;
   const { http_controller } = generate;
   const { singleUpperCamel, pluralSnake, singleSnake } = name;
   const { ImmutableGlobal, Schema } = typeDict;

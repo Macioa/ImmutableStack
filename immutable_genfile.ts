@@ -5,7 +5,7 @@
 */
 
 import fs from "fs";
-import { join } from "path";
+import { join } from "./utils/path";
 import { getNamesFromSingularSnakeCase as getNames } from "./utils/string";
 import { log } from "./utils/logger";
 

@@ -1,18 +1,19 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_vite_supervisor = async (
-  AppName: string,
-  AppNameCamel: string,
-  LibDir: string,
-) => {
+const gen_vite_supervisor = async ({
+  AppNameSnake,
+  AppNameCamel,
+  LibDir,
+}: AppData) => {
   const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `
 defmodule ${AppNameCamel}.ViteDevSupervisor do
   use GenServer
 
-  @vite_dev_cmd ["run", "dev", "--prefix", "apps/${AppName}_ui/"]
+  @vite_dev_cmd ["run", "dev", "--prefix", "apps/${AppNameSnake}_ui/"]
   @timeout_sec 5
   @type state :: %{
           vite_server: nil | Port.t(),
@@ -166,7 +167,7 @@ end
       filename: "vite_dev_supervisor.ex",
       content,
     },
-    "gen_vite_supervisor",
+    "gen_vite_supervisor"
   );
 };
 

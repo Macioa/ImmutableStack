@@ -1,7 +1,8 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_store = async (AppName: string, UiDir: string) => {
+const gen_store = async ({ AppNameCamel, UiDir }: AppData) => {
   const storePath = join(UiDir, "/src/store");
 
   const content = `
@@ -10,11 +11,11 @@ import { requestReducer } from "@requests/index";
 import type { RequestsStoreState } from "@requests/index";
 
 
-type ${AppName}State = {
+type ${AppNameCamel}State = {
     requestsStore: RequestsStoreState;
 };
 
-const ${AppName}Store = configureStore({
+const ${AppNameCamel}Store = configureStore({
   reducer: combineReducers({
     requestsStore: requestReducer,
   }),
@@ -29,13 +30,13 @@ const ${AppName}Store = configureStore({
     // },
 });
 
-export { ${AppName}Store };
-export type { ${AppName}State };
+export { ${AppNameCamel}Store };
+export type { ${AppNameCamel}State };
         `;
 
   return generateFile(
     { dir: storePath, filename: "index.tsx", content },
-    "gen_store",
+    "gen_store"
   );
 };
 

@@ -4,8 +4,7 @@ import { ImmutableGenerator } from "../../immutable_gen";
 import { CommentType, mark } from "../../repair";
 
 const mark_schema = async ({
-  LibDir,
-  AppNameSnake,
+  AppData: { LibDir, AppNameSnake },
   name,
 }: ImmutableGenerator) => {
   const file = path.join(

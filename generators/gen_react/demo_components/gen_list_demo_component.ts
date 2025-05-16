@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../";
 
@@ -6,13 +6,15 @@ const gen_list_demo_component = async (
   generator: ImmutableGenerator,
   genTypes: GenTypes
 ) => {
-  const { name, LibDir } = generator;
   const {
-    singleUpperCamel,
-    singleLowerCamel,
-    pluralLowerCamel,
-    pluralUpperCamel,
-  } = name || {};
+    name: {
+      singleUpperCamel,
+      singleLowerCamel,
+      pluralLowerCamel,
+      pluralUpperCamel,
+    },
+    AppData: { LibDir },
+  } = generator;
 
   const filedir = join(
     LibDir || "",
@@ -22,8 +24,8 @@ const gen_list_demo_component = async (
   const content = `
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Dispatch } from "redux";
-import {
+import type { Dispatch } from "redux";
+import type {
   ${singleUpperCamel} as ${singleUpperCamel}T,
 } from "../../state/${singleUpperCamel}";
 import { ${singleUpperCamel} } from "./show";

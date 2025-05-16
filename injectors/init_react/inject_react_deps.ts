@@ -1,7 +1,8 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_react_deps = async (UiDir: string) => {
+const inject_react_deps = async ({UiDir}:AppData) => {
   const file = path.join(UiDir, "package.json");
   const injections: Injection[] = [
     [InjectType.AFTER, /\"scripts\":\s+\{/, `"test": "jest",`],
@@ -13,7 +14,8 @@ const inject_react_deps = async (UiDir: string) => {
     "@types/react-redux": "^7.1.34",
     "deepmerge": "^4.3.1",
     "react-redux": "^9.1.2",
-    "mincurrypipe": "^3.0.0",`,
+    "mincurrypipe": "^3.0.0",
+    "phoenix": "^1.7.21",`,
     ],
     [
       InjectType.AFTER,
@@ -22,6 +24,7 @@ const inject_react_deps = async (UiDir: string) => {
     "@babel/plugin-transform-private-property-in-object": "^7.25.9",
     "@types/node": "^22.10.0",
     "lorem-ipsum": "^2.0.8",
+    "@types/phoenix": "^1.6.6",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

@@ -1,9 +1,9 @@
-import { join } from "path";
-import { ImmutableGenerator } from "../../immutable_gen";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_docker_dev = async (generator: ImmutableGenerator) => {
-  let dir = generator.dir?.ProjectDir || "";
+const gen_docker_dev = async ({ UmbrellaDir }: AppData) => {
+  let dir = UmbrellaDir;
   dir = join(dir, "docker");
   const filename = "dev.dockerfile";
   const content = `FROM elixir:1.18-alpine

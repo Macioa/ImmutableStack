@@ -5,15 +5,14 @@
           - use "null" as entity name if code is not entity specific (files created from init project)
 */
 
-import * as path from "path";
 import fs from "fs/promises";
-
-import { getAppData, AppData, AppNames } from "./readers/get_app_data";
+import * as path from "path";
+import { AppData, AppNames, getAppData } from "./readers/get_app_data";
+import { log, setLogLevel } from "./utils/logger";
 import {
   getNamesFromSingularSnakeCase as getNames,
   Names,
 } from "./utils/string";
-import { log, setLogLevel } from "./utils/logger";
 
 setLogLevel(5);
 
@@ -28,7 +27,7 @@ const main = async () => {
 
   const appData = (await getAppData()) as AppData;
   const names = getNames(entityName) as Names;
-  delete names.singleChar;
+  delete names?.singleChar;
   const fileContent = await fs.readFile(filePath, "utf-8");
 
   log({ level: 1, color: "GREEN" }, `Generating from existing code...`);
