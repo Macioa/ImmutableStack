@@ -12,7 +12,9 @@ interface Names {
 
 const getNamesFromSingularSnakeCase = (
   singularSnakeStr: string
-): Names => {
+): Names | null => {
+  if (!singularSnakeStr) return null;
+  
   const pluralSnake = pluralizeSnakeCase(singularSnakeStr);
   const singleUpperCamel = toUpperCamel(singularSnakeStr);
   const singleLowerCamel = toLowerCamel(singleUpperCamel);

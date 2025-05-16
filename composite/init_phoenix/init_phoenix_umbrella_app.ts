@@ -13,6 +13,7 @@ import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix
 import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
 import { gen_fallback_controller } from "../../generators/init_phoenix/gen_fallback_controller";
 import { gen_id_validation_plug } from "../../generators/init_phoenix/gen_id_validation_plug";
+import { mark_router } from "../../injectors/init_phoenix/mark_router";
 
 const init_phoenix_umbrella_app = async ({
   projectName,
@@ -46,6 +47,7 @@ const init_phoenix_umbrella_app = async ({
       AppNameCamel: projectNameCamel,
       AppNameSnake: projectName,
     }),
+    mark_router({ WebDir: webdir, AppNameSnake: projectName }),
   ]);
   const configure = await configure_phoenix_to_serve_react({
     AppName: projectName,

@@ -1,14 +1,15 @@
 import { join } from "path";
-import { ImmutableGenerator, ImmutableContext } from "../../../immutable_gen";
 import { generateFile } from "../..";
+import { ImmutableContext, ImmutableGenerator } from "../../../immutable_gen";
+import { CommentType, mark } from "../../../repair";
+import { log } from "../../../utils/logger";
 import { StringOnlyMap } from "../../../utils/map";
 import { gen_create_apis } from "./create";
+import { api as custom_api } from "./custom";
 import { gen_delete_apis } from "./delete";
 import { gen_get_apis } from "./get";
 import { gen_list_apis } from "./list";
 import { gen_update_apis } from "./update";
-import { api as custom_api } from "./custom";
-import { log } from "../../../utils/logger";
 
 const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
   log({ level: 7 }, "Requested Apis: ", requested_apis);
@@ -28,31 +29,45 @@ const gen_apis = (requested_apis: string[], gen_ref_data: StringOnlyMap) => {
       log({ level: 8 }, "APIFN RES", apiFn(remaining_apis, gen_ref_data));
       const { result, remaining_apis: new_remaining } = apiFn(
         remaining_apis,
-        gen_ref_data,
+        gen_ref_data
       );
 
-      return { computed: computed + result, remaining_apis: new_remaining };
+      return {
+        computed:
+          computed +
+          mark(
+            { str: result, entity: gen_ref_data.genCamelName, type: "CONTEXT" },
+            "EX" as CommentType
+          ),
+        remaining_apis: new_remaining,
+      };
     },
-    { computed: "", remaining_apis: requested_apis },
+    { computed: "", remaining_apis: requested_apis }
   );
   log({ level: 7 }, "Computed Apis: ", computed);
   const custom_apis = remaining_apis
     .map((api) => custom_api.fn({ header: api }))
+    .map((api) =>
+      mark(
+        { str: api, entity: gen_ref_data.genCamelName, type: "CONTEXT" },
+        "EX" as CommentType
+      )
+    )
     .join("\n");
   return computed + "\n" + custom_apis;
 };
 
 const gen_phx_context = async (
   generator: ImmutableGenerator,
-  _typeDict: any,
+  _typeDict: any
 ) => {
+  const { AppNameCamel, LibDir, generate, name } = generator;
   const {
-    AppNameCamel,
-    LibDir,
-    generate,
-    name,
-  } = generator;
-  const { singleSnake: genName, singleUpperCamel: genCamelName, pluralUpperCamel: genPluralCamel, pluralSnake: genPluralSnake } = name
+    singleSnake: genName,
+    singleUpperCamel: genCamelName,
+    pluralUpperCamel: genPluralCamel,
+    pluralSnake: genPluralSnake,
+  } = name;
   const { name: camelName, apiFunctions } =
     generate.context as ImmutableContext;
   const contextPath = join(LibDir || "", `/lib/`);
@@ -124,7 +139,7 @@ end
       filename: `${snakeController}.ex`,
       content,
     },
-    "gen_phx_context",
+    "gen_phx_context"
   );
 };
 
@@ -139,13 +154,10 @@ interface ApiIdMap {
 }
 
 interface ApiGenFunction {
-  (
-    api_list: string[],
-    dict: StringOnlyMap,
-  ): {
+  (api_list: string[], dict: StringOnlyMap): {
     result: string;
     remaining_apis: string[];
   };
 }
-export type { ImmAPI, ApiIdMap, ApiGenFunction };
 export { gen_phx_context };
+export type { ApiGenFunction, ApiIdMap, ImmAPI };

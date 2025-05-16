@@ -25,7 +25,7 @@ const new_genfile = () => {
     singleLowerCamel,
     pluralUpperCamel,
     pluralLowerCamel,
-  } = getNames(genName);
+  } = getNames(genName) || {};
   const tsContent = `
 /*
                     *****************************
@@ -129,14 +129,14 @@ const Immutable: ImmutableGenerator = {
     stateSlice: {
       name: "${singleLowerCamel}Slice",
       reducers: [
-        "set${singleUpperCamel} = (state, action)",
-        "set${pluralUpperCamel} = (state, action)",
-        // "customReducer = (state, {payload: {key: _value}})",
+        "set${singleUpperCamel}(state: ${singleUpperCamel}StoreState, action: PayloadAction<${singleUpperCamel}>",
+        "set${pluralUpperCamel}(state: ${singleUpperCamel}StoreState, action: PayloadAction<${singleUpperCamel}[]>",
+        // "customReducer(state, action: PayloadAction<${singleUpperCamel}>)",
       ],
       selectors: [
-        "select${singleUpperCamel} = (state)",
-        "select${pluralUpperCamel} = (state)",
-        // "customSelector = (%{key: _value})",
+        "select${singleUpperCamel} = (state: GenericAppState)",
+        "select${pluralUpperCamel} = (state: GenericAppState)",
+        // "customSelector = (state: GenericAppState)",
       ],
     },
     appstate: "${singleUpperCamel}StoreState",

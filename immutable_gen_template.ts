@@ -27,7 +27,7 @@ const main = async () => {
   const filePath = path.resolve(args[1]);
 
   const appData = (await getAppData()) as AppData;
-  const names = getNames(entityName);
+  const names = getNames(entityName) as Names;
   delete names.singleChar;
   const fileContent = await fs.readFile(filePath, "utf-8");
 
