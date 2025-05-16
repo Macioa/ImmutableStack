@@ -146,6 +146,8 @@ async function gen() {
     await salt({
       init: "init_proj.js",
       gen: "gen.js",
+      repair: "repair.js",
+      settings: "settings.js"
     })
   );
 }

@@ -17,7 +17,7 @@ const addReducerToGlobal = async (generator: ImmutableGenerator) => {
     [
       InjectType.AFTER,
       /import\s.*/,
-      `\nimport { ${singleUpperCamel}Reducer, ${appstate} } from '@state/${singleUpperCamel}';`,
+      `\nimport type { ${appstate} } from '@state/${singleUpperCamel}';\nimport { ${singleUpperCamel}Reducer } from '@state/${singleUpperCamel}';`,
     ],
     [
       InjectType.AFTER,

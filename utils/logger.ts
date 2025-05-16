@@ -28,4 +28,4 @@ const log = async ({ level, color }: LogOptions, ...args: any[]) => {
 
 const sleep = (s: number) => new Promise((resolve) => setTimeout(resolve, s * 1000));
 
-export { setLogLevel, log, sleep };
+export { setLogLevel, log, sleep, log_level };

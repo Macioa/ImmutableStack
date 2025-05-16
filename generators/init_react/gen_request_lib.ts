@@ -7,8 +7,9 @@ const gen_request_lib = async (LibDir: string) => {
   const literalErrorString =
     "`${API_URL} request failed: ${res?.status}\\n${res?.statusText}`";
   const content = `
-import { Dispatch } from "redux";
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { Dispatch } from "redux";
+import { createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 import merge from "deepmerge";
 
 interface GenericAppState {

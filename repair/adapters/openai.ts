@@ -1,9 +1,11 @@
-import { OpenAI } from "openai";
+// import { OpenAI } from "openai";
 import { API_Fn, RepairRequest, RepairRequestReply } from "..";
 import { getSetting } from "../../utils/settings";
 import { log } from "../../utils/logger";
+import util from "util";
 
 const key = "openai";
+const url = "https://api.openai.com/v1/chat/completions";
 
 const defaults = {
   model: "gpt-3.5-turbo",
@@ -15,15 +17,6 @@ const defaults = {
   //   stop: ["\n\n"],
 };
 
-const client = (async function () {
-  if ((await getSetting("llm")) != key) {
-    log({ level: 11, color: "YELLOW" }, `WARNING: ${key} not selected as llm`);
-    return null;
-  }
-  return new OpenAI({
-    apiKey: await getSetting(key),
-  });
-})();
 
 const query: API_Fn = async ({
   prompt,
@@ -31,10 +24,6 @@ const query: API_Fn = async ({
   target,
   output,
 }: RepairRequest): Promise<RepairRequestReply | null> => {
-  if (!(await client)) {
-    log({ level: 2, color: "RED" }, `Error: openai client not available`);
-    return null;
-  }
   const request = {
     messages: [
       { role: "user", content: JSON.stringify({ prompt }), name: "prompt" },
@@ -51,11 +40,21 @@ const query: API_Fn = async ({
       })),
     ],
     ...defaults,
-  } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming;
+  };
+  log({ level: 5 }, "Request", { ...request });
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${await getSetting(key)}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+  const parsed = await response.json();
+  log({ level: 3 }, "Response:", parsed?.choices);
 
-  const response = (await client)?.chat.completions.create(request);
-  const { id, model, usage } = (await response) || {};
-  const result = (await response)?.choices[0].message.content
+  const { id, model, usage } = parsed;
+  const result = parsed?.choices[0].message.content
     ?.replace(/^```typescript/g, "")
     ?.replace(/```$/g, "");
   return { id, model, result, usage, api: key } as RepairRequestReply;
