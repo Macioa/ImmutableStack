@@ -4,16 +4,16 @@ import { generateFile } from "../index";
 import { Names } from "../../immutable_gen";
 
 const gen_channel_demo_component = (
-  { singleUpperCamel }: Names,
+  { singleUpperCamel, singleSnake }: Names,
   { LibDir }: AppData
 ) => {
-  const filename = `channelcomponent.ex`;
-  const dir = join(LibDir, "lib/components");
+  const filename = `channelcomponent.tsx`;
+  const dir = join(LibDir, "lib/typescript/components");
   const content = `import use${singleUpperCamel}Channel from "../requests/${singleUpperCamel}Channel"; // adjust path as needed
 import { useEffect } from "react";
 
 export default function ${singleUpperCamel}ChannelComponent() {
-  const { channel, joined, error, push, on, off } = use${singleUpperCamel}Channel("room:lobby");
+  const { channel, joined, error, push, on, off } = use${singleUpperCamel}Channel("${singleSnake}:lobby");
 
   useEffect(() => {
     if (!joined || !channel) return;

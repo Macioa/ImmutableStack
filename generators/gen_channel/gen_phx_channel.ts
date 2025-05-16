@@ -12,7 +12,7 @@ const gen_phx_channel = (
   const content = `defmodule ${AppNameCamel}Web.${singleUpperCamel}Channel do
   use ${AppNameCamel}Web, :channel
 
-  def join("room:" <> _room_id, _params, socket) do
+  def join("${singleSnake}:" <> _room_id, _params, socket) do
     {:ok, socket}
   end
 

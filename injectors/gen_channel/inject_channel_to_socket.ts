@@ -10,7 +10,7 @@ const inject_channel_to_socket = async (
   const file = join(WebDir || "", "lib/channels/user_socket.ex");
   const content = `\nchannel "${singleSnake}:*", ${AppNameCamel}Web.${singleUpperCamel}Channel\n`;
   const injections: Injection[] = [
-    [InjectType.BEFORE, /use\sPhoenix.Socket/gm, content],
+    [InjectType.AFTER, /use\sPhoenix.Socket/gm, content],
   ];
   return inject_file(
     {
