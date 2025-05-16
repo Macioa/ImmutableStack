@@ -11,7 +11,6 @@ import { homedir } from "os";
 import { join } from "path";
 import { StringOnlyMap } from "../map";
 import { log } from "../logger";
-
 const SETTINGS = ".immutable";
 const cred = gen();
 

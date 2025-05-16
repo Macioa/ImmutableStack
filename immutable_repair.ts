@@ -7,7 +7,7 @@ import repair, {
   TARGET_ROUTES,
   TARGETS
 } from "./repair";
-import { log, setLogLevel, log_level } from "./utils/logger";
+import { log, setLogLevel } from "./utils/logger";
 import { spawn } from 'child_process';
 
 setLogLevel(5);
