@@ -15,7 +15,6 @@ const getNamesFromSingularSnakeCase = (
   singularSnakeStr: string
 ): Names | null => {
   if (!singularSnakeStr) return null;
-
   const pluralSnake = pluralizeSnakeCase(singularSnakeStr);
   const singleUpperCamel = toUpperCamel(singularSnakeStr);
   const singleLowerCamel = toLowerCamel(singleUpperCamel);

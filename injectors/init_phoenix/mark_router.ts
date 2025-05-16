@@ -1,7 +1,6 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "..";
 import { CommentType, mark } from "../../repair";
-import { StringOnlyMap } from "../../utils/map";
 import { AppData } from "../../readers/get_app_data";
 
 const mark_router = async ({ WebDir, AppNameSnake }: AppData) => {
