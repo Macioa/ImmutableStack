@@ -12,7 +12,7 @@ const asdfShims = path.join(home, ".asdf", "shims");
 const env = {
   ...process.env,
   PATH: `${asdfShims}:${process.env.PATH}`,
-  ASDF_DIR: asdfDir, 
+  ASDF_DIR: asdfDir,
 };
 
 const versionsPath = path.join(__dirname, "versions.sh");
@@ -91,6 +91,28 @@ const main = async () => {
     if (versions.erlang) await asdfInstall("erlang", versions.erlang);
     if (versions.elixir) await asdfInstall("elixir", versions.elixir);
     if (versions.nodejs) await asdfInstall("nodejs", versions.nodejs);
+  }
+
+  if (!isWin) {
+    try {
+      await exec({ command: "docker --version", dir: home }, "start_script");
+      log({ level: 5, color: "YELLOW" }, "Docker is installed.");
+    } catch {
+      log({ level: 3, color: "GREEN" }, "Installing Docker...");
+      await exec(
+        { command: "brew install --cask docker", dir: home },
+        "start_script"
+      );
+      log(
+        { level: 3, color: "GREEN" },
+        "Docker installed. Please launch Docker Desktop manually if required."
+      );
+    }
+  } else {
+    log(
+      { level: 1, color: "RED" },
+      "!!! Please install Docker Desktop manually on Windows: https://www.docker.com/products/docker-desktop/ !!!"
+    );
   }
 
   // Install Hex and Phoenix (Elixir)
