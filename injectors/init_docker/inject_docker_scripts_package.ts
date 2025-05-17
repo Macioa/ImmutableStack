@@ -20,7 +20,7 @@ const inject_docker_scripts_package = ({
     "d.build": "m='Building Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml build",
     "d.restart": "m='Restarting Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml restart -d",
     "BUILD, RUN, STOP, DESTROY CONTAINERS": "echo 'BUILD, RUN, STOP, DESTROY CONTAINERS'",
-    "d.up": "m='Stopping Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up -d",
+    "d.up": "m='Starting Apps (** Docker **) ...' && echo $m && yarn d.kill && yarn d.deps && yarn d.comp && yarn d.serv && yarn d.logs",
     "d.down": "m='Stopping Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml down",
     "d.db": "m='Starting Only the Database (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml up -d ${AppNameSnake}_db",
     "HOLD OR KILL CONTAINERS": "echo 'HOLD OR KILL CONTAINERS'",
