@@ -29,7 +29,7 @@ const main = async () => {
   ]);
 
   writeLog(appdata.UmbrellaDir, `generate_${name.singleSnake}_channel`);
-  log({ level: 1, color: "GREEN" }, `\n\n ${name.singleSnake} Channel Complete\n\n`);
+  log({ level: 1, color: "GREEN" }, `\n\n ${name.singleUpperCamel} Channel Complete\n\n`);
 };
 
 main().catch(console.error);
