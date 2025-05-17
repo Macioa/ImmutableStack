@@ -17,7 +17,7 @@ const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
     command: bash -c "iex -S mix phx.server"
     ports:
       - "4000:4000"
-      - "5173:5173"
+      - "5173-5183:5173-5183"
     environment:
       - MIX_ENV=docker
       - NODE_ENV=development
