@@ -14,7 +14,7 @@ const init_react_app_with_vite = async (appdata: AppData) => {
   );
   const init = await exec(
     {
-      command: `npx create-vite@latest ${AppNameSnake}_ui --template react-ts --no-install`,
+      command: `y | npx create-vite@6.5.0 ${AppNameSnake}_ui --template react-ts --no-install`,
       dir: AppDir,
       // options: {
       //   timeoutResolve: 1000 * 30,
