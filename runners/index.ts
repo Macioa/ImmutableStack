@@ -10,6 +10,7 @@ import mixOrDocker from "./nomix";
 type Execution = {
   dir: string;
   command: string;
+  env?: NodeJS.ProcessEnv;
   options?: ExecutionOptions;
 };
 
@@ -38,6 +39,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
   const {
     dir,
     command: cInit,
+    env,
     options,
   } = { ...ExecutionDefaults, ...execution };
   const {
@@ -64,7 +66,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
     const executedDir = pathResolve(dir);
     mkdirSync(executedDir, { recursive: true });
     const [cmd, ...args] = command.split(" ");
-    const child = spawn(cmd, args, { cwd: executedDir, shell: true });
+    const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
 
     child.stdout.on("data", (data) => {
       log({ level: 5 }, data.toString());
