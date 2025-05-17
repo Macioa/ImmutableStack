@@ -3,6 +3,7 @@
     Initialize a new project with Immutable Stack
       - requires a project name as an argument    
 */
+import { fetch_assets } from "./assets";
 import { init_docker } from "./composite/init_docker";
 import { init_phoenix_umbrella_app } from "./composite/init_phoenix/init_phoenix_umbrella_app";
 import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
@@ -48,6 +49,7 @@ async function main() {
   const _docker = await init_docker(AppData);
   const _init = await init_phoenix_umbrella_app(AppData);
   const _react = await init_react_app_with_vite(AppData);
+  const _assets = await fetch_assets(AppData);
   const _build_tools = await build_tool_agnostic_init_tasks(AppData);
   const _release = await inject_sample_release_mix(AppData);
 
