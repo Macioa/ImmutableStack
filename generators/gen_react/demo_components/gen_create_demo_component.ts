@@ -18,6 +18,7 @@ const createPropertyField = (
   singleLowerCamel: string
 ) => {
   return ` 
+  <label htmlFor="${name}">${name}</label>
   <input
     type="${JsToInputType[type as keyof typeof JsToInputType] || "text"}"
     name="${name}"
@@ -64,9 +65,10 @@ interface CreateProps {
     f: ${singleUpperCamel}T | null,
     d: Dispatch
   ) => void;
+  submitText?: string;
 }
 
-export const ${singleUpperCamel}Form = ({ onSubmit }: CreateProps) => {
+export const ${singleUpperCamel}Form = ({ onSubmit, submitText }: CreateProps) => {
   const dispatch = useDispatch();
   const [${singleLowerCamel}, set${singleUpperCamel}] = useState<${singleUpperCamel}T | null>(null);
 
@@ -78,15 +80,16 @@ export const ${singleUpperCamel}Form = ({ onSubmit }: CreateProps) => {
   };
 
   return (
-    <form
+    <form className="form-container"
       onSubmit={(e: React.FormEvent<HTMLFormElement>) =>
         onSubmit && onSubmit(e, ${singleLowerCamel}, dispatch)
       }
     >
+      <h4 className="form-title">${singleUpperCamel} Form</h4>
 
     ${propertyFields}
       
-      <button type="submit">Submit</button>
+      <button type="submit" className="form-submit-btn">{submitText || "Submit"}</button>
     </form>
   );
 };
@@ -94,7 +97,7 @@ export const ${singleUpperCamel}Form = ({ onSubmit }: CreateProps) => {
 export const Create${singleUpperCamel} = ({ onSubmit }: CreateProps) => (
   <div>
     <h4>Create a ${singleUpperCamel}</h4>
-    <${singleUpperCamel}Form onSubmit={onSubmit} />
+    <${singleUpperCamel}Form onSubmit={onSubmit} submitText="Create a ${singleUpperCamel}"/>
   </div>
 );
   `;

@@ -1,4 +1,6 @@
 import { gen_vite_supervisor } from "../../generators/init_phoenix/gen_vite_supervisor";
+import { gen_app_css } from "../../generators/init_react/gen_app_css";
+import { gen_app_tsx } from "../../generators/init_react/gen_app_tsx";
 import { inject_vite_supervisor_to_application_ex } from "../../injectors/init_phoenix/inject_vite_supervisor_to_application_ex";
 import { inject_build_aliases } from "../../injectors/init_react/inject_build_aliases";
 import { inject_vite_build_output } from "../../injectors/init_react/inject_vite_build_output";
@@ -33,6 +35,8 @@ const init_react_app_with_vite = async (appdata: AppData) => {
     await inject_vite_build_output(appdata),
     await gen_vite_supervisor(appdata),
     await inject_vite_supervisor_to_application_ex(appdata),
+    await gen_app_tsx(appdata),
+    await gen_app_css(appdata),
   ];
 
   return tasks.flat();

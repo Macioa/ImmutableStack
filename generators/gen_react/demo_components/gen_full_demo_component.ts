@@ -21,13 +21,12 @@ const gen_full_demo_component = async (
     `lib/typescript/components/${singleLowerCamel}/`
   );
 
-  const content = `
-import React from "react";
+  const content = `import React from "react";
 import { useSelector } from "react-redux";
 import type { Dispatch } from "redux";
 import { pipe } from "mincurrypipe";
 import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
-import { select${singleUpperCamel}, select${pluralUpperCamel}, setFrog } from "../../state/${singleUpperCamel}";
+import { select${singleUpperCamel}, select${pluralUpperCamel}, set${singleUpperCamel} } from "../../state/${singleUpperCamel}";
 import { request${pluralUpperCamel}, update${singleUpperCamel} } from "../../requests/${singleLowerCamel}";
 import { Create${singleUpperCamel} } from "./create";
 import { ${pluralUpperCamel} } from "./list";
@@ -44,21 +43,20 @@ export const ${singleUpperCamel}Demo = () => {
     <div>
       <h1>${singleUpperCamel} Demo</h1>
       <p>This is a demo of ${singleLowerCamel} components.</p>
-      <h2>My ${singleUpperCamel}</h2>
+      <h2>Selected ${singleUpperCamel}</h2>
       <${singleUpperCamel} ${singleLowerCamel}={${singleLowerCamel}} />
-      <h2>New ${singleUpperCamel}</h2>
-      <CreateFrog
+      <Create${singleUpperCamel}
         onSubmit={(
           e: React.FormEvent<HTMLFormElement>,
-          f: FrogT | null,
-          d: Dispatch
+          f: ${singleUpperCamel}T | null,
+          d: Dispatch,
         ) =>
           pipe(
             prevtDef(e),
-            () => f && updateFrog(f, d),
-            setFrog,
+            () => f && update${singleUpperCamel}(f, d),
+            set${singleUpperCamel},
             d,
-            () => requestFrogs(d)
+            () => request${pluralUpperCamel}(d),
           )
         }
       />
@@ -66,8 +64,7 @@ export const ${singleUpperCamel}Demo = () => {
       <${pluralUpperCamel} ${pluralLowerCamel}={${pluralLowerCamel}} effect={request${pluralUpperCamel}} />
     </div>
   );
-};
-  `;
+};`;
 
   return generateFile(
     { dir: filedir, filename: `index.tsx`, content },

@@ -1,3 +1,4 @@
+import { gen_index_html } from "../../generators/init_react/gen_index.html";
 import {
   gen_jest_config,
   gen_jest_setup,
@@ -9,12 +10,14 @@ import { gen_store } from "../../generators/init_react/gen_store";
 import { inject_package_scripts } from "../../injectors/init_react/inject_package_scripts";
 import { inject_react_deps } from "../../injectors/init_react/inject_react_deps";
 import { inject_redux_provider } from "../../injectors/init_react/inject_redux_provider";
+import { inject_socket_provider } from "../../injectors/init_react/inject_socket_provider";
 import { AppData } from "../../readers/get_app_data";
 
 const build_tool_agnostic_init_tasks = async (appdata: AppData) => {
   const tasks = await Promise.all([
     gen_store(appdata),
-    inject_redux_provider(appdata),
+    await inject_redux_provider(appdata),
+    inject_socket_provider(appdata),
     gen_lorem_utils(appdata),
     gen_request_lib(appdata),
     inject_package_scripts(appdata),
@@ -22,6 +25,7 @@ const build_tool_agnostic_init_tasks = async (appdata: AppData) => {
     gen_jest_config(appdata),
     gen_jest_setup(appdata),
     gen_socket_context(appdata),
+    gen_index_html(appdata),
   ]).catch(console.error);
 
   return [tasks].flat();
