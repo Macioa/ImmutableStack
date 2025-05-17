@@ -1,9 +1,9 @@
 import { getAppData } from "./readers/get_app_data";
 
 const gen_links = async () => {
-  const { AppNameCamel } = (await getAppData()) || {};
+  const { AppNameCamel, UmbrellaDir } = (await getAppData()) || {};
   const appname = AppNameCamel;
-  const prefix = `${process.cwd()}/`;
+  const prefix = `${UmbrellaDir}/`;
 
   const links = `## back end folders:
 
