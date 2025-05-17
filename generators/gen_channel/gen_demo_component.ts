@@ -7,7 +7,7 @@ const gen_channel_demo_component = (
   { singleUpperCamel, singleSnake }: Names,
   { LibDir }: AppData
 ) => {
-  const filename = `channelcomponent.tsx`;
+  const filename = `${singleUpperCamel}Channel.tsx`;
   const dir = join(LibDir, "lib/typescript/components");
   const content = `import use${singleUpperCamel}Channel from "../requests/${singleUpperCamel}Channel"; // adjust path as needed
 import { useEffect } from "react";
