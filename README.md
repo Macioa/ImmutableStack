@@ -1,18 +1,25 @@
-# `    Immutable Stack    `
-### `    Pre-Alpha           `
+<div align="center">
+  <img src="https://raw.githubusercontent.com/macioa/immutablestuff/alpha/assets/logotext.png" width="300"/><br/>
+  <h4>Elixir - Phoenix - React - Redux</h4><br/>
+  <img src="https://raw.githubusercontent.com/macioa/immutablestuff/alpha/assets/logo.png" width="300"/><br/>
+  <img src="https://raw.githubusercontent.com/macioa/immutablestuff/alpha/assets/alpha.png" width="300"/>
+</div>
 
-![software composer image](https://raw.githubusercontent.com/Macioa/MinCurryPipe/main/_logo_adjusted.png)
-
-## [`    Elixir/Phoenix    ->    Typescript/React/Redux    `] 
+## 
 
 The Immutable Stack provides comprehensive tooling for creating applications with Elixir/Phoenix and React/Redux including:
+##
 
 - **-New Immutable Projects-**   Generate new ready-to-go Immutable projects with both live ssr and static rendering. Full integration with mix commands like:
   - mix deps.get (retreives full stack dependencies)
   - mix compile (compiles front and back end)
   - mix phx.server (In -dev-, starts vite with hot-reload and serves static files from phoenix endpoint)
-
-- **-Entity Driven Code Generation-**    Code generation through control files provide 'instant gen' or highly customized code generations. Fine tune entity attributes, appstate, and more. Toggle crud routes and apis with `cmd + /`. Add new routes and apis to generate boiler. 
+##
+- **-AI Code Repair-**   Add an adapter for your llm of choice or connect to an extisting adapter for command line file repair with targeted code and context selection.
+##
+- **-Pre-connected Channel Generation-**    Prewired Phoenix Channels for full-duplex communication. Includes socket hooks, channel hooks, components, and server code. Simply add channel state or call handlers.
+##
+- **-Entity Driven Code Generation-**    Code generation through control files provide 'instant gen' or highly customizable code generations. Fine tune entity attributes, appstate, and more. Toggle crud routes and apis with `cmd + /`. Add new routes and apis to generate boiler. Repair tool can be used to fill in new custom functions. 
   
   - Customizable (Ex : Ts) type-mapping
 
@@ -122,9 +129,9 @@ const Immutable: ImmutableGenerator = {
 ** *Sample Generation* **
 
 ![sample output](https://raw.githubusercontent.com/Macioa/ImmutableStuff/master/output.gif)
-
+##
 - **Foundations** for **scalable**, **resusable** code and scalable **architecture**
-
+##
 - **Easy Customization** with **transparency** and Generation Logs - "Built to be forked". Generators primarily use easily-modified TS string-literals for code generation. Code generation include histories, making it easy to find which generators touched a file and in what order. Includes utility for quickly converting live-code to literal generators.
 <br>
 
@@ -163,7 +170,7 @@ const Immutable: ImmutableGenerator = {
             ],
 }}}}}}
 ```
-
+##
 - **MacOs Toolkit** - automated installs for common, language-agnostic dev tools, including:
 
   - **[asdf](https://asdf-vm.com/)** - A universal language version handler.
@@ -176,8 +183,9 @@ const Immutable: ImmutableGenerator = {
 * [Determinism in ImmutableStack](https://github.com/Macioa/ImmutableStuff/blob/master/determinism.md)
 * [Composability in ImmutableStack](https://github.com/Macioa/ImmutableStuff/blob/master/composability.md)
 
-## Documentation
-* [Quick Start](https://github.com/Macioa/ImmutableStuff/blob/master/quickstart.md)
+## Documentation* 
+* [Quickest Start (Docker)](https://github.com/Macioa/ImmutableStuff/blob/master/quickeststart.md)
+* [Quick Start (local dev)](https://github.com/Macioa/ImmutableStuff/blob/master/quickstart.md)
 * [Dataflow in ImmutableStack](https://github.com/Macioa/ImmutableStuff/blob/master/dataflow.md)
 * [File Structure in ImmutableStack](https://github.com/Macioa/ImmutableStuff/blob/master/filestructure.md)
 * [Architecture in ImmutableStack](https://github.com/Macioa/ImmutableStuff/blob/master/architecture.md)
