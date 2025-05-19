@@ -1,9 +1,8 @@
 import path from "path";
 import { inject_file, InjectType, Injection } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_scrinever = async (generator: any) => {
-  const { LibDir, AppNameSnake } = generator || {};
-
+const inject_scrinever = async ({ LibDir, AppNameSnake }: AppData) => {
   const file = path.join(LibDir || ".", `lib/${AppNameSnake}/repo.ex`);
   const injections: Injection[] = [
     [InjectType.BEFORE, /end[\s\n]*$/, `  use Scrivener\n`],

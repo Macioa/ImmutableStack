@@ -26,7 +26,7 @@ const gen_json = async (generator: ImmutableGenerator, source: any) => {
     " --no-prompts";
 
   log({ level: 2, color: "BLUE" }, `Generating Phoenix API for ${gen.context}`);
-  return execute({ command, dir: generator.WebDir }, "gen_json");
+  return execute({ command, dir: generator.AppData.WebDir }, "gen_json");
 };
 
 export { gen_json, handle_json };

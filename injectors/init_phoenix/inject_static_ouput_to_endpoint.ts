@@ -1,11 +1,12 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_static_output_to_endpoint = async (
-  AppName: string,
-  WebDir: string,
-) => {
-  const file = path.join(WebDir, `lib/${AppName}_web/endpoint.ex`);
+const inject_static_output_to_endpoint = async ({
+  AppNameSnake,
+  WebDir,
+}: AppData) => {
+  const file = path.join(WebDir, `lib/${AppNameSnake}_web/endpoint.ex`);
   const injections: Injection[] = [
     [
       InjectType.REPLACE,

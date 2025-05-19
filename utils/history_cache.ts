@@ -1,5 +1,5 @@
 import { writeFileSync } from "fs";
-import path from "path";
+import { resolve } from "./path";
 
 import {
   StringOnlyMap,
@@ -35,14 +35,14 @@ const cacheLogCommand = (
     command: string;
     dir: string;
   },
-  caller: string | null = null,
+  caller: string | null = null
 ) => {
   memLog.commands.push({ command, dir, caller: caller || "unreferenced" });
 };
 
 const cacheLog = (
   { filename, dir }: StringOnlyMap,
-  caller: string | null = null,
+  caller: string | null = null
 ): Log => {
   validate({ filename, dir }, caller);
   const reducedDir = reduceDir(dir);
@@ -61,9 +61,9 @@ const writeLog = (umbrellaDir: string, name: string) => {
   memLog._name = name;
   const log = JSON.stringify(memLog, null, 2);
   writeFileSync(
-    path.resolve(umbrellaDir, `.immutable_history_${name}.json`),
+    resolve(umbrellaDir, `.immutable_history_${name}.json`),
     log,
-    "utf8",
+    "utf8"
   );
 };
 
@@ -75,7 +75,7 @@ const cacheLogByPath = (filepath: string, caller: string | null = null) => {
 };
 
 const setUmbrellaDirCache = (dir: string) => {
-  umbrellaDirCache = path.resolve(dir).replace(/^[^\w]+/, "");
+  umbrellaDirCache = resolve(dir).replace(/^[^\w]+/, "");
 };
 const reduceDir = (dir: string) => {
   dir = dir.replace(/^[^\w]+/, "");

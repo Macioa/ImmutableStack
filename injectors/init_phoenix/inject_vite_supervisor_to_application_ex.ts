@@ -1,12 +1,13 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_vite_supervisor_to_application_ex = async (
-  AppName: string,
-  AppNameCamel: string,
-  WebDir: string,
-) => {
-  const file = path.join(WebDir, `lib/${AppName}_web/application.ex`);
+const inject_vite_supervisor_to_application_ex = async ({
+  AppNameSnake,
+  AppNameCamel,
+  WebDir,
+}: AppData) => {
+  const file = path.join(WebDir, `lib/${AppNameSnake}_web/application.ex`);
   const injections: Injection[] = [
     [
       InjectType.REPLACE,
@@ -22,7 +23,7 @@ const inject_vite_supervisor_to_application_ex = async (
 
   return inject_file(
     { file, injections },
-    "inject_vite_supervisor_to_application_ex",
+    "inject_vite_supervisor_to_application_ex"
   );
 };
 

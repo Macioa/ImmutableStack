@@ -1,18 +1,19 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_deps_get_aliases_to_mix_exs = async (
-  AppName: string,
-  umbrellaDir: string,
-) => {
-  const file = path.join(umbrellaDir, `mix.exs`);
+const inject_deps_get_aliases_to_mix_exs = async ({
+  AppNameSnake,
+  UmbrellaDir,
+}: AppData) => {
+  const file = path.join(UmbrellaDir, `mix.exs`);
   const injections: Injection[] = [
     [
       InjectType.BEFORE,
       /defp\s+aliases\s+do[\s\n]+\[/,
       `
   defp npm_install(_) do
-    Mix.shell().cmd("npm install", cd: "apps/${AppName}_ui")
+    Mix.shell().cmd("npm install", cd: "apps/${AppNameSnake}_ui")
   end\n\n
 `,
     ],
@@ -25,7 +26,7 @@ const inject_deps_get_aliases_to_mix_exs = async (
 
   return inject_file(
     { file, injections },
-    "inject_deps_get_aliases_to_mix_exs",
+    "inject_deps_get_aliases_to_mix_exs"
   );
 };
 

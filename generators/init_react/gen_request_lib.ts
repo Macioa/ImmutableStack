@@ -1,15 +1,18 @@
-import { join } from "path";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const gen_request_lib = async (LibDir: string) => {
+const gen_request_lib = async ({ LibDir }: AppData) => {
   const dir = join(LibDir, "lib/typescript/requests");
-  const literalFetchRoute = "`${API_URL}/${route}`";
   const literalErrorString =
-    "`${API_URL} request failed: ${res?.status}\\n${res?.statusText}`";
+    "`${FULL_URL} request failed: ${res?.status}\\n${res?.statusText}`";
   const content = `
-import { Dispatch } from "redux";
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { Dispatch } from "redux";
+import { createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 import merge from "deepmerge";
+
+const API_URL = (import.meta as any).env["VITE_UI_API_URL"] || "http://localhost:4000/api/"
 
 interface GenericAppState {
   RequestsStore: RequestsStoreState;
@@ -62,7 +65,6 @@ const isLoading = (state: GenericAppState, key: string | null = null) => {
 
 type requestAPIinterface = {
   name: string;
-  api_url_key: string;
   route: string;
   options?: RequestInit;
   callback?: Function;
@@ -75,7 +77,8 @@ const defaultOptions = {
 };
 
 const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
-  const { name, api_url_key, route, options, callback } = details;
+  const { name, route, options, callback } = details;
+  const FULL_URL = new URL(route, API_URL)
   const req = new Promise<any>(async (resolve, reject) => {
 
     const handleError = (err: string, rej: Function) => {
@@ -90,10 +93,9 @@ const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
     };
 
     try {
-      const API_URL = (import.meta as any).env[api_url_key] || "http://localhost:4000/api/",
-        reqOptions = merge(defaultOptions, options || {});
+      const reqOptions = merge(defaultOptions, options || {});
 
-      const res = await fetch(${literalFetchRoute}, reqOptions)
+      const res = await fetch(FULL_URL, reqOptions)
         .catch((err) => handleError(String(err), reject));
 
       if (!res?.ok)
@@ -127,7 +129,7 @@ export default requestSlice;
 
   return generateFile(
     { dir, filename: "index.tsx", content },
-    "gen_request_lib",
+    "gen_request_lib"
   );
 };
 

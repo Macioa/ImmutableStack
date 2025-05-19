@@ -5,30 +5,19 @@
 */
 
 import * as path from "path";
-
+import { gen_phx } from "./composite/gen_phoenix";
+import { gen_react } from "./composite/gen_react";
+import { readGenFile } from "./readers/genfile";
+import { AppData } from "./readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
 import { log, setLogLevel } from "./utils/logger";
 import { Names } from "./utils/string";
-
-import { readGenFile } from "./readers/genfile";
-import { gen_phx } from "./composite/gen_phoenix";
-import { gen_react } from "./composite/gen_react";
 
 setLogLevel(5);
 
 type ImmutableGenerator = {
   name: Names;
-  appName: {
-    camel: string;
-    snake: string;
-  };
-  dir: {
-    ProjectDir?: string;
-    AppDir?: string;
-    LibDir?: string;
-    UiDir?: string;
-    WebDir?: string;
-  };
+  AppData: AppData;
   generate: {
     requests?: ImmutableRequests;
     stateSlice?: ImmutableStateSlice;
@@ -97,42 +86,45 @@ const main = async () => {
     process.exit(1);
   }
 
-  log({ level: 1, color: "GREEN" }, `\n\n Generating from genfile...\n\n`);
+  log({ level: 1, color: "GREEN" }, `\n\n Reading genfile...\n\n`);
   const { generator, genTypes } = await readGenFile(filePath);
-  setUmbrellaDirCache(generator.UmbrellaDir || "./");
+  const {
+    name: { pluralUpperCamel, singleSnake },
+    AppData: { AppNameCaps, UmbrellaDir },
+  } = generator;
+  setUmbrellaDirCache(UmbrellaDir);
 
-  log({ level: 2, color: "BLUE" }, `\nGenerating front end components...`);
+  log({ level: 1, color: "BLUE" }, `\nGenerating front end components...`);
   await gen_react(generator, genTypes);
 
-  log({ level: 2, color: "BLUE" }, `\nGenerating server components...`);
+  log({ level: 1, color: "BLUE" }, `\nGenerating server components...`);
   await gen_phx(generator, genTypes);
 
-  writeLog(
-    generator.UmbrellaDir || "./",
-    `generate_${generator.name.singleSnake}`
-  );
+  writeLog(UmbrellaDir, `generate_${singleSnake}`);
 
   log(
     { level: 1, color: "GREEN" },
-    `\n\Generation Complete.\n\nGenerated ${generator.name.pluralUpperCamel}\n`
+    `\n\Generation Complete.\n\nGenerated ${pluralUpperCamel}\n`
   );
-  log({ level: 1, color: "BLUE" }, `    in ${generator.LibDir}/lib\n\n`);
+  log({ level: 1, color: "TEAL" }, `    in ${AppNameCaps} App\n\n`);
   log(
     { level: 2, color: "YELLOW" },
     "\nDon't forget to update your repository by running migrations:"
   );
-  log({ level: 3, color: "BLUE" }, `    mix ecto.migrate\n`);
+  log({ level: 4, color: "BLUE" }, `    yarn d.mig\n`);
+  log({ level: 4, color: "BLUE" }, `          or\n`);
+  log({ level: 4, color: "BLUE" }, `    mix ecto.migrate\n`);
 };
 
 main().catch(console.error);
 
 export type {
   Dict,
-  TypeDict,
   GenTypes,
   GenTypesKey,
-  ImmutableGenerator,
   ImmutableContext,
   ImmutableController,
+  ImmutableGenerator,
   Names,
+  TypeDict,
 };

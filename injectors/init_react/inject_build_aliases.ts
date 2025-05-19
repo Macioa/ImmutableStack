@@ -1,5 +1,6 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
 const inject_viteconfig = async (AppNameSnake: string, UiDir: string) => {
   const file = path.join(UiDir, "vite.config.ts");
@@ -47,7 +48,7 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
   return inject_file({ file, injections }, "inject_tsconfig");
 };
 
-const inject_build_aliases = async (AppNameSnake: string, UiDir: string) =>
+const inject_build_aliases = async ({ AppNameSnake, UiDir }: AppData) =>
   Promise.all([
     inject_viteconfig(AppNameSnake, UiDir),
     inject_tsconfig(AppNameSnake, UiDir),

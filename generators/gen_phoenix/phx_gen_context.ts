@@ -14,7 +14,7 @@ const gen_context = async (generator: any, source: any) => {
     { level: 2, color: "BLUE" },
     `Generating Phoenix Context: ${gen.context}`,
   );
-  return execute({ command, dir: generator.WebDir }, "gen_context");
+  return execute({ command, dir: generator.AppData.WebDir }, "gen_context");
 };
 
 export { gen_context };

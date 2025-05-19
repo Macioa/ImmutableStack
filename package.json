@@ -1,6 +1,6 @@
 {
   "name": "immutablestack",
-  "version": "0.0.0",
+  "version": "0.911.0",
   "scripts": {
     "fetchMD": "curl -s https://raw.githubusercontent.com/macioa/ImmutableStuff/master/intro.md > README.md",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,8 +10,12 @@
     "b_init": "esbuild immutable_init.ts --bundle --minify --outfile=.build/init_proj.js --platform=node",
     "b_links": "esbuild immutable_links.ts --bundle --minify --outfile=.build/links.js --platform=node",
     "b_bash": "mkdir -p .build && cp start_macos.sh dev_kit_macos.sh versions.sh gen_toolkit.sh .build/",
-    "build": "tsc && npm run b_genhandle && npm run b_genfile && npm run b_init && npm run b_bash && npm run b_gentemplate && npm run b_links",
-    "zip": "VERSION=\"v0.3.213\"; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_IMM_PATH\"",
+    "b_settings": "esbuild immutable_settings.ts --minify --bundle --outfile=.build/settings.js --platform=node",
+    "b_repair": "esbuild immutable_repair.ts --minify --bundle --outfile=.build/repair.js --platform=node",
+    "b_channel": "esbuild immutable_gen_channel.ts --minify --bundle --outfile=.build/channel.js --platform=node",
+    "b_start": "esbuild start.ts --minify --bundle --outfile=.build/start.js --platform=node",
+    "build": "tsc && npm run b_genhandle && npm run b_genfile && npm run b_init && npm run b_bash && npm run b_gentemplate && npm run b_links && npm run b_settings && npm run b_repair && npm run b_channel && npm run b_start",
+    "zip": "VERSION=\"v0.911.0\"; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_IMM_PATH\"",
     "p": "npm run build && npm run zip"
   },
   "keywords": [],
@@ -21,12 +25,15 @@
   "devDependencies": {
     "@types/node": "^22.5.4",
     "@types/pluralize": "^0.0.33",
+    "@types/yargs": "^17.0.33",
     "esbuild": "^0.23.1",
     "lorem-ipsum": "^2.0.8",
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "crypto": "^1.0.1",
     "pluralize": "^8.0.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "yargs": "^17.7.2"
   }
 }

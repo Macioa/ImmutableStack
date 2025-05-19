@@ -1,8 +1,9 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { generateFile } from "../../index";
+import { AppData } from "../../../readers/get_app_data";
 
-const gen_map_util = async (AppNameCamel: string, AppDir: string) => {
-  const utilsPath = join(AppDir || "", "/lib/utils");
+const gen_map_util = async ({ AppNameCamel, LibDir }: AppData) => {
+  const utilsPath = join(LibDir || "", "/lib/utils");
 
   const content = `
 defmodule ${AppNameCamel}.Utils.MapUtil do
@@ -28,7 +29,7 @@ end
 
   return generateFile(
     { dir: utilsPath, filename: "map.ex", content },
-    "gen_map_util",
+    "gen_map_util"
   );
 };
 

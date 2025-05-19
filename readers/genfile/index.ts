@@ -26,14 +26,14 @@ const readGenFile = async (filePath: string): Promise<GenData> => {
   )) as unknown as ImmutableGenerator;
 
   const generator = {
-    ...(await getAppData()),
     ...genFileParsed,
-    name: getNames(genFileParsed?.name as unknown as string),
-  } as unknown as ImmutableGenerator;
+    name: getNames(genFileParsed?.name as unknown as string) || {},
+    AppData: await getAppData(),
+  } as ImmutableGenerator;
 
 
   log({ level: 3, color: "BLUE" }, `Found app:`);
-  await log({ level: 3, color: "GREEN" }, `      ${generator.AppNameCamel}`);
+  await log({ level: 3, color: "GREEN" }, `      ${generator.AppData.AppNameCamel}`);
 
 
   await log({ level: 3, color: "BLUE" }, "Generator: \n", generator);
