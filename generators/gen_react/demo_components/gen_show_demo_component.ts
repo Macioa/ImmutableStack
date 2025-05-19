@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../";
 
@@ -10,8 +10,10 @@ const gen_show_demo_component = async (
   generator: ImmutableGenerator,
   genTypes: GenTypes
 ) => {
-  const { name, LibDir } = generator;
-  const { singleUpperCamel, singleLowerCamel } = name || {};
+  const {
+    name: { singleUpperCamel, singleLowerCamel },
+    AppData: { LibDir },
+  } = generator;
   const sourceType = genTypes.TsType || genTypes.ImmutableGlobal;
   const source = sourceType?.ts || {};
 
@@ -26,41 +28,50 @@ const gen_show_demo_component = async (
     })
     .join(" ");
 
-  const content = `
-import { useEffect } from "react";
+  const content = `import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Dispatch } from "redux";
-import { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
+import type { Dispatch } from "redux";
+import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
+import "../styles.css";
 
 interface ${singleUpperCamel}Props {
   ${singleLowerCamel}?: ${singleUpperCamel}T | null;
   effect?: (d: Dispatch) => void;
 }
 
-export const ${singleUpperCamel}Render = ({ ${singleLowerCamel} }: ${singleUpperCamel}Props) => (
-  <div>
-    <h4>${singleUpperCamel}:</h4>
-    <p>
-      {\`${properties}\`}
-    </p>
-  </div>
-);
+export const ${singleUpperCamel}Render = ({ ${singleLowerCamel} }: ${singleUpperCamel}Props) => {
+  if (!${singleLowerCamel}) return null;
+
+  return (
+    <div className="form-container" style={{ background: "none" }}>
+      <ul className="styled-list">
+        {Object.entries(${singleLowerCamel}).map(([key, value]) => (
+          <li className="styled-list-item" key={key}>
+            <span style={{ fontWeight: 600, color: "#235390", minWidth: 90, marginRight: 8 }}>
+              {key}:
+            </span>
+            <span>{String(value)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 export const ${singleUpperCamel} = (props: ${singleUpperCamel}Props) => {
   const { ${singleLowerCamel}, effect } = props;
-  const dispatch =useDispatch(); // Generate a redux dispatch for this component
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    // By passing the effect function through props, we can defer the decision whether this function requests data
-    //      or merely renders existing data to the parent component
     if (effect) effect(dispatch as Dispatch);
-  }, [dispatch]); // This will fire the effect once on component mount
+  }, [dispatch, effect]);
 
   return (
-    <div>{${singleLowerCamel} ? <${singleUpperCamel}Render ${singleLowerCamel}={${singleLowerCamel}} /> : <p> No ${singleUpperCamel} selected</p>}</div>
+    <div>
+      {${singleLowerCamel} ? <${singleUpperCamel}Render ${singleLowerCamel}={${singleLowerCamel}} /> : <p>No ${singleUpperCamel} selected</p>}
+    </div>
   );
-};
-  `;
+};`;
 
   return generateFile(
     { dir: filedir, filename: `show.tsx`, content },

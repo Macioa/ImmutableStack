@@ -1,18 +1,19 @@
-import { join } from "path";
+import { join } from "../../utils/path";
+import { AppData } from "../../readers/get_app_data";
+import { CommentType, mark } from "../../repair";
 import { generateFile } from "../index";
-import { StringOnlyMap } from "../../utils/map";
 
 const gen_fallback_controller = async ({
   WebDir,
   AppNameCamel,
   AppNameSnake,
-}: StringOnlyMap) => {
+}: AppData) => {
   const fallbackControllerPath = join(
     WebDir || ".",
     `lib/${AppNameSnake}_web/controllers`
   );
 
-  const content = `
+  const contentInit = `
 defmodule ${AppNameCamel}Web.FallbackController do
   @moduledoc """
   Translates controller action results into valid \`Plug.Conn\` responses.
@@ -67,6 +68,11 @@ defmodule ${AppNameCamel}Web.FallbackController do
   end
 end
 `;
+
+  const content = mark(
+    { str: contentInit, type: "FALLBACK_CONTROLLER" },
+    "EX" as CommentType
+  );
 
   return generateFile(
     {

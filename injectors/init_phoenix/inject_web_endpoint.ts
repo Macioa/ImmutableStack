@@ -1,13 +1,17 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_web_endpoint = async (AppNameCamel: string, WebDir: string) => {
-  const file = path.join(WebDir, `lib/${AppNameCamel}_web/endpoint.ex`);
+const inject_web_endpoint = async ({
+  AppNameSnake,
+  WebDir,
+}: AppData) => {
+  const file = path.join(WebDir, `lib/${AppNameSnake}_web/endpoint.ex`);
   const injections: Injection[] = [
     [
       InjectType.BEFORE,
       /plug\sPlug\.MethodOverride/,
-      `plug CORSPlug, origin: Application.compile_env(:${AppNameCamel}, CORSPlug)[:origin]\n`,
+      `plug CORSPlug, origin: Application.compile_env(:${AppNameSnake}, CORSPlug)[:origin]\n`,
     ],
   ];
 

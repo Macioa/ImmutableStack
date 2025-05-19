@@ -1,12 +1,13 @@
-import { gen_schema } from "../../generators/gen_phoenix/phx_gen_schema";
 import { gen_phx_context } from "../../generators/gen_phoenix/gen_phx_context";
 import { gen_phx_context_test } from "../../generators/gen_phoenix/gen_phx_context/test";
-import { inject_router } from "../../injectors/gen_phoenix/inject_router";
 import {
-  gen_phx_controller,
   gen_json_handler,
+  gen_phx_controller,
 } from "../../generators/gen_phoenix/gen_phx_controller";
-import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
+import { gen_schema } from "../../generators/gen_phoenix/phx_gen_schema";
+import { GenTypes, ImmutableGenerator } from "../../immutable_gen";
+import { inject_router } from "../../injectors/gen_phoenix/inject_router";
+import { mark_schema } from "../../injectors/gen_phoenix/mark_schema";
 
 const gen_phx = async (
   generator: ImmutableGenerator,
@@ -16,7 +17,11 @@ const gen_phx = async (
   let res: any = [];
 
     
-  if (gen.schema) res.push(await gen_schema(generator, genTypes));
+  if (gen.schema) {
+    const schema = await gen_schema(generator, genTypes)
+    await mark_schema(generator);
+    res.push(schema);
+  }
 
   if (gen.context) { 
     res.push(await gen_phx_context(generator, genTypes));

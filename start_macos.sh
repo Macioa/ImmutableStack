@@ -72,8 +72,7 @@ fi
 
 # Install global npm packages
 echo "Installing global npm packages..."
-npm install -g create-react-app typescript ts-node serve
-# npm install -g redux react-redux @types/react-redux
+npm install -g create-vite@4.5.1
 
 # Install Hex and Phoenix
 echo "Installing Hex and Phoenix..."

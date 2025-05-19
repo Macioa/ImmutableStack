@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../../utils/path";
 import {
   ImmutableGenerator,
   ImmutableContext,
@@ -12,6 +12,7 @@ import { gen_list_api_tests } from "./list";
 import { gen_update_api_tests } from "./update";
 import { api_test as custom_api_test } from "./custom";
 import { log } from "../../../../utils/logger";
+import { mark, CommentType } from "../../../../repair";
 
 const gen_api_tests = (
   requested_apis: string[],
@@ -32,17 +33,31 @@ const gen_api_tests = (
       log({ level: 8 }, "APIFN COM", computed);
       log({ level: 8 }, "APIFN REM", remaining_apis);
       log({ level: 8 }, "APIFN RES", apiFn(remaining_apis, gen_ref_data));
-            const { result, remaining_apis: new_remaining } = apiFn(
+      const { result, remaining_apis: new_remaining } = apiFn(
         remaining_apis,
         gen_ref_data
       );
-            return { computed: computed + result, remaining_apis: new_remaining };
+      return {
+        computed:
+          computed +
+          mark(
+            { str: result, entity: gen_ref_data.genCamelName, type: "CONTEXT" },
+            "EX" as CommentType
+          ),
+        remaining_apis: new_remaining,
+      };
     },
     { computed: "", remaining_apis: requested_apis }
   );
   log({ level: 7 }, "Computed Apis: ", computed);
   const custom_apis = remaining_apis
     .map((api) => custom_api_test.fn({ header: api }))
+    .map((api) =>
+      mark(
+        { str: api, entity: gen_ref_data.genCamelName, type: "CONTEXT" },
+        "EX" as CommentType
+      )
+    )
     .join("\n");
   return computed + "\n" + custom_apis;
 };
@@ -51,7 +66,11 @@ const gen_phx_context_test = async (
   generator: ImmutableGenerator,
   _typeDict: any
 ) => {
-  const { AppNameCamel, LibDir, generate, name } = generator;
+  const {
+    AppData: { AppNameCamel, LibDir },
+    generate,
+    name,
+  } = generator;
   const {
     singleSnake: genName,
     singleUpperCamel: genCamelName,

@@ -1,18 +1,19 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../index";
+import { CommentType, mark } from "../../../repair";
 
 const gen_json_handler = async (
   generator: ImmutableGenerator,
-  typeDict: GenTypes,
+  typeDict: GenTypes
 ) => {
-  const { WebDir, AppNameCamel, AppNameSnake, generate, name } = generator;
-  const { http_controller }= generate;
-  const { singleUpperCamel, pluralSnake, singleSnake} = name
+  const { AppData: {WebDir, AppNameCamel, AppNameSnake}, generate, name } = generator;
+  const { http_controller } = generate;
+  const { singleUpperCamel, pluralSnake, singleSnake } = name;
   const { ImmutableGlobal, Schema } = typeDict;
   const jsonHandlerPath = join(
     WebDir || ".",
-    `lib/${AppNameSnake}_web/controllers`,
+    `lib/${AppNameSnake}_web/controllers`
   );
 
   const typeSource = (ImmutableGlobal || Schema)?.ex;
@@ -21,7 +22,7 @@ const gen_json_handler = async (
     .map((key) => `${key}: Map.get(${singleSnake}, :${key})`)
     .join(",\n      ");
 
-  const content = `
+  const contentInit = `
 defmodule ${AppNameCamel}Web.${singleUpperCamel}JSON do
   alias ${AppNameCamel}Web.FallbackController
 
@@ -90,6 +91,10 @@ defmodule ${AppNameCamel}Web.${singleUpperCamel}JSON do
   end
 end
 `;
+  const content = mark(
+    { str: contentInit, type: "JSON_HANDLER", entity: singleSnake },
+    "EX" as CommentType
+  );
 
   return http_controller
     ? generateFile(
@@ -98,7 +103,7 @@ end
           filename: `${singleSnake}_json.ex`,
           content,
         },
-        "gen_json_handler",
+        "gen_json_handler"
       )
     : null;
 };

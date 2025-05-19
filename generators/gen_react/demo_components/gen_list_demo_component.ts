@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join } from "../../../utils/path";
 import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
 import { generateFile } from "../../";
 
@@ -6,27 +6,27 @@ const gen_list_demo_component = async (
   generator: ImmutableGenerator,
   genTypes: GenTypes
 ) => {
-  const { name, LibDir } = generator;
   const {
-    singleUpperCamel,
-    singleLowerCamel,
-    pluralLowerCamel,
-    pluralUpperCamel,
-  } = name || {};
+    name: {
+      singleUpperCamel,
+      singleLowerCamel,
+      pluralLowerCamel,
+      pluralUpperCamel,
+    },
+    AppData: { LibDir },
+  } = generator;
 
   const filedir = join(
     LibDir || "",
     `lib/typescript/components/${singleLowerCamel}/`
   );
 
-  const content = `
-import { useEffect } from "react";
+  const content = `import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Dispatch } from "redux";
-import {
-  ${singleUpperCamel} as ${singleUpperCamel}T,
-} from "../../state/${singleUpperCamel}";
+import type { Dispatch } from "redux";
+import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
 import { ${singleUpperCamel} } from "./show";
+import "../styles.css";
 
 interface ${singleUpperCamel}Props {
   ${pluralLowerCamel}?: ${singleUpperCamel}T[];
@@ -35,9 +35,11 @@ interface ${singleUpperCamel}Props {
 
 export const ${pluralUpperCamel}Render = ({ ${pluralLowerCamel} }: ${singleUpperCamel}Props) => (
   <div>
-    <ul>
+    <ul className="styled-list">
       {${pluralLowerCamel}?.map((${singleLowerCamel}) => (
-        <${singleUpperCamel} ${singleLowerCamel}={${singleLowerCamel}} key={\`${singleLowerCamel}-\${${singleLowerCamel}?.id}\`} />
+        <li className="styled-list-item" key={\`${singleLowerCamel}-\${${singleLowerCamel}?.id}\`}>
+          <${singleUpperCamel} ${singleLowerCamel}={${singleLowerCamel}} key={\`${singleLowerCamel}-\${${singleLowerCamel}?.id}\`} />
+        </li>
       ))}
     </ul>
   </div>
@@ -52,14 +54,8 @@ export const ${pluralUpperCamel} = ({ ${pluralLowerCamel}, effect }: ${singleUpp
     if (effect) effect(dispatch as Dispatch);
   }, [dispatch]); // This will fire the effect once on component mount and again if dispatch changes
 
-  return (
-    <div>
-      <h3>${pluralUpperCamel}</h3>
-      <${pluralUpperCamel}Render ${pluralLowerCamel}={${pluralLowerCamel}} />
-    </div>
-  );
-};
-  `;
+  return <${pluralUpperCamel}Render ${pluralLowerCamel}={${pluralLowerCamel}} />;
+};`;
 
   return generateFile(
     { dir: filedir, filename: `list.tsx`, content },

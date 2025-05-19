@@ -1,13 +1,14 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
+import { AppData } from "../../readers/get_app_data";
 
-const inject_package_scripts = async (AppName: string, UiDir: string) => {
+const inject_package_scripts = async ({ AppNameSnake, UiDir }: AppData) => {
   const file = path.join(UiDir, "package.json");
   const injections: Injection[] = [
     [
       InjectType.AFTER,
       /\"scripts\":\s+\{/,
-      `\n    "postinstall": "ln -s $(pwd)/node_modules ../${AppName}/lib/typescript/node_modules",`,
+      `\n    "postinstall": "ln -sf $(pwd)/node_modules ../${AppNameSnake}/lib/typescript/node_modules",`,
     ],
   ];
 

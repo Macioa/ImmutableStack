@@ -3,17 +3,16 @@
     Initialize a new project with Immutable Stack
       - requires a project name as an argument    
 */
-
-
-import { join } from "path";
-import { log, setLogLevel } from "./utils/logger";
-import { execute as exec } from "./runners";
-
-import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
-
-import { init_react_app_with_vite } from "./composite/init_react/init_react_app_with_vite";
-import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
+import { fetch_assets } from "./assets";
+import { init_docker } from "./composite/init_docker";
 import { init_phoenix_umbrella_app } from "./composite/init_phoenix/init_phoenix_umbrella_app";
+import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
+import { init_react_app_with_vite } from "./composite/init_react/init_react_app_with_vite";
+import { inject_sample_release_mix } from "./injectors/init_docker/inject_sample_release_mix";
+import { appDataFromAppnNameSnake, setAppData } from "./readers/get_app_data";
+import { execute as exec } from "./runners";
+import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
+import { log, setLogLevel } from "./utils/logger";
 
 setLogLevel(5);
 
@@ -22,82 +21,63 @@ const args = process.argv.slice(2);
 async function main() {
   if (args.length < 1) {
     console.error(
-      "Usage: node init_proj.js <project_name>\n   Or: immutable -init <project_name>",
+      "Usage: node init_proj.js <project_name>\n   Or: immutable -init <project_name>"
     );
     process.exit(1);
   }
 
-  let projectName = args[0];
-
-  projectName = projectName
+  let projectName = args[0]
     .toLowerCase()
     .replace(/[\s-]/g, "_")
     .replace(/[^a-z0-9_]/g, "");
 
-  const projectNameCamel = projectName
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join("");
-
-  const currentDir = process.cwd(),
-    umbrellaDir = join(currentDir, `${projectName}_umbrella`),
-    appdir = join(umbrellaDir, "apps"),
-    libdir = join(appdir, projectName),
-    uidir = join(appdir, `${projectName}_ui`),
-    webdir = join(appdir, `${projectName}_web`);
-  setUmbrellaDirCache(umbrellaDir);
+  const AppData = appDataFromAppnNameSnake(projectName, false);
+  setAppData(AppData);
+  const { AppNameSnake, UmbrellaDir } = AppData;
 
   log(
     { level: 1, color: "GREEN" },
-    `\n\n Generating ${projectName} App with Immutable Stack\n\n`,
+    `\n\n Generating ${AppNameSnake} App with Immutable Stack\n\n`
+  );
+  setUmbrellaDirCache(UmbrellaDir);
+
+  const _dir = await exec(
+    { command: `mkdir -p ${AppNameSnake}_umbrella`, dir: UmbrellaDir },
+    "init_proj"
   );
 
-  await init_phoenix_umbrella_app({
-    projectName,
-    projectNameCamel,
-    umbrellaDir,
-    libdir,
-    webdir,
-  });
+  const _docker = await init_docker(AppData);
+  const _init = await init_phoenix_umbrella_app(AppData);
+  const _react = await init_react_app_with_vite(AppData);
+  const _assets = await fetch_assets(AppData);
+  const _build_tools = await build_tool_agnostic_init_tasks(AppData);
+  const _release = await inject_sample_release_mix(AppData);
 
-  await init_react_app_with_vite({
-    projectName,
-    projectNameCamel,
-    appdir,
-    uidir,
-    webdir,
-    libdir,
-  });
-  await build_tool_agnostic_init_tasks({
-    projectName,
-    projectNameCamel,
-    uidir,
-    libdir,
-  });
-
-  writeLog(umbrellaDir, `init_project_${projectName}`);
-
-  const deps = await exec(
+  writeLog(UmbrellaDir, `init_project_${projectName}`);
+  log(
+    { level: 1, color: "BLUE" },
+    `\n\n Retreiving dependencies for React and Phoenix...\n\n`
+  );
+  const _deps = await exec(
     {
       command: `mix deps.get`,
-      dir: umbrellaDir,
+      dir: UmbrellaDir,
     },
-    "init_proj",
+    "init_proj"
   );
-
-  const compile = await exec(
+  log({ level: 1, color: "BLUE" }, `\n\n Compiling React and Phoenix...\n\n`);
+  const _compile = await exec(
     {
       command: `mix compile`,
-      dir: umbrellaDir,
+      dir: UmbrellaDir,
     },
-    "init_proj",
+    "init_proj"
   );
 
   log(
     { level: 1, color: "GREEN" },
-    `\n\nInitialization Complete.\n\nGenerated ${projectName}_umbrella`,
+    `\n\nInitialization Complete.\n\nGenerated ${projectName}_umbrella`
   );
-  log({ level: 1, color: "BLUE" }, `    in ${currentDir}\n\n`);
 }
 
 main().catch(console.error);
