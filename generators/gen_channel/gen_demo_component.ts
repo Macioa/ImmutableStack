@@ -11,9 +11,11 @@ const gen_channel_demo_component = (
   const dir = join(LibDir, "lib/typescript/components");
   const content = `import use${singleUpperCamel}Channel from "../requests/${singleUpperCamel}Channel"; // adjust path as needed
 import { useEffect } from "react";
+import "./styles.css";
 
 export default function ${singleUpperCamel}ChannelComponent() {
-  const { channel, joined, error, push, on, off } = use${singleUpperCamel}Channel("${singleSnake}:lobby");
+  const { channel, joined, error, push, on, off } =
+    use${singleUpperCamel}Channel("${singleSnake}:lobby");
 
   useEffect(() => {
     if (!joined || !channel) return;
@@ -32,10 +34,20 @@ export default function ${singleUpperCamel}ChannelComponent() {
     };
   }, [joined, channel]);
 
-  if (error) return <div>Error: {error}</div>;
+  if (error) return <div>Error - {error}</div>;
   if (!joined) return <div>Joining channel...</div>;
 
-  return <div>${singleUpperCamel} channel joined!</div>;
+  const statusClass = joined
+    ? "channel-status-connected"
+    : "channel-status-disconnected";
+
+  return (
+    <div className={\`channel-status-container \${statusClass}\`}>
+      {error && <div>Error - {error}</div>}
+      {!joined && !error && <div>Joining channel...</div>}
+      {joined && !error && <div>${singleUpperCamel} channel joined!</div>}
+    </div>
+  );
 }`;
   return generateFile({ filename, dir, content }, "gen_channel_demo_component");
 };

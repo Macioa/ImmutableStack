@@ -4,7 +4,7 @@ import { join } from "../utils/path";
 import { AppData } from "../readers/get_app_data";
 
 const path =
-  "https://raw.githubusercontent.com/macioa/immutablestack/main/assets/";
+  "https://raw.githubusercontent.com/macioa/immutablestack/alpha/assets/";
 const files = ["logo3.png"];
 const urls = files.map((name) => ({
   name,

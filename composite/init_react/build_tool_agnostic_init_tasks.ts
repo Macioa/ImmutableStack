@@ -1,3 +1,4 @@
+import { gen_demo_component_styles } from "../../generators/gen_react/demo_components/gen_demo_component_styles";
 import { gen_index_html } from "../../generators/init_react/gen_index.html";
 import {
   gen_jest_config,
@@ -26,6 +27,7 @@ const build_tool_agnostic_init_tasks = async (appdata: AppData) => {
     gen_jest_setup(appdata),
     gen_socket_context(appdata),
     gen_index_html(appdata),
+    gen_demo_component_styles(appdata),
   ]).catch(console.error);
 
   return [tasks].flat();

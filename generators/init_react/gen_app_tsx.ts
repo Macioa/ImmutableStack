@@ -11,7 +11,7 @@ import "./App.css";
 
 function App() {
   return (
-    <a href="https://www.immutablestack.com" target="_blank" className="banner">
+    <a href="https://github.com/macioa/immutablestack" target="_blank" className="banner">
       <h1>Immutable Stack</h1>
       <span className="logo-overlay-container">
         <img src={reactLogo} className="logo react" alt="React logo" />

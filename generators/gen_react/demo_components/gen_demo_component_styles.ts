@@ -1,11 +1,8 @@
-import { dir } from "console";
 import { generateFile } from "../..";
-import { ImmutableGenerator } from "../../../immutable_gen";
 import { join } from "../../../utils/path";
+import { AppData } from "../../../readers/get_app_data";
 
-const gen_demo_component_styles = ({
-  AppData: { LibDir },
-}: ImmutableGenerator) => {
+const gen_demo_component_styles = ({ LibDir }: AppData) => {
   const filename = "styles.css";
   const dir = join(LibDir, "lib/typescript/components");
   const content = `.form-container {
