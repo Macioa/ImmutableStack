@@ -8,7 +8,7 @@ const inject_web_app_deps = async ({ WebDir }: AppData) => {
     [
       T.AFTER,
       /defp\sdeps\sdo\s*\n{0,5}\s*\[/,
-      `\n      {:cors_plug, "~> 2.0"},\n`,
+      `\n{:cors_plug, "~> 2.0"},\n{:ueberauth, "~> 0.10"},\n{:ueberauth_google, "~> 0.10"},\n`,
     ],
   ];
 
