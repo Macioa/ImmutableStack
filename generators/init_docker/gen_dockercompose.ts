@@ -21,7 +21,7 @@ const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
     environment:
       - MIX_ENV=docker
       - NODE_ENV=development
-      - DATABASE_URL=ecto://postgres:postgres@db:5432/${AppNameSnake}_dev
+      - DATABASE_URL=ecto://postgres:postgres@db:5432/${AppNameSnake}_db
     depends_on:
       - ${AppNameSnake}_db
     tty: true
