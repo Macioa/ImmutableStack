@@ -1,7 +1,7 @@
-import { join } from "../../../utils/path";
-import { ImmutableGenerator } from "../../../immutable_gen";
-import { mark } from "../../../repair/index";
-import { generateFile } from "../../index";
+import { join } from "@/utils/path";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
+import { mark } from "@/repair/index";
+import { generateFile } from "@/generators/gen_react";
 
 import { get_reducer_exports, get_reducer_tests } from "./reducers";
 import { get_selector_exports, get_selector_tests } from "./selectors";

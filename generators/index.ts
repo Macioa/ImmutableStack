@@ -1,9 +1,9 @@
 import { mkdirSync, writeFileSync, existsSync, unlinkSync } from "fs";
-import { resolve, join } from "../utils/path";
-import { log } from "../utils/logger";
-import { format } from "../utils/format";
+import { resolve, join } from "@/utils/path";
+import { log } from "@/utils/logger";
+import { format } from "@/utils/format";
 
-import { cacheLog } from "../utils/history_cache";
+import { cacheLog } from "@/utils/history_cache";
 
 type FileGeneration = {
   dir: string;

@@ -1,7 +1,7 @@
-import { join } from "../../utils/path";
-import { AppData } from "../../readers/get_app_data";
-import { generateFile } from "../index";
-import { Names } from "../../immutable_gen";
+import { join } from "@/utils/path";
+import { AppData } from "@/readers/get_app_data";
+import { generateFile } from "@/generators/index";
+import { Names } from "@/commands/immutable_gen";
 
 const gen_react_channel = (
   { singleUpperCamel }: Names,

@@ -1,6 +1,6 @@
-import { ImmutableGenerator } from "../../../immutable_gen";
-import { log } from "../../../utils/logger";
-import { StringOnlyMap } from "../../../utils/map";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
+import { log } from "@/utils/logger";
+import { StringOnlyMap } from "@/utils/map";
 
 const getOne = ({ singleUpperCamel, singleLowerCamel }: StringOnlyMap) => ({
   header: `select${singleUpperCamel} = (state: GenericAppState)`,

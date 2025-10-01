@@ -1,5 +1,5 @@
 import { ImmRoute } from ".";
-import { StringOnlyMap, validate } from "../../../utils/map";
+import { StringOnlyMap, validate } from "@/utils/map";
 
 const custom = ({ header }: StringOnlyMap) => {
   validate({ header }, "custom");

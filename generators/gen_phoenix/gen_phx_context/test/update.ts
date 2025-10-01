@@ -1,5 +1,5 @@
-import { StringOnlyMap, validate } from "../../../../utils/map";
-import { compute_header } from "../../../../utils/gen_header";
+import { StringOnlyMap, validate } from "@/utils/map";
+import { compute_header } from "@/utils/gen_header";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
 const update_many_test = ({

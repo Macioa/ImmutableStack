@@ -1,6 +1,6 @@
-import { StringOnlyMap, validate } from "../../../utils/map";
+import { StringOnlyMap, validate } from "@/utils/map";
 import { ImmRoute } from ".";
-import { compute_header } from "../../../utils/gen_header";
+import { compute_header } from "@/utils/gen_header";
 
 const create_list = ({
   genName,

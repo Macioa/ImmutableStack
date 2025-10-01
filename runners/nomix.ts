@@ -1,4 +1,4 @@
-import { log } from "../utils/logger";
+import { log } from "@/utils/logger";
 import { getSetting } from "../utils/settings";
 
 const mixOrDocker = async (cmd: string, appNameSnake: string) => {

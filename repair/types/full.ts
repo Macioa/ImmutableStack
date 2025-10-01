@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
-import { resolve } from "../../utils/path";
+import { resolve } from "@/utils/path";
 import { getContext, getTarget, repairFn, RepairI } from "../";
-import { log } from "../../utils/logger";
+import { log } from "@/utils/logger";
 import { API_Fn } from "../adapters";
 
 const fullFileRepair = async (query: API_Fn, params: RepairI) => {

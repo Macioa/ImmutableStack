@@ -1,9 +1,9 @@
 import { readFile } from "fs/promises";
-import { join } from "../utils/path";
-import { getAppData } from "../readers/get_app_data";
-import { log } from "../utils/logger";
-import { getSetting } from "../utils/settings";
-import { getNamesFromSingularSnakeCase } from "../utils/string";
+import { join } from "@/utils/path";
+import { getAppData } from "@/readers/get_app_data";
+import { log } from "@/utils/logger";
+import { getSetting } from "@/utils/settings";
+import { getNamesFromSingularSnakeCase } from "@/utils/string";
 import adapters from "./adapters";
 import fullFileRepair from "./types/full";
 

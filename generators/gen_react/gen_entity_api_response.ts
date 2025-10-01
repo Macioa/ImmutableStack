@@ -1,6 +1,6 @@
-import { join } from "../../utils/path";
-import { generateFile } from "..";
-import { GenTypes, ImmutableGenerator } from "../../immutable_gen";
+import { join } from "@/utils/path";
+import { generateFile } from "@/generators/gen_react";
+import { GenTypes, ImmutableGenerator } from "@/commands/immutable_gen";
 import { mark } from "../../repair";
 
 const gen_entity_api_response = async (

@@ -1,6 +1,6 @@
-import { generateFile } from "../..";
-import { join } from "../../../utils/path";
-import { AppData } from "../../../readers/get_app_data";
+import { generateFile } from "@/generators/gen_react";
+import { join } from "@/utils/path";
+import { AppData } from "@/readers/get_app_data";
 
 const gen_demo_component_styles = ({ LibDir }: AppData) => {
   const filename = "styles.css";

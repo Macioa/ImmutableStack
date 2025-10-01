@@ -1,7 +1,7 @@
-import { join } from "../../utils/path";
+import { join } from "@/utils/path";
 import { Injection, InjectType, inject_file } from "..";
-import { Names } from "../../immutable_gen";
-import { AppData } from "../../readers/get_app_data";
+import { Names } from "@/commands/immutable_gen";
+import { AppData } from "@/readers/get_app_data";
 
 const inject_channel_to_socket = async (
   { singleUpperCamel, singleSnake }: Names,

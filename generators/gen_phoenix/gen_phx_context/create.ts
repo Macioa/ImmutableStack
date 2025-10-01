@@ -1,6 +1,6 @@
-import { StringOnlyMap, validate } from "../../../utils/map";
+import { StringOnlyMap, validate } from "@/utils/map";
 import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
-import { compute_header } from "../../../utils/gen_header";
+import { compute_header } from "@/utils/gen_header";
 import { log } from "../../../utils/logger";
 
 const comment_main = ({ pluralNameSnake }: StringOnlyMap, examples: string) => {

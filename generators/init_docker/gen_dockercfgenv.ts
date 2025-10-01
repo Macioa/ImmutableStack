@@ -1,5 +1,5 @@
 import { join } from "path";
-import { ImmutableGenerator } from "../../immutable_gen";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { generateFile } from "../index";
 
 const gen_docker_config_env = async (generator: ImmutableGenerator) => {

@@ -1,3 +1,5 @@
+scripts/bash_profile copy
+
 # Logs
 logs
 *.log

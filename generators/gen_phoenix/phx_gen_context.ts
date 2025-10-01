@@ -1,5 +1,5 @@
-import { execute } from "../../runners";
-import { log } from "../../utils/logger";
+import { execute } from "@/runners";
+import { log } from "@/utils/logger";
 
 const gen_context = async (generator: any, source: any) => {
   const gen = generator.generate;

@@ -1,14 +1,14 @@
 import { spawn } from 'child_process';
 import { existsSync } from "fs";
-import { resolve } from "./utils/path";
+import { resolve } from "@/utils/path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import repair, {
   marked,
   TARGET_ROUTES,
   TARGETS
-} from "./repair";
-import { log, setLogLevel } from "./utils/logger";
+} from "@/repair";
+import { log, setLogLevel } from "@/utils/logger";
 
 setLogLevel(5);
 

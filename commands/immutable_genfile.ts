@@ -5,9 +5,9 @@
 */
 
 import fs from "fs";
-import { join } from "./utils/path";
-import { getNamesFromSingularSnakeCase as getNames } from "./utils/string";
-import { log } from "./utils/logger";
+import { join } from "@/utils/path";
+import { getNamesFromSingularSnakeCase as getNames } from "@/utils/string";
+import { log } from "@/utils/logger";
 
 const [, , genName] = process.argv;
 const file = join(process.cwd(), `.genfile_${genName}.ts`);
@@ -25,6 +25,7 @@ const new_genfile = () => {
     singleLowerCamel,
     pluralUpperCamel,
     pluralLowerCamel,
+    pluralSnake,
   } = getNames(genName) || {};
   const tsContent = `
 /*
@@ -114,7 +115,7 @@ const Immutable: ImmutableGenerator = {
       ],
     },
     schema: "${singleUpperCamel}",
-    databaseTable: "${pluralLowerCamel}",
+    databaseTable: "${pluralSnake}",
 
     // FRONT END
     requests: {

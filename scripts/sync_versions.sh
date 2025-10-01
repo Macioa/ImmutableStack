@@ -5,7 +5,8 @@
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKAGE_JSON="$SCRIPT_DIR/package.json"
+# Look for package.json in the parent directory (project root)
+PACKAGE_JSON="$SCRIPT_DIR/../package.json"
 
 # Check if package.json exists
 if [ ! -f "$PACKAGE_JSON" ]; then

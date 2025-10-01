@@ -1,6 +1,6 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
-import { ImmutableGenerator } from "../../immutable_gen";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
 
 const addReducerToGlobal = async (generator: ImmutableGenerator) => {
   const {

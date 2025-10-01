@@ -1,18 +1,18 @@
-import { join } from "../../../../utils/path";
+import { join } from "@/utils/path";
 import {
   ImmutableGenerator,
   ImmutableContext,
-} from "../../../../immutable_gen";
-import { generateFile } from "../../..";
-import { StringOnlyMap } from "../../../../utils/map";
+} from "@/commands/immutable_gen";
+import { generateFile } from "@/generators/index";
+import { StringOnlyMap } from "@/utils/map";
 import { gen_create_api_tests } from "./create";
 import { gen_get_api_tests } from "./get";
 import { gen_delete_api_tests } from "./delete";
 import { gen_list_api_tests } from "./list";
 import { gen_update_api_tests } from "./update";
 import { api_test as custom_api_test } from "./custom";
-import { log } from "../../../../utils/logger";
-import { mark, CommentType } from "../../../../repair";
+import { log } from "@/utils/logger";
+import { mark, CommentType } from "@/repair";
 
 const gen_api_tests = (
   requested_apis: string[],

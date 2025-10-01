@@ -1,8 +1,8 @@
-import { join } from "../../utils/path";
-import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
-import { generateFile } from "../index";
-import { StringOnlyMap } from "../../utils/map";
-import { CommentType, mark } from "../../repair/index";
+import { join } from "@/utils/path";
+import { ImmutableGenerator, GenTypes } from "@/commands/immutable_gen";
+import { generateFile } from "@/generators/gen_react";
+import { StringOnlyMap } from "@/utils/map";
+import { CommentType, mark } from "@/repair/index";
 
 const gen_entity_requests = async (
   generator: ImmutableGenerator,

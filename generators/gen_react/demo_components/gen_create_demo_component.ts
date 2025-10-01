@@ -1,7 +1,7 @@
-import { join } from "../../../utils/path";
-import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
-import { generateFile } from "../../";
-import { StringOnlyMap } from "../../../utils/map";
+import { join } from "@/utils/path";
+import { ImmutableGenerator, GenTypes } from "@/commands/immutable_gen";
+import { generateFile } from "@/generators/gen_react";
+import { StringOnlyMap } from "@/utils/map";
 
 enum JsToInputType {
   string = "text",
