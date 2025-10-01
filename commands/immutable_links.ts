@@ -1,4 +1,4 @@
-import { getAppData } from "./readers/get_app_data";
+import { getAppData } from "@/readers/get_app_data";
 
 const gen_links = async () => {
   const { AppNameCamel, UmbrellaDir } = (await getAppData()) || {};

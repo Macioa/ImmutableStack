@@ -1,6 +1,6 @@
-import { join } from "../../utils/path";
-import { generateFile } from "../index";
-import { AppData } from "../../readers/get_app_data";
+import { join } from "@/utils/path";
+import { generateFile } from "@/generators/index";
+import { AppData } from "@/readers/get_app_data";
 
 const gen_custom_compiler = async ({
   AppNameSnake,

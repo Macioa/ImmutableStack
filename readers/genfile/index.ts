@@ -1,11 +1,11 @@
 import * as fs from "fs";
 
-import { getAppData } from "../get_app_data";
-import { ImmutableGenerator, GenTypes } from "../../immutable_gen";
+import { getAppData } from "@/readers/get_app_data";
+import { ImmutableGenerator, GenTypes } from "@/commands/immutable_gen";
 import { getGenerator } from "./generator";
 import { getTypeEquivalents, readAllTypes } from "./typedict";
-import { getNamesFromSingularSnakeCase as getNames } from "../../utils/string";
-import { log, sleep } from "../../utils/logger";
+import { getNamesFromSingularSnakeCase as getNames } from "@/utils/string";
+import { log, sleep } from "@/utils/logger";
 
 type GenData = {
   generator: ImmutableGenerator;

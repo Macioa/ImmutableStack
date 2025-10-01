@@ -1,7 +1,7 @@
 import fs from "fs";
 import { format } from "../utils/format";
 import { cacheLogByPath as cacheLog } from "../utils/history_cache";
-import { log } from "../utils/logger";
+import { log } from "@/utils/logger";
 
 type Injection = [InjectType, RegExp, string | ((s: string) => string)];
 

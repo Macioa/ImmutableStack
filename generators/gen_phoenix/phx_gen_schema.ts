@@ -1,6 +1,6 @@
-import { GenTypes, ImmutableGenerator } from "../../immutable_gen";
-import { execute } from "../../runners";
-import { log } from "../../utils/logger";
+import { GenTypes, ImmutableGenerator } from "@/commands/immutable_gen";
+import { execute } from "@/runners";
+import { log } from "@/utils/logger";
 
 const gen_schema = async (
   {

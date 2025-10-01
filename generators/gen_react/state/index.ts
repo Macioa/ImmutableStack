@@ -1,9 +1,9 @@
-import { join } from "../../../utils/path";
-import { GenTypes, ImmutableGenerator } from "../../../immutable_gen";
-import { mark } from "../../../repair/index";
-import { log } from "../../../utils/logger";
-import { loremFunctions } from "../../../utils/lorem";
-import { generateFile } from "../../index";
+import { join } from "@/utils/path";
+import { GenTypes, ImmutableGenerator } from "@/commands/immutable_gen";
+import { mark } from "@/repair/index";
+import { log } from "@/utils/logger";
+import { loremFunctions } from "@/utils/lorem";
+import { generateFile } from "@/generators/gen_react";
 import { get_reducer_exports, get_reducers } from "./reducers";
 import { get_selector_exports, get_selectors } from "./selectors";
 import { generate_entity_state_tests } from "./test";

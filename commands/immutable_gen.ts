@@ -5,13 +5,13 @@
 */
 
 import * as path from "path";
-import { gen_phx } from "./composite/gen_phoenix";
-import { gen_react } from "./composite/gen_react";
-import { readGenFile } from "./readers/genfile";
-import { AppData } from "./readers/get_app_data";
-import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
-import { log, setLogLevel } from "./utils/logger";
-import { Names } from "./utils/string";
+import { gen_phx } from "@/composite/gen_phoenix";
+import { gen_react } from "@/composite/gen_react";
+import { readGenFile } from "@/readers/genfile";
+import { AppData } from "@/readers/get_app_data";
+import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
+import { log, setLogLevel } from "@/utils/logger";
+import { Names } from "@/utils/string";
 
 setLogLevel(5);
 

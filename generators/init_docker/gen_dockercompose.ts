@@ -1,5 +1,5 @@
-import { AppData } from "../../readers/get_app_data";
-import { generateFile } from "../index";
+import { AppData } from "@/readers/get_app_data";
+import { generateFile } from "@/generators/index";
 
 const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
   let dir = UmbrellaDir || "";

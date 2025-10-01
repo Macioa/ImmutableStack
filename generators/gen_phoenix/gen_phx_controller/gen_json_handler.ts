@@ -1,7 +1,7 @@
-import { join } from "../../../utils/path";
-import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
-import { generateFile } from "../../index";
-import { CommentType, mark } from "../../../repair";
+import { join } from "@/utils/path";
+import { ImmutableGenerator, GenTypes } from "@/commands/immutable_gen";
+import { generateFile } from "@/generators/index";
+import { CommentType, mark } from "@/repair";
 
 const gen_json_handler = async (
   generator: ImmutableGenerator,

@@ -1,5 +1,5 @@
 import { ImmAPI } from ".";
-import { StringOnlyMap, validate } from "../../../../utils/map";
+import { StringOnlyMap, validate } from "@/utils/map";
 
 const custom_api = ({ header }: StringOnlyMap) => {
   validate({ header }, "custom");

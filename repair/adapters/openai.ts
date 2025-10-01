@@ -1,7 +1,7 @@
 // import { OpenAI } from "openai";
 import { API_Fn, RepairRequest, RepairRequestReply } from "..";
-import { getSetting } from "../../utils/settings";
-import { log } from "../../utils/logger";
+import { getSetting } from "@/utils/settings";
+import { log } from "@/utils/logger";
 import util from "util";
 
 const key = "openai";

@@ -1,11 +1,11 @@
-import { gen_channel_demo_component } from "./generators/gen_channel/gen_demo_component";
-import { gen_phx_channel } from "./generators/gen_channel/gen_phx_channel";
-import { gen_react_channel } from "./generators/gen_channel/gen_react_channel";
-import { inject_channel_to_socket } from "./injectors/gen_channel/inject_channel_to_socket";
-import { AppData, getAppData } from "./readers/get_app_data";
-import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
-import { log, setLogLevel } from "./utils/logger";
-import { getNamesFromSingularSnakeCase, Names } from "./utils/string";
+import { gen_channel_demo_component } from "@/generators/gen_channel/gen_demo_component";
+import { gen_phx_channel } from "@/generators/gen_channel/gen_phx_channel";
+import { gen_react_channel } from "@/generators/gen_channel/gen_react_channel";
+import { inject_channel_to_socket } from "@/injectors/gen_channel/inject_channel_to_socket";
+import { AppData, getAppData } from "@/readers/get_app_data";
+import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
+import { log, setLogLevel } from "@/utils/logger";
+import { getNamesFromSingularSnakeCase, Names } from "@/utils/string";
 
 setLogLevel(5);
 

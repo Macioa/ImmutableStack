@@ -1,6 +1,6 @@
 import path from "path";
 import { inject_file, InjectType, Injection } from "../index";
-import { ImmutableGenerator } from "../../immutable_gen";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
 
 const inject_router = async (generator: ImmutableGenerator) => {
   const {

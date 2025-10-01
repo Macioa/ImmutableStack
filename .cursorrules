@@ -16,12 +16,7 @@ ImmutableStack/
 ├── generators/                 # Core code generation modules
 │   ├── gen_channel/          # Phoenix Channel generation
 │   ├── gen_phoenix/          # Phoenix-specific generators
-│   │   ├── gen_phx_context/  # Context generation
-│   │   ├── gen_phx_controller/ # Controller generation
-│   │   └── phx_gen_*.ts      # Schema, JSON handlers
 │   ├── gen_react/             # React-specific generators
-│   │   ├── demo_components/   # Demo component generation
-│   │   └── state/            # Redux state generation
 │   ├── init_configs/          # Configuration file generation
 │   ├── init_docker/          # Docker file generation
 │   ├── init_phoenix/         # Phoenix project setup
@@ -98,7 +93,7 @@ Commands to run:
       immutable -gen _my_genfile_path                   # Run generator with generator file
       immutable -gen_channel _my_channel_name           # Create a channel
       immutable -repair _my_broken_file_path            # Repair a file using AI (see docs for details)
-      immutable -gentemplate _my_genname _my filepath   # Create a string literal template from existing code
+      immutable -gentemplate _my_genname _my_filepath   # Create a string literal template from existing code
       immutable -settings my_key: my_value              # Save a key:value to settings
       immutable -settings -clear                        # Clear local settings
       immutable -links                                  # Quick links to common files and directories

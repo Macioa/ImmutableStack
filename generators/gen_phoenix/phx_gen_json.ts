@@ -1,7 +1,7 @@
-import { execute } from "../../runners";
-import { log } from "../../utils/logger";
-import { ImmutableGenerator } from "../../immutable_gen";
-import { inject_router } from "../../injectors/gen_phoenix/inject_router";
+import { execute } from "@/runners";
+import { log } from "@/utils/logger";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
+import { inject_router } from "@/injectors/gen_phoenix/inject_router";
 
 const handle_json = async (generator: ImmutableGenerator, typeDict: any): Promise<any> => {
   const { generate, ...rest } = generator;

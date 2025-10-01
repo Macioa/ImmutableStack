@@ -7,12 +7,12 @@
 
 import fs from "fs/promises";
 import * as path from "path";
-import { AppData, AppNames, getAppData } from "./readers/get_app_data";
-import { log, setLogLevel } from "./utils/logger";
+import { AppData, AppNames, getAppData } from "@/readers/get_app_data";
+import { log, setLogLevel } from "@/utils/logger";
 import {
   getNamesFromSingularSnakeCase as getNames,
   Names,
-} from "./utils/string";
+} from "@/utils/string";
 
 setLogLevel(5);
 

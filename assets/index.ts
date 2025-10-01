@@ -1,7 +1,7 @@
 import fs from "fs";
 import { Readable } from "stream";
-import { join } from "../utils/path";
-import { AppData } from "../readers/get_app_data";
+import { join } from "@/utils/path";
+import { AppData } from "@/readers/get_app_data";
 
 const path =
   "https://raw.githubusercontent.com/macioa/immutablestack/alpha/assets/";

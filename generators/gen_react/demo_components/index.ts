@@ -1,4 +1,4 @@
-import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
+import { ImmutableGenerator, GenTypes } from "@/commands/immutable_gen";
 import { gen_create_demo_component } from "./gen_create_demo_component";
 import { gen_full_demo_component } from "./gen_full_demo_component";
 import { gen_list_demo_component } from "./gen_list_demo_component";

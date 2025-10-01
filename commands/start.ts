@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "fs";
 import * as path from "path";
 import * as os from "os";
-import { log, setLogLevel } from "./utils/logger";
-import { execute as exec } from "./runners";
+import { log, setLogLevel } from "@/utils/logger";
+import { execute as exec } from "@/runners";
 setLogLevel(5);
 
 const isWin = process.platform === "win32";

@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
-import { log } from "../utils/logger";
+import { log } from "@/utils/logger";
 import { existsSync } from "fs";
 
 type AppNames = {

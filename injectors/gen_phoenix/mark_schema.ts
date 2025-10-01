@@ -1,6 +1,6 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "..";
-import { ImmutableGenerator } from "../../immutable_gen";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { CommentType, mark } from "../../repair";
 
 const mark_schema = async ({

@@ -2,7 +2,7 @@
 
 if [ -f "$(dirname "$0")/versions.sh" ]; then
     echo "Sourcing versions.sh..."
-    source "versions.sh"
+    source "$(dirname "$0")/versions.sh"
 else
     echo "versions.sh not found in the same directory."
     exit 1

@@ -1,6 +1,6 @@
-import { join } from "../../../utils/path";
-import { ImmutableGenerator, GenTypes } from "../../../immutable_gen";
-import { generateFile } from "../../";
+import { join } from "@/utils/path";
+import { ImmutableGenerator, GenTypes } from "@/commands/immutable_gen";
+import { generateFile } from "@/generators/gen_react";
 
 const gen_list_demo_component = async (
   generator: ImmutableGenerator,

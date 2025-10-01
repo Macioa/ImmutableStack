@@ -3,16 +3,16 @@
     Initialize a new project with Immutable Stack
       - requires a project name as an argument    
 */
-import { fetch_assets } from "./assets";
-import { init_docker } from "./composite/init_docker";
-import { init_phoenix_umbrella_app } from "./composite/init_phoenix/init_phoenix_umbrella_app";
-import { build_tool_agnostic_init_tasks } from "./composite/init_react/build_tool_agnostic_init_tasks";
-import { init_react_app_with_vite } from "./composite/init_react/init_react_app_with_vite";
-import { inject_sample_release_mix } from "./injectors/init_docker/inject_sample_release_mix";
-import { appDataFromAppnNameSnake, setAppData } from "./readers/get_app_data";
-import { execute as exec } from "./runners";
-import { setUmbrellaDirCache, writeLog } from "./utils/history_cache";
-import { log, setLogLevel } from "./utils/logger";
+import { fetch_assets } from "@/assets";
+import { init_docker } from "@/composite/init_docker";
+import { init_phoenix_umbrella_app } from "@/composite/init_phoenix/init_phoenix_umbrella_app";
+import { build_tool_agnostic_init_tasks } from "@/composite/init_react/build_tool_agnostic_init_tasks";
+import { init_react_app_with_vite } from "@/composite/init_react/init_react_app_with_vite";
+import { inject_sample_release_mix } from "@/injectors/init_docker/inject_sample_release_mix";
+import { appDataFromAppnNameSnake, setAppData } from "@/readers/get_app_data";
+import { execute as exec } from "@/runners";
+import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
+import { log, setLogLevel } from "@/utils/logger";
 
 setLogLevel(5);
 

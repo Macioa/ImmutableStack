@@ -1,10 +1,10 @@
-import { log, setLogLevel } from "./utils/logger";
+import { log, setLogLevel } from "@/utils/logger";
 import {
     clearSettings,
     getSetting,
     readSettings,
     updateSetting,
-} from "./utils/settings";
+} from "@/utils/settings";
 
 setLogLevel(5)
 

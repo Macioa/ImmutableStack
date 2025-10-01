@@ -1,13 +1,13 @@
-import { join } from "../../../utils/path";
-import { generateFile } from "../..";
+import { join } from "@/utils/path";
+import { generateFile } from "@/generators/index";
 import {
   ImmutableContext,
   ImmutableController,
   ImmutableGenerator,
-} from "../../../immutable_gen";
-import { CommentType, mark } from "../../../repair";
-import { log } from "../../../utils/logger";
-import { StringOnlyMap } from "../../../utils/map";
+} from "@/commands/immutable_gen";
+import { CommentType, mark } from "@/repair";
+import { log } from "@/utils/logger";
+import { StringOnlyMap } from "@/utils/map";
 import { routes as create_routes } from "./create_route";
 import { route as custom_route } from "./custom_route";
 import { routes as delete_routes } from "./delete_route";

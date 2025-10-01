@@ -1,0 +1,95 @@
+# Directory variables
+export BASH_COMPLETION_PATH="/opt/homebrew/etc/profile.d/bash_completion.sh"
+export ASDF_PATH="$HOME/.asdf/asdf.sh"
+export ASDF_COMPLETIONS_PATH="$HOME/.asdf/completions/asdf.bash"
+export IMMUTABLE_STACK_PATH="$HOME/git/ImmutableStack"
+export HOMEBREW_IMM_PATH="$HOME/git/homebrew-immutable"
+export OUTPUT_PATH="$HOME/git/ImmutableStack/dist"
+export LOCAL_ENV_PATH="$HOME/.local/bin/env"
+
+# Create output directory
+mkdir -p "$OUTPUT_PATH"
+
+[[ -r "$BASH_COMPLETION_PATH" ]] && . "$BASH_COMPLETION_PATH"
+. "$ASDF_PATH"
+. "$ASDF_COMPLETIONS_PATH"
+
+build(){
+cd "$IMMUTABLE_STACK_PATH" && \
+HBREW_IMM_PATH="$HOMEBREW_IMM_PATH" yarn p && \
+cd "$HOMEBREW_IMM_PATH" && \
+yarn build
+}
+init_proj() {
+cd "$IMMUTABLE_STACK_PATH" && \
+HBREW_IMM_PATH="$HOMEBREW_IMM_PATH" yarn p && \
+cd "$HOMEBREW_IMM_PATH" && \
+yarn build && \
+cd "$OUTPUT_PATH" && \
+rm -rf $1_umbrella && \
+immutable -init $1 && \
+cd $1_umbrella
+}
+gen() {
+cd "$IMMUTABLE_STACK_PATH" && \
+cd "$OUTPUT_PATH/$1_umbrella" && \
+immutable -genfile $2 && \
+immutable -gen .genfile_$2.ts
+}
+
+version() {
+if [ -z "$1" ]; then
+    echo "Usage: version <version_number>"
+    return 1
+fi
+
+VERSION="$1"
+echo "Setting version to $VERSION..."
+
+# Update package.json in IMM stack path
+echo "Updating package.json in IMM stack path..."
+cd "$IMMUTABLE_STACK_PATH"
+if [ -f "package.json" ]; then
+    # Use sed to update the version field, handling JSON formatting
+    sed -i.bak "s/\"version\":[[:space:]]*\"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
+    rm -f package.json.bak
+    echo "Updated IMM stack package.json to version $VERSION"
+else
+    echo "Warning: package.json not found in IMM stack path"
+fi
+
+# Update package.json in homebrew IMM path
+echo "Updating package.json in homebrew IMM path..."
+cd "$HOMEBREW_IMM_PATH"
+if [ -f "package.json" ]; then
+    sed -i.bak "s/\"version\":[[:space:]]*\"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
+    rm -f package.json.bak
+    echo "Updated homebrew IMM package.json to version $VERSION"
+else
+    echo "Warning: package.json not found in homebrew IMM path"
+fi
+
+# Run sync versions script in IMM stack path
+echo "Running sync versions script in IMM stack path..."
+cd "$IMMUTABLE_STACK_PATH"
+if [ -f "scripts/sync_versions.sh" ]; then
+    ./scripts/sync_versions.sh
+    echo "Completed sync versions in IMM stack path"
+else
+    echo "Warning: sync_versions.sh not found in IMM stack path"
+fi
+
+# Run sync versions script in homebrew IMM path
+echo "Running sync versions script in homebrew IMM path..."
+cd "$HOMEBREW_IMM_PATH"
+if [ -f "sync-version.sh" ]; then
+    ./sync-version.sh
+    echo "Completed sync versions in homebrew IMM path"
+else
+    echo "Warning: sync-version.sh not found in homebrew IMM path"
+fi
+
+echo "Version update completed!"
+}
+
+. "$LOCAL_ENV_PATH"

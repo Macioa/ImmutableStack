@@ -1,5 +1,5 @@
-import { Dict, TypeDict, GenTypes, GenTypesKey } from "../../immutable_gen";
-import { log } from "../../utils/logger";
+import { Dict, TypeDict, GenTypes, GenTypesKey } from "@/commands/immutable_gen";
+import { log } from "@/utils/logger";
 
 const readAllTypes = (fileContent: string, dict: Dict): GenTypes => ({
   ...getGenTypes(fileContent, dict),

@@ -1,9 +1,9 @@
-import { generateFile } from "../..";
-import { ImmutableContext, ImmutableGenerator } from "../../../immutable_gen";
-import { CommentType, mark } from "../../../repair";
-import { log } from "../../../utils/logger";
-import { StringOnlyMap } from "../../../utils/map";
-import { join } from "../../../utils/path";
+import { generateFile } from "@/generators/index";
+import { ImmutableContext, ImmutableGenerator } from "@/commands/immutable_gen";
+import { CommentType, mark } from "@/repair";
+import { log } from "@/utils/logger";
+import { StringOnlyMap } from "@/utils/map";
+import { join } from "@/utils/path";
 import { gen_create_apis } from "./create";
 import { api as custom_api } from "./custom";
 import { gen_delete_apis } from "./delete";

@@ -4,7 +4,7 @@ import { resolve as pathResolve } from "path";
 import { getAppData } from "../readers/get_app_data";
 import { chunkArray } from "../utils/chunk";
 import { cacheLogCommand } from "../utils/history_cache";
-import { log } from "../utils/logger";
+import { log } from "@/utils/logger";
 import mixOrDocker from "./nomix";
 
 type Execution = {

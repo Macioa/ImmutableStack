@@ -1,7 +1,7 @@
-import { join } from "../../utils/path";
-import { ImmutableGenerator } from "../../immutable_gen";
-import { generateFile } from "../index";
-import { AppData } from "../../readers/get_app_data";
+import { join } from "@/utils/path";
+import { ImmutableGenerator } from "@/commands/immutable_gen";
+import { generateFile } from "@/generators/index";
+import { AppData } from "@/readers/get_app_data";
 
 const gen_dev_config_env = async ({
   UmbrellaDir,
