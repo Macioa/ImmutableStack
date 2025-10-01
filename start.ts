@@ -122,7 +122,7 @@ const main = async () => {
     "start_script"
   );
   await exec(
-    { command: "mix archive.install hex phx_new --force", dir: home },
+    { command: "mix archive.install hex phx_new 1.7.14 --force", dir: home },
     "start_script"
   );
 

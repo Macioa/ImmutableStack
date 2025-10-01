@@ -20,7 +20,7 @@ RUN apk add --no-cache \
 # Install Hex and Rebar
 RUN mix local.hex --force && \
     mix local.rebar --force && \
-    mix archive.install hex phx_new --force
+    mix archive.install hex phx_new 1.7.14 --force
 
 ENV PATH="$MIX_HOME/archives:$PATH"
 

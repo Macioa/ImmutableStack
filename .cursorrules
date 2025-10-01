@@ -1,0 +1,116 @@
+# ImmutableStack Project Rules
+
+## Project Overview
+ImmutableStack is a comprehensive toolkit for creating applications with the "Immutable Stack" - Elixir/Phoenix backend with React/Redux frontend. It provides code generation, AI-powered file repair, and development tooling for full-stack applications.
+## Project Structure
+### Root Directory Structure
+```
+ImmutableStack/
+├── assets/                    # Static assets (logo, images)
+├── composite/                 # High-level generation orchestrators
+│   ├── gen_phoenix/          # Phoenix backend generation coordinator
+│   ├── gen_react/             # React frontend generation coordinator
+│   ├── init_docker/          # Docker initialization coordinator
+│   ├── init_phoenix/         # Phoenix project initialization
+│   └── init_react/           # React project initialization
+├── generators/                 # Core code generation modules
+│   ├── gen_channel/          # Phoenix Channel generation
+│   ├── gen_phoenix/          # Phoenix-specific generators
+│   │   ├── gen_phx_context/  # Context generation
+│   │   ├── gen_phx_controller/ # Controller generation
+│   │   └── phx_gen_*.ts      # Schema, JSON handlers
+│   ├── gen_react/             # React-specific generators
+│   │   ├── demo_components/   # Demo component generation
+│   │   └── state/            # Redux state generation
+│   ├── init_configs/          # Configuration file generation
+│   ├── init_docker/          # Docker file generation
+│   ├── init_phoenix/         # Phoenix project setup
+│   └── init_react/           # React project setup
+├── injectors/                 # Code injection utilities
+│   ├── gen_channel/          # Channel injection
+│   ├── gen_phoenix/          # Phoenix code injection
+│   ├── gen_react/            # React code injection
+│   ├── init_docker/          # Docker injection
+│   ├── init_phoenix/         # Phoenix injection
+│   └── init_react/           # React injection
+├── readers/                   # File parsing and data extraction
+│   ├── genfile/              # Genfile parsing
+│   └── get_app_data.ts       # Application data extraction
+├── repair/                    # AI-powered code repair system
+│   ├── adapters/             # LLM adapters
+│   └── types/                # Repair type definitions
+├── runners/                   # Command execution utilities
+│   ├── nomix.ts              # Mix command execution
+│   └── index.ts              # Execution orchestration
+├── utils/                     # Shared utilities and helpers
+│   ├── settings/             # Settings management
+│   ├── chunk.ts              # Array chunking utilities
+│   ├── format.ts             # Code formatting
+│   ├── gen_header.ts         # File header generation
+│   ├── history_cache.ts      # Generation history tracking
+│   ├── logger.ts             # Custom logging system
+│   ├── lorem.ts              # Lorem ipsum generation
+│   ├── map.ts                # Mapping utilities
+│   ├── path.ts               # Path utilities
+│   └── string.ts             # String manipulation (Names utility)
+├── immutable_*.ts            # Main entry point scripts
+├── start.ts                  # Development environment setup
+├── package.json              # Node.js dependencies and scripts
+├── tsconfig.json             # TypeScript configuration
+├── Vagrantfile               # Vagrant development environment
+├── versions.sh               # Version definitions for asdf
+└── dev_kit_macos.sh          # macOS development tools installation
+```
+
+### Generated Project Structure (Output)
+When ImmutableStack generates a new project, it creates:
+```
+GeneratedProject/
+├── apps/
+│   ├── app_name/             # Main Phoenix application
+│   │   ├── lib/
+│   │   │   ├── app_name/     # Core business logic
+│   │   │   └── typescript/   # Generated TypeScript code
+│   │   │       ├── requests/ # API request functions
+│   │   │       └── state/    # Redux state management
+│   │   └── test/             # Phoenix tests
+│   └── app_name_web/         # Web interface
+│       ├── lib/
+│       │   └── app_name_web/
+│       │       ├── controllers/ # HTTP controllers
+│       │       ├── channels/   # WebSocket channels
+│       │       └── router.ex   # Route definitions
+│       └── test/
+├── config/                   # Phoenix configuration
+├── priv/
+│   └── repo/
+│       └── migrations/       # Database migrations
+└── docker-compose.yml        # Docker development setup
+```
+
+Commands to run:
+```
+    Usage: 
+      immutable -install                                # Install core (required)
+      immutable -devkit                                 # Install external dev tools (optional)
+      immutable -init _my_proj_name                     # Initialize a new project
+      immutable -genfile _my_genname                    # Create a generator file
+      immutable -gen _my_genfile_path                   # Run generator with generator file
+      immutable -gen_channel _my_channel_name           # Create a channel
+      immutable -repair _my_broken_file_path            # Repair a file using AI (see docs for details)
+      immutable -gentemplate _my_genname _my filepath   # Create a string literal template from existing code
+      immutable -settings my_key: my_value              # Save a key:value to settings
+      immutable -settings -clear                        # Clear local settings
+      immutable -links                                  # Quick links to common files and directories
+```
+
+## Development Tools (Bash Functions)
+```
+    First:
+        source ~/.bash_profile
+    Usage:
+      build                                            # Build ImmutableStack and homebrew-immutable packages
+      init_proj <project_name>                         # Initialize new project with full build process
+      gen <project_name> <genfile_name>                # Generate code using existing project and genfile
+      version <version_number>                          # Update version across all package.json files and sync
+```
