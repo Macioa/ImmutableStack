@@ -12,7 +12,7 @@ const mixOrDocker = async (cmd: string, appNameSnake: string) => {
     log({ level: 2, color: "PINK" }, `Running MIX in Docker...`)
   }
   if (hasnew) {
-    pref = `mkdir -p ${appNameSnake}_umbrella && cd ${appNameSnake}_umbrella && `
+    pref = `mkdir -p ${appNameSnake}_umbrella && cd ${appNameSnake}_umbrella && `;
     cmd = `${cmd} && cp -rf ${appNameSnake}_umbrella/* . && rm -rf ${appNameSnake}_umbrella`;
     dockerdir = "docker/compose.yaml";
   }

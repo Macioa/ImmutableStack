@@ -8,7 +8,7 @@ const inject_package_scripts = async ({ AppNameSnake, UiDir }: AppData) => {
     [
       InjectType.AFTER,
       /\"scripts\":\s+\{/,
-      `\n    "postinstall": "ln -sf $(pwd)/node_modules ../${AppNameSnake}/lib/typescript/node_modules",`,
+      `\n    "postinstall": "if [ -d '../${AppNameSnake}/lib/typescript' ]; then rm -f ../${AppNameSnake}/lib/typescript/node_modules && ln -sf $(pwd)/node_modules ../${AppNameSnake}/lib/typescript/node_modules && echo 'Symlink created: ../${AppNameSnake}/lib/typescript/node_modules -> $(pwd)/node_modules'; else echo 'Warning: ${AppNameSnake}/lib/typescript directory not found, skipping symlink creation'; fi",`,
     ],
   ];
 

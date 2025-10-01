@@ -135,3 +135,4 @@ dist
 *.js.map
 .genfile*
 .build
+package.json.backup

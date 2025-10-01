@@ -42,7 +42,7 @@ async function main() {
   setUmbrellaDirCache(UmbrellaDir);
 
   const _dir = await exec(
-    { command: `mkdir -p ${AppNameSnake}_umbrella`, dir: UmbrellaDir },
+    { command: `mkdir -p .`, dir: UmbrellaDir },
     "init_proj"
   );
 
@@ -69,6 +69,14 @@ async function main() {
   const _compile = await exec(
     {
       command: `mix compile`,
+      dir: UmbrellaDir,
+    },
+    "init_proj"
+  );
+
+  const _cleanup = await exec(
+    {
+      command: `rm -rf ${AppNameSnake} ${AppNameSnake}_umbrella`,
       dir: UmbrellaDir,
     },
     "init_proj"
