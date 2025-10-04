@@ -52,8 +52,8 @@ const gen_phx_channel_cluster_test = (
       assert_broadcast "update_state", %{"key" => "value"}
       
       # Verify state is consistent across cluster
-      push(socket, "get_state", %{})
-      assert_reply %{"key" => "value"}
+      ref = push(socket, "get_state", %{})
+      assert_reply ref, %{"key" => "value"}
     end
 
     test "handles node disconnections gracefully", %{socket: socket} do

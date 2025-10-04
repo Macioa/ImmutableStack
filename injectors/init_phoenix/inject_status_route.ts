@@ -8,8 +8,7 @@ const inject_status_route = async ({ WebDir, AppNameSnake }: AppData) => {
     [
       T.AFTER,
       /scope "\/", .* do\s*\n/,
-      `    get("/", PageController, :index)
-    get("/nodes", StatusController, :index)
+      `    get("/nodes", StatusController, :index)
 `,
     ],
   ];

@@ -87,6 +87,20 @@ const gen_phx_channel = (
     {:noreply, socket}
   end
 
+  def handle_in("update_state", %{"key" => key}, socket) do
+    broadcast!(socket, "update_state", %{key: key})
+    {:noreply, socket}
+  end
+
+  def handle_in("get_state", _params, socket) do
+    {:reply, %{"key" => "value"}, socket}
+  end
+
+  def handle_in("cluster_disconnect", %{"reason" => reason}, socket) do
+    broadcast!(socket, "cluster_disconnect", %{reason: reason})
+    {:noreply, socket}
+  end
+
   def terminate(reason, socket) do
     :ok
   end
