@@ -44,28 +44,33 @@ const gen_phx_channel_test = (
     end
 
     test "rejects joining with invalid room id" do
-      assert :error = ${singleUpperCamel}Channel.join("${singleSnake}:invalid", %{}, socket())
+      socket = socket(${AppNameCamel}Web.UserSocket, "user_id", %{some: :assign})
+      assert {:error, _reason} = ${singleUpperCamel}Channel.join("${singleSnake}:invalid", %{}, socket)
     end
 
     test "rejects malformed room IDs" do
-      assert :error = ${singleUpperCamel}Channel.join("invalid_format", %{}, socket())
-      assert :error = ${singleUpperCamel}Channel.join("", %{}, socket())
-      assert :error = ${singleUpperCamel}Channel.join("${singleSnake}:", %{}, socket())
+      socket = socket(${AppNameCamel}Web.UserSocket, "user_id", %{some: :assign})
+      assert {:error, _reason} = ${singleUpperCamel}Channel.join("invalid_format", %{}, socket)
+      assert {:error, _reason} = ${singleUpperCamel}Channel.join("", %{}, socket)
+      assert {:error, _reason} = ${singleUpperCamel}Channel.join("${singleSnake}:", %{}, socket)
     end
 
     test "rejects join with invalid parameters" do
-      assert :error = ${singleUpperCamel}Channel.join("${singleSnake}:lobby", %{"invalid" => "param"}, socket())
+      socket = socket(${AppNameCamel}Web.UserSocket, "user_id", %{some: :assign})
+      assert {:error, _reason} = ${singleUpperCamel}Channel.join("${singleSnake}:lobby", %{"invalid" => "param"}, socket)
     end
 
     test "handles rate limiting for join attempts" do
       # Simulate rapid join attempts
+      socket = socket(${AppNameCamel}Web.UserSocket, "user_id", %{some: :assign})
       for _ <- 1..10 do
-        assert :error = ${singleUpperCamel}Channel.join("${singleSnake}:rate_limited", %{}, socket())
+        assert {:error, _reason} = ${singleUpperCamel}Channel.join("${singleSnake}:rate_limited", %{}, socket)
       end
     end
 
     test "rejects join when room at capacity" do
-      assert :error = ${singleUpperCamel}Channel.join("${singleSnake}:full_room", %{}, socket())
+      socket = socket(${AppNameCamel}Web.UserSocket, "user_id", %{some: :assign})
+      assert {:error, _reason} = ${singleUpperCamel}Channel.join("${singleSnake}:full_room", %{}, socket)
     end
   end
 
