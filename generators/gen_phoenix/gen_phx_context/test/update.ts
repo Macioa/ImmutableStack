@@ -4,20 +4,21 @@ import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
 const update_many_test = ({
   genLowerSnakePlural,
+  genLowerSnake,
   camelName,
   genUpperCamel,
 }: StringOnlyMap) => {
   validate(
-    { genLowerSnakePlural, camelName, genUpperCamel },
+    { genLowerSnakePlural, genLowerSnake, camelName, genUpperCamel },
     "update_many_test"
   );
   return `
-  test "update_${genLowerSnakePlural}/1 updates multiple ${genLowerSnakePlural}" do
-    {:ok, ${genLowerSnakePlural}, []} = ${camelName}.create_${genLowerSnakePlural}([@valid_attrs, @valid_attrs])
+  test "update_${genLowerSnake}/1 updates multiple ${genLowerSnakePlural}" do
+    {:ok, ${genLowerSnakePlural}, []} = ${camelName}.create_${genLowerSnake}([@valid_attrs, @valid_attrs])
     ${genLowerSnakePlural} = ${genLowerSnakePlural} |> Enum.map(&Map.merge(@update_attrs, %{id: &1.id}))
-    operation = ${camelName}.update_${genLowerSnakePlural}(${genLowerSnakePlural})
+    operation = ${camelName}.update_${genLowerSnake}(${genLowerSnakePlural})
     assert {:ok, [%${genUpperCamel}{}, %${genUpperCamel}{}], []} = operation
-    partial_operation = ${camelName}.update_${genLowerSnakePlural}(${genLowerSnakePlural} ++ [@fake_attrs])
+    partial_operation = ${camelName}.update_${genLowerSnake}(${genLowerSnakePlural} ++ [@fake_attrs])
     assert {:partial_success, [%${genUpperCamel}{}, %${genUpperCamel}{}], [_failed_attrs]} = partial_operation
   end
 `;
@@ -25,15 +26,16 @@ const update_many_test = ({
 
 const update_single_test = ({
   genLowerSnakePlural,
+  genLowerSnake,
   camelName,
 }: StringOnlyMap) => {
-  validate({ genLowerSnakePlural, camelName }, "update_single_test");
+  validate({ genLowerSnakePlural, genLowerSnake, camelName }, "update_single_test");
   return `
-  test "update_${genLowerSnakePlural}/1 updates a single ${genLowerSnakePlural}" do
-    {:ok, %{id: id}} = ${camelName}.create_${genLowerSnakePlural}(@valid_attrs)
-    operation = ${camelName}.update_${genLowerSnakePlural}(Map.merge(@update_attrs, %{id: id}))
-    assert {:ok, result_${genLowerSnakePlural}} = operation
-    assert new_${genLowerSnakePlural} = ${camelName}.get_${genLowerSnakePlural}!(result_${genLowerSnakePlural})
+  test "update_${genLowerSnake}/1 updates a single ${genLowerSnake}" do
+    {:ok, %{id: id}} = ${camelName}.create_${genLowerSnake}(@valid_attrs)
+    operation = ${camelName}.update_${genLowerSnake}(Map.merge(@update_attrs, %{id: id}))
+    assert {:ok, result_${genLowerSnake}} = operation
+    assert new_${genLowerSnake} = ${camelName}.get_${genLowerSnake}!(result_${genLowerSnake})
 
     assert %{
              id: res_id,
@@ -42,7 +44,7 @@ const update_single_test = ({
              example3: example3,
              updated_at: _,
              inserted_at: _
-           } = new_${genLowerSnakePlural}
+           } = new_${genLowerSnake}
 
     assert [example1, example2, example3, res_id] == [
              @update_attrs.example1,

@@ -4,16 +4,17 @@ import { ImmAPI, ApiIdMap, ApiGenFunction } from ".";
 
 const list_standard_test = ({
   genLowerSnakePlural,
+  genLowerSnake,
   camelName,
   genUpperCamel,
 }: StringOnlyMap) => {
   validate(
-    { genLowerSnakePlural, camelName, genUpperCamel },
+    { genLowerSnakePlural, genLowerSnake, camelName, genUpperCamel },
     "list_standard_test"
   );
   return `
   test "list_${genLowerSnakePlural}/0 returns all ${genLowerSnakePlural}" do
-    {:ok, _${genLowerSnakePlural}} = ${camelName}.create_${genLowerSnakePlural}(@valid_attrs)
+    {:ok, _${genLowerSnakePlural}} = ${camelName}.create_${genLowerSnake}(@valid_attrs)
     operation = ${camelName}.list_${genLowerSnakePlural}()
 
     assert {:ok, [%${genUpperCamel}{}],
@@ -24,16 +25,17 @@ const list_standard_test = ({
 
 const list_dynamic_test = ({
   genLowerSnakePlural,
+  genLowerSnake,
   camelName,
   genUpperCamel,
 }: StringOnlyMap) => {
   validate(
-    { genLowerSnakePlural, camelName, genUpperCamel },
+    { genLowerSnakePlural, genLowerSnake, camelName, genUpperCamel },
     "list_dynamic_test"
   );
   return `
   test "list_${genLowerSnakePlural}_by/2 returns all ${genLowerSnakePlural} by field" do
-    {:ok, _${genLowerSnakePlural}} = ${camelName}.create_${genLowerSnakePlural}(@valid_attrs)
+    {:ok, _${genLowerSnakePlural}} = ${camelName}.create_${genLowerSnake}(@valid_attrs)
     operation = ${camelName}.list_${genLowerSnakePlural}_by(%{"example1" => "1"}, %{})
 
     assert {:ok, [%${genUpperCamel}{}],
@@ -44,7 +46,7 @@ const list_dynamic_test = ({
   end
 
   test "list_${genLowerSnakePlural}_by/2 returns all ${genLowerSnakePlural} by field with pagination" do
-    {:ok, _${genLowerSnakePlural}, []} = ${camelName}.create_${genLowerSnakePlural}([@valid_attrs, @valid_attrs, @valid_attrs])
+    {:ok, _${genLowerSnakePlural}, []} = ${camelName}.create_${genLowerSnake}([@valid_attrs, @valid_attrs, @valid_attrs])
     operation = ${camelName}.list_${genLowerSnakePlural}_by(%{"example1" => "1"}, %{page_size: 2})
     {:ok, ${genLowerSnakePlural}, page} = operation
     assert [%${genUpperCamel}{}, %${genUpperCamel}{}] = ${genLowerSnakePlural}
