@@ -4,6 +4,19 @@ import { AppData } from "../../readers/get_app_data";
 
 const inject_cluster_to_application = async ({ LibDir, AppNameCamel }: AppData) => {
   const file = path.join(LibDir, `lib/${AppNameCamel.toLowerCase()}/application.ex`);
+  
+  // Read the file to check if cluster configuration already exists
+  const fs = require('fs');
+  const content = fs.readFileSync(file, 'utf8');
+  
+  // If cluster configuration already exists, skip injection
+  if (content.includes('{DNSCluster, query: Application.get_env(') || 
+      content.includes('topologies = [') ||
+      content.includes('Cluster.Supervisor')) {
+    console.log('Cluster configuration already exists in application.ex, skipping injection');
+    return Promise.resolve([file]);
+  }
+  
   const injections: Injection[] = [
     [
       T.AFTER,

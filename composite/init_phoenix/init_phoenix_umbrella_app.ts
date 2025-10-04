@@ -17,6 +17,7 @@ import { inject_phoenix_deps } from "../../injectors/init_phoenix/inject_phoenix
 import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_to_repo";
 import { inject_socket_to_endpoint } from "../../injectors/init_phoenix/inject_socket_to_endpoint";
 import { inject_status_route } from "../../injectors/init_phoenix/inject_status_route";
+import { inject_test_helper_exclusions } from "../../injectors/init_phoenix/inject_test_helper_exclusions";
 import { inject_web_endpoint } from "../../injectors/init_phoenix/inject_web_endpoint";
 import { mark_router } from "../../injectors/init_phoenix/mark_router";
 import { AppData } from "../../readers/get_app_data";
@@ -60,6 +61,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData) => {
   const socket = await inject_socket_to_endpoint(appdata);
   const cluster_application = await inject_cluster_to_application(appdata);
   const status_route = await inject_status_route(appdata);
+  const test_helper_exclusions = await inject_test_helper_exclusions(appdata);
   const dynamic_port = await inject_dynamic_port_config(appdata);
 
   return [
@@ -73,6 +75,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData) => {
     user_socket,
     cluster_application,
     status_route,
+    test_helper_exclusions,
     dynamic_port,
   ].flat();
 };
