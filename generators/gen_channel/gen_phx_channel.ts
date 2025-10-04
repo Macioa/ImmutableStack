@@ -33,6 +33,21 @@ const gen_phx_channel = (
     {:noreply, socket}
   end
 
+  def handle_in("cluster_message", %{"node" => node, "message" => message}, socket) do
+    broadcast!(socket, "cluster_message", %{node: node, message: message})
+    {:noreply, socket}
+  end
+
+  def handle_in("node_message", %{"from" => from}, socket) do
+    broadcast!(socket, "node_message", %{from: from})
+    {:noreply, socket}
+  end
+
+  def handle_in("performance_test", %{"count" => count}, socket) do
+    broadcast!(socket, "performance_test", %{count: count})
+    {:noreply, socket}
+  end
+
   def handle_in("server_shutdown", _params, socket) do
     push(socket, "phx_error", %{reason: "server_shutdown"})
     {:noreply, socket}
@@ -44,7 +59,7 @@ const gen_phx_channel = (
   end
 
   def handle_in("reconnect", %{"attempt" => attempt}, socket) do
-    {:reply, :ok, %{status: "reconnected", attempt: attempt}, socket}
+    {:reply, %{status: "reconnected", attempt: attempt}, socket}
   end
 
   def handle_in("invalid_message", _params, socket) do

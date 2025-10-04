@@ -104,7 +104,7 @@ const gen_phx_channel_test = (
     test "handles reconnection attempts", %{socket: socket} do
       # Test reconnection after disconnection
       push(socket, "reconnect", %{attempt: 1})
-      assert_reply :ok, %{status: "reconnected"}
+      assert_reply %{status: "reconnected", attempt: 1}
     end
   end
 
