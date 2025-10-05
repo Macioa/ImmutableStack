@@ -1,3 +1,13 @@
+/**
+ * Command execution runner with prereq support
+ * 
+ * Usage:
+ * Basic: execute({ command: "echo hello", dir: "/tmp" })
+ * Multiple: execute({ command: ["cmd1", "cmd2"], dir: "/tmp" })
+ * Prereq: execute({ command: "main", dir: "/tmp", prereq: { command: "check", recover: "fix" } })
+ * Options: execute({ command: "cmd", dir: "/tmp", options: { resolveOnErrorCode: true } })
+ */
+
 import { spawn } from "child_process";
 import { mkdirSync } from "fs";
 import { resolve as pathResolve } from "path";
@@ -9,9 +19,14 @@ import mixOrDocker from "./nomix";
 
 type Execution = {
   dir: string;
-  command: string;
+  command: string | string[];
   env?: NodeJS.ProcessEnv;
   options?: ExecutionOptions;
+  prereq?: {
+    command: string;
+    dir?: string;
+    recover?: string | string[];
+  };
 };
 
 type PromptAndReply = [string, string];
@@ -41,6 +56,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
     command: cInit,
     env,
     options,
+    prereq,
   } = { ...ExecutionDefaults, ...execution };
   const {
     timeoutResolve,
@@ -52,52 +68,94 @@ const execute = async (execution: Execution, caller: string | null = null) => {
     ...options,
   };
 
-  const command = await mixOrDocker(
-    cInit,
-    (await getAppData())?.AppNameSnake || ""
-  );
+  if (prereq) {
+    const prereqDir = prereq.dir || dir;
+    const prereqCommand = await mixOrDocker(
+      prereq.command,
+      (await getAppData())?.AppNameSnake || ""
+    );
+    
+    const prereqResult = await new Promise<number>((resolve) => {
+      const executedDir = pathResolve(prereqDir);
+      mkdirSync(executedDir, { recursive: true });
+      const [cmd, ...args] = prereqCommand.split(" ");
+      const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
+      child.on("close", (exitcode) => resolve(exitcode || 0));
+    });
 
-  cacheLogCommand({ command, dir }, caller);
-
-  log({ level: 1, color: "PURPLE" }, `Executing: ${command}`);
-  log({ level: 1, color: "TEAL" }, `      in ${dir}...\n\n`);
-
-  return new Promise((resolve, reject) => {
-    const executedDir = pathResolve(dir);
-    mkdirSync(executedDir, { recursive: true });
-    const [cmd, ...args] = command.split(" ");
-    const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
-
-    child.stdout.on("data", (data) => {
-      log({ level: 5 }, data.toString());
-      if (options?.prompts) {
-        options.prompts.forEach(([prompt, response]) => {
-          if (data.toString().includes(prompt)) {
-            const r = response + (forceReturnOnPrompt ? "\n" : "");
-            child.stdin.write(r);
-          }
-        });
+    if (prereqResult !== 0) {
+      if (prereq.recover) {
+        const recoverCommands = Array.isArray(prereq.recover) ? prereq.recover : [prereq.recover];
+        for (const recoverCmd of recoverCommands) {
+          const recoverCommand = await mixOrDocker(
+            recoverCmd,
+            (await getAppData())?.AppNameSnake || ""
+          );
+          await new Promise<void>((resolve) => {
+            const executedDir = pathResolve(prereqDir);
+            const [cmd, ...args] = recoverCommand.split(" ");
+            const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
+            child.on("close", () => resolve());
+          });
+        }
+      } else {
+        throw new Error(`Prereq failed: ${prereq.command}`);
       }
-    });
+    }
+  }
 
-    child.stderr.on("error", (error) => {
-      console.error(`Could not run ${command}:\n      ${error}`);
-      reject(error || `Could not run ${command}`);
-    });
+  const commands = Array.isArray(cInit) ? cInit : [cInit];
+  
+  for (const cmdInit of commands) {
+    const command = await mixOrDocker(
+      cmdInit,
+      (await getAppData())?.AppNameSnake || ""
+    );
 
-    child.on("close", (exitcode) => {
-      if (!resolveOnErrorCode && exitcode) {
-        console.error(
-          `Process exited with exit code ${exitcode}:\n       ${command}`
-        );
-        reject(`Process exited with ${exitcode}`);
-      } else resolve(dir);
-    });
+    cacheLogCommand({ command, dir }, caller);
 
-    if (timeoutResolve) setTimeout(() => resolve(dir), timeoutResolve);
-    if (timeoutReject)
-      setTimeout(() => reject(new Error("Time out")), timeoutReject);
-  });
+    log({ level: 1, color: "PURPLE" }, `Executing: ${command}`);
+    log({ level: 1, color: "TEAL" }, `      in ${dir}...\n\n`);
+
+    await new Promise((resolve, reject) => {
+      const executedDir = pathResolve(dir);
+      mkdirSync(executedDir, { recursive: true });
+      const [cmd, ...args] = command.split(" ");
+      const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
+
+      child.stdout.on("data", (data) => {
+        log({ level: 5 }, data.toString());
+        if (options?.prompts) {
+          options.prompts.forEach(([prompt, response]) => {
+            if (data.toString().includes(prompt)) {
+              const r = response + (forceReturnOnPrompt ? "\n" : "");
+              child.stdin.write(r);
+            }
+          });
+        }
+      });
+
+      child.stderr.on("error", (error) => {
+        console.error(`Could not run ${command}:\n      ${error}`);
+        reject(error || `Could not run ${command}`);
+      });
+
+      child.on("close", (exitcode) => {
+        if (!resolveOnErrorCode && exitcode) {
+          console.error(
+            `Process exited with exit code ${exitcode}:\n       ${command}`
+          );
+          reject(`Process exited with ${exitcode}`);
+        } else resolve(dir);
+      });
+
+      if (timeoutResolve) setTimeout(() => resolve(dir), timeoutResolve);
+      if (timeoutReject)
+        setTimeout(() => reject(new Error("Time out")), timeoutReject);
+    });
+  }
+  
+  return dir;
 };
 
 const executeChunk = async (
