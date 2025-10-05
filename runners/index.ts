@@ -96,12 +96,21 @@ const execute = async (execution: Execution, caller: string | null = null) => {
       (await getAppData())?.AppNameSnake || ""
     );
     
-    const prereqResult = await new Promise<number>((resolve) => {
+    const prereqResult = await new Promise<number>((resolve, reject) => {
       const executedDir = pathResolve(prereqDir);
       mkdirSync(executedDir, { recursive: true });
       const [cmd, ...args] = prereqCommand.split(" ");
       const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
+      
       child.on("close", (exitcode) => resolve(exitcode || 0));
+      child.on("error", (error) => {
+        console.error(`Prereq spawn failed: ${prereqCommand}`, error);
+        reject(error);
+      });
+      child.stderr.on("error", (error) => {
+        console.error(`Prereq stderr error: ${prereqCommand}`, error);
+        reject(error);
+      });
     });
 
     if (prereqResult !== 0) {
@@ -112,11 +121,27 @@ const execute = async (execution: Execution, caller: string | null = null) => {
             recoverCmd,
             (await getAppData())?.AppNameSnake || ""
           );
-          await new Promise<void>((resolve) => {
+          await new Promise<void>((resolve, reject) => {
             const executedDir = pathResolve(prereqDir);
             const [cmd, ...args] = recoverCommand.split(" ");
             const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
-            child.on("close", () => resolve());
+            
+            child.on("close", (exitcode) => {
+              if (exitcode && exitcode !== 0) {
+                console.error(`Recover command failed with exit code ${exitcode}: ${recoverCommand}`);
+                reject(new Error(`Recover command failed with exit code ${exitcode}`));
+              } else {
+                resolve();
+              }
+            });
+            child.on("error", (error) => {
+              console.error(`Recover spawn failed: ${recoverCommand}`, error);
+              reject(error);
+            });
+            child.stderr.on("error", (error) => {
+              console.error(`Recover stderr error: ${recoverCommand}`, error);
+              reject(error);
+            });
           });
         }
       } else {
@@ -211,7 +236,7 @@ const executeAllSync = async (
   executions: Execution[],
   caller: string | null = null
 ) => {
-  const res: any[] = [];
+  let res: any[] = [];
   for (const exec of executions) {
     try {
       res.push(await execute(exec, caller));

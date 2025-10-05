@@ -21,15 +21,16 @@ export const initGitRepository = async (projectDir: string, gitDomain: string) =
   await execute(
     {
       command: [
-        `git ls-remote ${remoteUrl} || true`,
-        `gh repo create ${projectName} --private --confirm || true`,
+        `git ls-remote ${remoteUrl}`,
+        `gh repo create ${projectName} --private --confirm`,
         "git init",
         "git add .",
         'git commit -m "Initial commit"',
         `git remote add origin ${remoteUrl}`
       ],
       dir: projectDir,
-      prereq: gitPrereq
+      prereq: gitPrereq,
+      options: { resolveOnErrorCode: true }
     },
     "git"
   );
@@ -45,10 +46,14 @@ export const deleteAppRepositories = async (appName: string, gitDomain?: string)
   log({ level: 1, color: "BLUE" }, `\nDeleting repositories for app: ${appName}`);
   
   const repositories = [`${appName}_umbrella`, `${appName}_lib`, `${appName}_ui`, `${appName}_web`];
-  const deleteCommands = repositories.map(repoName => `gh repo delete ${repoName} --yes || true`);
+  const deleteCommands = repositories.map(repoName => `gh repo delete ${repoName} --yes`);
 
   await execute(
-    { command: deleteCommands, dir: "/tmp" },
+    { 
+      command: deleteCommands, 
+      dir: "/tmp",
+      options: { resolveOnErrorCode: true }
+    },
     "deleteAppRepositories"
   );
 };
@@ -65,13 +70,14 @@ export const addGitSubmodules = async (projectDir: string, appsDir: string, gitD
     
     const repoCreationCommands = directories.map(dir => {
       const repoName = dir === projectName ? `${projectName}_lib` : dir;
-      return `gh repo create ${repoName} --private --confirm || true`;
+      return `gh repo create ${repoName} --private --confirm`;
     });
     
     await execute(
       {
         command: repoCreationCommands,
-        dir: "/tmp"
+        dir: "/tmp",
+        options: { resolveOnErrorCode: true }
       },
       "git"
     );
@@ -87,7 +93,7 @@ export const addGitSubmodules = async (projectDir: string, appsDir: string, gitD
         `cd ${appPath} && git remote add origin ${submoduleUrl}`,
         `cd ${appPath} && git add .`,
         `cd ${appPath} && git commit -m "Initial commit"`,
-        `cd ${appPath} && git push -u origin master`
+        `cd ${appPath} && git push -u origin main`
       ];
     });
     
@@ -95,26 +101,28 @@ export const addGitSubmodules = async (projectDir: string, appsDir: string, gitD
       {
         command: appInitCommands,
         dir: "/tmp",
-        prereq: gitPrereq
+        prereq: gitPrereq,
+        options: { resolveOnErrorCode: true }
       },
       "git"
     );
 
     const submoduleCommands = [
-      ...directories.map(dir => `git rm -r --cached apps/${dir} || true`),
+      ...directories.map(dir => `git rm -r --cached apps/${dir}`),
       ...directories.map(dir => {
         const repoName = dir === projectName ? `${projectName}_lib` : dir;
         const submoduleUrl = `${gitDomain.replace(/\.git$/, '')}/${repoName}.git`;
         return `git submodule add ${submoduleUrl} apps/${dir}`;
       }),
       'git commit -m "Add app submodules"',
-      "git push -u origin master"
+      "git push -u origin main"
     ];
     
     await execute(
       {
         command: submoduleCommands,
-        dir: projectDir
+        dir: projectDir,
+        options: { resolveOnErrorCode: true }
       },
       "git"
     );
