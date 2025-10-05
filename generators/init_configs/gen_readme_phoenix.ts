@@ -44,9 +44,9 @@ Part of [${AppNameCamel}.Umbrella](../..)
 *Generated with [ImmutableStack](https://www.immutablestack.com)*`;
 
   // Phoenix web app README
-  const webContent = `# ${AppNameCamel}Web
+  const webContent = `# ${AppNameCamel}API
 
-Phoenix web interface with controllers, channels, and views.
+Phoenix API interface with controllers, channels, and views.
 
 ## Development
 

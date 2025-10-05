@@ -21,15 +21,18 @@ npm run dev
 npm test
 \`\`\`
 
-## Formatting
+## Building
 
 \`\`\`bash
-npm run format
+npm run build
+npm run preview
 \`\`\`
 
 ## Parent Repository
 
 Part of [${AppNameCamel}.Umbrella](../..)
+
+*Note: These commands can also be managed through mix commands in the parent umbrella app.*
 
 ---
 
