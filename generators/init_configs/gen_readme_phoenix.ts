@@ -39,6 +39,8 @@ mix ecto.gen.migration create_table_name
 
 Part of [${AppNameCamel}.Umbrella](../..)
 
+*Note: These commands can also be managed through mix commands in the parent umbrella app.*
+
 ---
 
 *Generated with [ImmutableStack](https://www.immutablestack.com)*`;
@@ -79,6 +81,8 @@ mix ecto.gen.migration create_table_name
 ## Parent Repository
 
 Part of [${AppNameCamel}.Umbrella](../..)
+
+*Note: These commands can also be managed through mix commands in the parent umbrella app.*
 
 ---
 
