@@ -8,6 +8,7 @@ import { init_docker } from "@/composite/init_docker";
 import { init_phoenix_umbrella_app } from "@/composite/init_phoenix/init_phoenix_umbrella_app";
 import { build_tool_agnostic_init_tasks } from "@/composite/init_react/build_tool_agnostic_init_tasks";
 import { init_react_app_with_vite } from "@/composite/init_react/init_react_app_with_vite";
+import { gen_all_configs } from "@/generators/init_configs";
 import { inject_sample_release_mix } from "@/injectors/init_docker/inject_sample_release_mix";
 import { appDataFromAppnNameSnake, setAppData } from "@/readers/get_app_data";
 import { execute as exec } from "@/runners";
@@ -57,6 +58,7 @@ async function main() {
   const _react = await init_react_app_with_vite(AppData);
   const _assets = await fetch_assets(AppData);
   const _build_tools = await build_tool_agnostic_init_tasks(AppData);
+  const _configs = await gen_all_configs(AppData);
   const _release = await inject_sample_release_mix(AppData);
 
   writeLog(UmbrellaDir, `init_project_${projectName}`);
