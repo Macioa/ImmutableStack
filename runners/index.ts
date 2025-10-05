@@ -2,10 +2,12 @@
  * Command execution runner with prereq support
  * 
  * Usage:
- * Basic: execute({ command: "echo hello", dir: "/tmp" })
- * Multiple: execute({ command: ["cmd1", "cmd2"], dir: "/tmp" })
- * Prereq: execute({ command: "main", dir: "/tmp", prereq: { command: "check", recover: "fix" } })
- * Options: execute({ command: "cmd", dir: "/tmp", options: { resolveOnErrorCode: true } })
+ * Basic: execute({ command: "echo hello", dir: "/tmp", caller: "filename" })
+ * Multiple: execute({ command: ["cmd1", "cmd2"], dir: "/tmp", caller: "filename" })
+ * Prereq: execute({ command: "main", dir: "/tmp", prereq: { command: "check", recover: "fix" }, caller: "filename" })
+ * Options: execute({ command: "cmd", dir: "/tmp", options: { resolveOnErrorCode: true }, caller: "filename" })
+ * 
+ * Note: caller should be filename (minus extension) that called the execution
  */
 
 import { spawn } from "child_process";
@@ -51,19 +53,8 @@ enum Arrow {
 }
 
 const execute = async (execution: Execution, caller: string | null = null) => {
-  const {
-    dir,
-    command: cInit,
-    env,
-    options,
-    prereq,
-  } = { ...ExecutionDefaults, ...execution };
-  const {
-    timeoutResolve,
-    timeoutReject,
-    forceReturnOnPrompt,
-    resolveOnErrorCode,
-  } = {
+  const { dir, command: cInit, env, options, prereq } = { ...ExecutionDefaults, ...execution };
+  const { timeoutResolve, timeoutReject, forceReturnOnPrompt, resolveOnErrorCode } = {
     ...ExecutionDefaults.options,
     ...options,
   };
@@ -185,15 +176,16 @@ const executeAllSync = async (
   executions: Execution[],
   caller: string | null = null
 ) => {
-  let res: any[] = [];
+  const res: any[] = [];
   for (const exec of executions) {
     try {
-      res = [...res, await execute(exec, caller)];
+      res.push(await execute(exec, caller));
     } catch (error) {
       console.error(error);
       res.push(error);
     }
   }
+  return res;
 };
 
 export { Arrow, execute, executeAll, executeAllSync };

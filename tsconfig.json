@@ -5,7 +5,8 @@
   ],
   "exclude": [
     "dist/**/*",
-    "node_modules/**/*"
+    "node_modules/**/*",
+    "runners/test_runner.ts"
   ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
