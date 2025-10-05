@@ -1,13 +1,43 @@
 /**
- * Command execution runner with prereq support
+ * @fileoverview Command execution runner with prereq support
  * 
- * Usage:
- * Basic: execute({ command: "echo hello", dir: "/tmp", caller: "filename" })
- * Multiple: execute({ command: ["cmd1", "cmd2"], dir: "/tmp", caller: "filename" })
- * Prereq: execute({ command: "main", dir: "/tmp", prereq: { command: "check", recover: "fix" }, caller: "filename" })
- * Options: execute({ command: "cmd", dir: "/tmp", options: { resolveOnErrorCode: true }, caller: "filename" })
+ * Provides utilities for executing shell commands with support for:
+ * - Prerequisite commands that must succeed before main execution
+ * - Recovery commands for failed prerequisites
+ * - Batch execution with chunking and synchronization options
+ * - Interactive prompts and timeout handling
  * 
- * Note: caller should be filename (minus extension) that called the execution
+ * @example Basic execution:
+ * ```typescript
+ * execute({ command: "echo hello", dir: "/tmp", caller: "filename" })
+ * ```
+ * 
+ * @example Multiple commands:
+ * ```typescript
+ * execute({ command: ["cmd1", "cmd2"], dir: "/tmp", caller: "filename" })
+ * ```
+ * 
+ * @example With prerequisites:
+ * ```typescript
+ * execute({ 
+ *   command: "main", 
+ *   dir: "/tmp", 
+ *   prereq: { command: "check", recover: "fix" }, 
+ *   caller: "filename" 
+ * })
+ * ```
+ * 
+ * @example With options:
+ * ```typescript
+ * execute({ 
+ *   command: "cmd", 
+ *   dir: "/tmp", 
+ *   options: { resolveOnErrorCode: true }, 
+ *   caller: "filename" 
+ * })
+ * ```
+ * 
+ * @note caller should be filename (minus extension) that called the execution
  */
 
 import { spawn } from "child_process";
@@ -97,16 +127,21 @@ const execute = async (execution: Execution, caller: string | null = null) => {
 
   const commands = Array.isArray(cInit) ? cInit : [cInit];
   
+  const processedCommands = [];
   for (const cmdInit of commands) {
     const command = await mixOrDocker(
       cmdInit,
       (await getAppData())?.AppNameSnake || ""
     );
-
+    processedCommands.push(command);
     cacheLogCommand({ command, dir }, caller);
+  }
 
-    log({ level: 1, color: "PURPLE" }, `Executing: ${command}`);
-    log({ level: 1, color: "TEAL" }, `      in ${dir}...\n\n`);
+  const commandList = processedCommands.map(cmd => `      ${cmd}`).join('\n');
+  log({ level: 1, color: "PURPLE" }, `Executing:\n${commandList}`);
+  log({ level: 1, color: "TEAL" }, `      in ${dir}...\n\n`);
+  
+  for (const command of processedCommands) {
 
     await new Promise((resolve, reject) => {
       const executedDir = pathResolve(dir);

@@ -93,14 +93,16 @@ async function main() {
     `\n\nInitialization Complete.\n\nGenerated ${projectName}_umbrella`
   );
 
-  // Initialize git repository and submodules
-  await initGitRepository(UmbrellaDir, gitDomain);
-  await addGitSubmodules(UmbrellaDir, join(UmbrellaDir, "apps"), gitDomain);
-
-  log(
-    { level: 1, color: "GREEN" },
-    `\n\nGit repository initialized with submodules.\n\n`
-  );
+  // Initialize git repository and submodules only if git domain is provided
+  if (gitDomain) {
+    await initGitRepository(UmbrellaDir, gitDomain);
+    await addGitSubmodules(UmbrellaDir, join(UmbrellaDir, "apps"), gitDomain);
+    
+    log(
+      { level: 1, color: "GREEN" },
+      `\n\nGit repository initialized with submodules.\n\n`
+    );
+  }
 }
 
 main().catch(console.error);
