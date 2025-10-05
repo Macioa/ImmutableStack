@@ -13,6 +13,9 @@ import { appDataFromAppnNameSnake, setAppData } from "@/readers/get_app_data";
 import { execute as exec } from "@/runners";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
+import { promptGitDomain } from "@/prompts/git";
+import { initGitRepository, addGitSubmodules } from "@/utils/git";
+import { join } from "@/utils/path";
 
 setLogLevel(5);
 
@@ -34,6 +37,9 @@ async function main() {
   const AppData = appDataFromAppnNameSnake(projectName, false);
   setAppData(AppData);
   const { AppNameSnake, UmbrellaDir } = AppData;
+
+  // Prompt for git domain
+  const gitDomain = await promptGitDomain();
 
   log(
     { level: 1, color: "GREEN" },
@@ -85,6 +91,15 @@ async function main() {
   log(
     { level: 1, color: "GREEN" },
     `\n\nInitialization Complete.\n\nGenerated ${projectName}_umbrella`
+  );
+
+  // Initialize git repository and submodules
+  await initGitRepository(UmbrellaDir, gitDomain);
+  await addGitSubmodules(UmbrellaDir, join(UmbrellaDir, "apps"), gitDomain);
+
+  log(
+    { level: 1, color: "GREEN" },
+    `\n\nGit repository initialized with submodules.\n\n`
   );
 }
 
