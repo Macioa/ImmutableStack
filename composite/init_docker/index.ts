@@ -34,7 +34,7 @@ const init_docker = async (appdata: AppData) => {
     init_package_json(appdata),
   ]);
   const scripts = await inject_docker_scripts_package(appdata);
-  return init.concat(scripts);
+  return init.concat(scripts as string[]);
 };
 
 export { init_docker };

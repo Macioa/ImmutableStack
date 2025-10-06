@@ -21,7 +21,32 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
       Path.join([app_path, "./..", "${AppNameSnake}_ui"])
       |> Path.expand()
 
+    typescript_path =
+      Path.join([app_path, "lib", "typescript"])
+      |> Path.expand()
+
     ${AppNameCamel}.Tasks.ExportConfig.generate_env_file(ui_path)
+
+    # Create symlink for TypeScript dependencies
+    typescript_node_modules = Path.join(typescript_path, "node_modules")
+    ui_node_modules = Path.join(ui_path, "node_modules")
+    
+    if File.exists?(typescript_path) and File.exists?(ui_node_modules) do
+      # Remove existing symlink or directory if it exists
+      if File.exists?(typescript_node_modules) do
+        File.rm_rf(typescript_node_modules)
+        IO.puts("Removed existing: #{typescript_node_modules}")
+      end
+      
+      case File.ln_s(ui_node_modules, typescript_node_modules) do
+        :ok ->
+          IO.puts("Symlink created: #{typescript_node_modules} -> #{ui_node_modules}")
+        {:error, reason} ->
+          IO.puts(:stderr, "Failed to create symlink: #{reason}")
+      end
+    else
+      IO.puts("Warning: TypeScript directory or UI node_modules not found, skipping symlink creation")
+    end
 
     case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: ui_path) do
       {output, 0} ->
@@ -29,7 +54,39 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
         {:ok, []}
       {output, _exit_code} ->
         IO.puts(:stderr, output)
-        {:error, []}
+        
+        # Check for common dependency errors that require clean install
+        if String.contains?(output, "@rollup/rollup-darwin-arm64") or 
+           String.contains?(output, "Cannot find module") or
+           String.contains?(output, "npm has a bug related to optional dependencies") do
+          
+          IO.puts("Detected dependency error, attempting clean install...")
+          
+          # Clean install
+          case System.cmd("npm", ["ci"], stderr_to_stdout: true, cd: ui_path) do
+            {install_output, 0} ->
+              IO.puts("Clean install successful, retrying build...")
+              IO.puts(install_output)
+              
+              # Retry the build
+              case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: ui_path) do
+                {retry_output, 0} ->
+                  IO.puts("Build successful after clean install!")
+                  IO.puts(retry_output)
+                  {:ok, []}
+                {retry_output, _retry_exit_code} ->
+                  IO.puts(:stderr, "Build failed even after clean install:")
+                  IO.puts(:stderr, retry_output)
+                  {:error, []}
+              end
+            {install_output, _install_exit_code} ->
+              IO.puts(:stderr, "Clean install failed:")
+              IO.puts(:stderr, install_output)
+              {:error, []}
+          end
+        else
+          {:error, []}
+        end
     end
   end
 

@@ -41,8 +41,8 @@ const delete_single_by_id_test = ({
   validate({ camelName, genLowerSnake }, "delete_single_by_id_test");
   return `
   test "delete_${genLowerSnake}/1 deletes a single ${genLowerSnake} by id" do
-    {:ok, ${genLowerSnake}} = ${camelName}.create_${genLowerSnake}(@valid_id)
-    ${camelName}.delete_${genLowerSnake}(${genLowerSnake})
+    {:ok, ${genLowerSnake}} = ${camelName}.create_${genLowerSnake}(@valid_attrs)
+    ${camelName}.delete_${genLowerSnake}(${genLowerSnake}.id)
 
     assert_raise Ecto.NoResultsError, fn ->
       ${camelName}.get_${genLowerSnake}!(${genLowerSnake}.id)
@@ -67,7 +67,7 @@ const delete_api_tests: ImmAPI[] = [
     id: "delete_single_by_id_test",
     fn: delete_single_by_id_test,
     header: ({ genLowerSnake }: StringOnlyMap) =>
-      `delete_${genLowerSnake}(${genLowerSnake}_params) when is_map(${genLowerSnake}_params)`,
+      `delete_${genLowerSnake}(id) when is_binary(id)`,
   },
 ];
 

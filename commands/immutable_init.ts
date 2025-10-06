@@ -8,11 +8,15 @@ import { init_docker } from "@/composite/init_docker";
 import { init_phoenix_umbrella_app } from "@/composite/init_phoenix/init_phoenix_umbrella_app";
 import { build_tool_agnostic_init_tasks } from "@/composite/init_react/build_tool_agnostic_init_tasks";
 import { init_react_app_with_vite } from "@/composite/init_react/init_react_app_with_vite";
+import { gen_all_configs } from "@/generators/init_configs";
 import { inject_sample_release_mix } from "@/injectors/init_docker/inject_sample_release_mix";
 import { appDataFromAppnNameSnake, setAppData } from "@/readers/get_app_data";
 import { execute as exec } from "@/runners";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
+import { promptGitDomain } from "@/prompts/git";
+import { initGitRepository, addGitSubmodules } from "@/utils/git";
+import { join } from "@/utils/path";
 
 setLogLevel(5);
 
@@ -35,6 +39,9 @@ async function main() {
   setAppData(AppData);
   const { AppNameSnake, UmbrellaDir } = AppData;
 
+  // Prompt for git domain
+  const gitDomain = await promptGitDomain();
+
   log(
     { level: 1, color: "GREEN" },
     `\n\n Generating ${AppNameSnake} App with Immutable Stack\n\n`
@@ -51,6 +58,7 @@ async function main() {
   const _react = await init_react_app_with_vite(AppData);
   const _assets = await fetch_assets(AppData);
   const _build_tools = await build_tool_agnostic_init_tasks(AppData);
+  const _configs = await gen_all_configs(AppData);
   const _release = await inject_sample_release_mix(AppData);
 
   writeLog(UmbrellaDir, `init_project_${projectName}`);
@@ -86,6 +94,17 @@ async function main() {
     { level: 1, color: "GREEN" },
     `\n\nInitialization Complete.\n\nGenerated ${projectName}_umbrella`
   );
+
+  // Initialize git repository and submodules only if git domain is provided
+  if (gitDomain) {
+    await initGitRepository(UmbrellaDir, gitDomain);
+    await addGitSubmodules(UmbrellaDir, join(UmbrellaDir, "apps"), gitDomain);
+    
+    log(
+      { level: 1, color: "GREEN" },
+      `\n\nGit repository initialized with submodules.\n\n`
+    );
+  }
 }
 
 main().catch(console.error);
