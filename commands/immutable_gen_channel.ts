@@ -1,5 +1,7 @@
 import { gen_channel_demo_component } from "@/generators/gen_channel/gen_demo_component";
 import { gen_phx_channel } from "@/generators/gen_channel/gen_phx_channel";
+import { gen_phx_channel_test } from "@/generators/gen_channel/gen_phx_channel_test";
+import { gen_phx_channel_cluster_test } from "@/generators/gen_channel/gen_phx_channel_cluster_test";
 import { gen_react_channel } from "@/generators/gen_channel/gen_react_channel";
 import { inject_channel_to_socket } from "@/injectors/gen_channel/inject_channel_to_socket";
 import { AppData, getAppData } from "@/readers/get_app_data";
@@ -26,6 +28,8 @@ const main = async () => {
     gen_react_channel(name, appdata),
     inject_channel_to_socket(name, appdata),
     gen_channel_demo_component(name, appdata),
+    gen_phx_channel_test(name, appdata),
+    gen_phx_channel_cluster_test(name, appdata),
   ]);
 
   writeLog(appdata.UmbrellaDir, `generate_${name.singleSnake}_channel`);
