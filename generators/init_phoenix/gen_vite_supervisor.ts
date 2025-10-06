@@ -6,14 +6,14 @@ const gen_vite_supervisor = async ({
   AppNameSnake,
   AppNameCamel,
   LibDir,
-}: AppData) => {
+}: AppData, uiName: string = 'ui') => {
   const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `
 defmodule ${AppNameCamel}.ViteDevSupervisor do
   use GenServer
 
-  @vite_dev_cmd ["run", "dev", "--prefix", "apps/${AppNameSnake}_ui/"]
+  @vite_dev_cmd ["run", "dev", "--prefix", "apps/${AppNameSnake}_${uiName}/"]
   @timeout_sec 5
   @type state :: %{
           vite_server: nil | Port.t(),
