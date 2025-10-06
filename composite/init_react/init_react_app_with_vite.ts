@@ -1,3 +1,4 @@
+import path from "path";
 import { gen_vite_supervisor } from "../../generators/init_phoenix/gen_vite_supervisor";
 import { gen_app_css } from "../../generators/init_react/gen_app_css";
 import { gen_app_tsx } from "../../generators/init_react/gen_app_tsx";
@@ -8,15 +9,15 @@ import { AppData } from "../../readers/get_app_data";
 import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
 
-const init_react_app_with_vite = async (appdata: AppData) => {
+const init_react_app_with_vite = async (appdata: AppData, uiName: string = 'ui') => {
   const { AppNameSnake, AppDir } = appdata;
   log(
     { level: 1, color: "BLUE" },
-    `\nGenerating React App: ${AppNameSnake}_ui with Vite ...`
+    `\nGenerating React App: ${AppNameSnake}_${uiName} with Vite ...`
   );
   const init = await exec(
     {
-      command: `y | npx create-vite@6.5.0 ${AppNameSnake}_ui --template react-ts --no-install`,
+      command: `y | npx create-vite@6.5.0 ${AppNameSnake}_${uiName} --template react-ts --no-install`,
       dir: AppDir,
       // options: {
       //   timeoutResolve: 1000 * 30,
@@ -30,13 +31,17 @@ const init_react_app_with_vite = async (appdata: AppData) => {
     "\nConfiguring Vite build output and aliases..."
   );
 
+  // Create dynamic UiDir for this specific UI
+  const dynamicUiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
+  const appdataWithUi = { ...appdata, UiDir: dynamicUiDir };
+
   const tasks = [
-    await inject_build_aliases(appdata),
-    await inject_vite_build_output(appdata),
-    await gen_vite_supervisor(appdata),
-    await inject_vite_supervisor_to_application_ex(appdata),
-    await gen_app_tsx(appdata),
-    await gen_app_css(appdata),
+    await inject_build_aliases(appdataWithUi),
+    await inject_vite_build_output(appdataWithUi),
+    await gen_vite_supervisor(appdata, uiName),
+    await inject_vite_supervisor_to_application_ex(appdataWithUi),
+    await gen_app_tsx(appdataWithUi),
+    await gen_app_css(appdataWithUi),
   ];
 
   return tasks.flat();
