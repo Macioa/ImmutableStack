@@ -6,7 +6,7 @@ const gen_vite_supervisor = async ({
   AppNameSnake,
   AppNameCamel,
   LibDir,
-}: AppData, uiName: string = 'ui') => {
+}: AppData, uiName: string = 'temp_ui') => {
   const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `

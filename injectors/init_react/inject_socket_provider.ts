@@ -2,7 +2,8 @@ import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const inject_socket_provider = async ({ AppNameCamel, UiDir }: AppData) => {
+const inject_socket_provider = async ({ AppNameCamel, AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const file = path.join(UiDir, "src/App.tsx");
   const injections: Injection[] = [
     [

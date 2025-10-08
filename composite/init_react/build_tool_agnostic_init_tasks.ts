@@ -14,19 +14,19 @@ import { inject_redux_provider } from "../../injectors/init_react/inject_redux_p
 import { inject_socket_provider } from "../../injectors/init_react/inject_socket_provider";
 import { AppData } from "../../readers/get_app_data";
 
-const build_tool_agnostic_init_tasks = async (appdata: AppData) => {
+const build_tool_agnostic_init_tasks = async (appdata: AppData, uiName: string = 'temp_ui') => {
   const tasks = await Promise.all([
-    gen_store(appdata),
-    await inject_redux_provider(appdata),
-    inject_socket_provider(appdata),
+    gen_store(appdata, uiName),
+    await inject_redux_provider(appdata, uiName),
+    inject_socket_provider(appdata, uiName),
     gen_lorem_utils(appdata),
     gen_request_lib(appdata),
-    inject_package_scripts(appdata),
-    inject_react_deps(appdata),
-    gen_jest_config(appdata),
-    gen_jest_setup(appdata),
+    inject_package_scripts(appdata, uiName),
+    inject_react_deps(appdata, uiName),
+    gen_jest_config(appdata, uiName),
+    gen_jest_setup(appdata, uiName),
     gen_socket_context(appdata),
-    gen_index_html(appdata),
+    gen_index_html(appdata, uiName),
     gen_demo_component_styles(appdata),
   ]).catch(console.error);
 
