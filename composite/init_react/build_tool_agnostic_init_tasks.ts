@@ -14,7 +14,7 @@ import { inject_redux_provider } from "../../injectors/init_react/inject_redux_p
 import { inject_socket_provider } from "../../injectors/init_react/inject_socket_provider";
 import { AppData } from "../../readers/get_app_data";
 
-const build_tool_agnostic_init_tasks = async (appdata: AppData, uiName: string = 'temp_ui') => {
+const build_tool_agnostic_init_tasks = async (appdata: AppData, uiName: string = 'ui') => {
   const tasks = await Promise.all([
     gen_store(appdata, uiName),
     await inject_redux_provider(appdata, uiName),

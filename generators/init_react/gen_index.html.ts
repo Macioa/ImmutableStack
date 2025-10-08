@@ -2,7 +2,7 @@ import path from "path";
 import { generateFile } from "..";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_index_html = async ({ AppNameCaps, AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+const gen_index_html = async ({ AppNameCaps, AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const filename = "index.html";
   const content = `<!doctype html>

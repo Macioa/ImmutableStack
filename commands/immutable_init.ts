@@ -54,10 +54,10 @@ async function main() {
   );
 
   const _docker = await init_docker(AppData);
-  const _init = await init_phoenix_umbrella_app(AppData);
-  const _react = await init_react_app_with_vite(AppData, 'temp_ui');
-  const _assets = await fetch_assets(AppData, 'temp_ui');
-  const _build_tools = await build_tool_agnostic_init_tasks(AppData, 'temp_ui');
+  const _init = await init_phoenix_umbrella_app(AppData, 'ui', 'web');
+  const _react = await init_react_app_with_vite(AppData, 'ui');
+  const _assets = await fetch_assets(AppData, 'ui');
+  const _build_tools = await build_tool_agnostic_init_tasks(AppData, 'ui');
   const _configs = await gen_all_configs(AppData);
   const _release = await inject_sample_release_mix(AppData);
 

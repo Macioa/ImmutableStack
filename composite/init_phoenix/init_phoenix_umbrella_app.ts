@@ -27,7 +27,7 @@ import { join } from "../../utils/path";
 import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
 import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
 
-const init_phoenix_umbrella_app = async (appdata: AppData) => {
+const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui', webName: string = 'web') => {
   const { AppNameSnake, UmbrellaDir } = appdata;
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
   const init = await exec(
@@ -39,28 +39,28 @@ const init_phoenix_umbrella_app = async (appdata: AppData) => {
   );
   const declarations = await inject_app_declarations(appdata);
   const tasks = await Promise.all([
-    inject_phoenix_deps(appdata),
+    inject_phoenix_deps(appdata, webName),
     inject_cluster_deps(appdata),
-    inject_web_endpoint(appdata),
+    inject_web_endpoint(appdata, webName),
     inject_dev_config(appdata),
     inject_scrinever(appdata),
     gen_phx_utils(appdata),
     gen_id_validation_plug(appdata),
-    gen_fallback_controller(appdata),
-    gen_status_controller(appdata),
+    gen_fallback_controller(appdata, webName),
+    gen_status_controller(appdata, webName),
     gen_cluster_monitor(appdata),
     gen_cluster_test_script(appdata),
-    mark_router(appdata),
+    mark_router(appdata, webName),
     gen_docker_config_env(appdata),
     gen_dev_config_env(appdata),
   ]);
-  const configure = await configure_phoenix_to_serve_react(appdata);
-  const format = await configure_phoenix_to_format_react(appdata);
-  const depsget = await inject_deps_get_aliases_to_mix_exs(appdata);
-  const user_socket = await gen_user_socket(appdata);
-  const socket = await inject_socket_to_endpoint(appdata);
+  const configure = await configure_phoenix_to_serve_react(appdata, uiName, webName);
+  const format = await configure_phoenix_to_format_react(appdata, uiName);
+  const depsget = await inject_deps_get_aliases_to_mix_exs(appdata, uiName);
+  const user_socket = await gen_user_socket(appdata, webName);
+  const socket = await inject_socket_to_endpoint(appdata, webName);
   const cluster_application = await inject_cluster_to_application(appdata);
-  const status_route = await inject_status_route(appdata);
+  const status_route = await inject_status_route(appdata, webName);
   const test_helper_exclusions = await inject_test_helper_exclusions(appdata);
   const dynamic_port = await inject_dynamic_port_config(appdata);
 

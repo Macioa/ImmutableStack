@@ -5,8 +5,9 @@ import { AppData } from "../../readers/get_app_data";
 const gen_page_controller = async ({
   AppNameSnake,
   AppNameCamel,
-  WebDir,
-}: AppData) => {
+  AppDir,
+}: AppData, webName: string = 'web') => {
+  const WebDir = join(AppDir, `${AppNameSnake}_${webName}`);
   const controllersPath = join(WebDir, `/lib/${AppNameSnake}_web/controllers`);
 
   const content = `

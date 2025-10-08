@@ -2,8 +2,9 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_user_socket = async ({ WebDir, AppNameCamel }: AppData) => {
+const gen_user_socket = async ({ AppDir, AppNameCamel, AppNameSnake }: AppData, webName: string = 'web') => {
   const filename = "user_socket.ex";
+  const WebDir = join(AppDir, `${AppNameSnake}_${webName}`);
   const dir = join(WebDir || "", "lib/channels");
   const content = `defmodule ${AppNameCamel}Web.UserSocket do
   use Phoenix.Socket

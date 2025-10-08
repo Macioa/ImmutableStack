@@ -6,7 +6,7 @@ const gen_custom_compiler = async ({
   AppNameSnake,
   AppNameCamel,
   LibDir,
-}: AppData, uiName: string = 'temp_ui') => {
+}: AppData, uiName: string = 'ui') => {
   const compilerPath = join(LibDir, `/lib/mix/tasks`);
 
   const content = `

@@ -2,8 +2,9 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_status_controller = async ({ WebDir, AppNameCamel, AppNameSnake }: AppData) => {
+const gen_status_controller = async ({ AppDir, AppNameCamel, AppNameSnake }: AppData, webName: string = 'web') => {
   const filename = "status_controller.ex";
+  const WebDir = join(AppDir, `${AppNameSnake}_${webName}`);
   const dir = join(WebDir || "", "lib", `${AppNameSnake}_web/controllers`);
   const content = `defmodule ${AppNameCamel}Web.StatusController do
   use ${AppNameCamel}Web, :controller

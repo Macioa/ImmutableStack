@@ -4,10 +4,11 @@ import { CommentType, mark } from "../../repair";
 import { generateFile } from "../index";
 
 const gen_fallback_controller = async ({
-  WebDir,
+  AppDir,
   AppNameCamel,
   AppNameSnake,
-}: AppData) => {
+}: AppData, webName: string = 'web') => {
+  const WebDir = join(AppDir, `${AppNameSnake}_${webName}`);
   const fallbackControllerPath = join(
     WebDir || ".",
     `lib/${AppNameSnake}_web/controllers`

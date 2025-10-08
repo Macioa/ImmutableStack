@@ -12,7 +12,7 @@ const urls = files.map((name) => ({
   url: new URL(name, url_path).toString(),
 }));
 
-async function fetch_assets({ AppDir, AppNameSnake }: AppData, uiName: string = 'temp_ui') {
+async function fetch_assets({ AppDir, AppNameSnake }: AppData, uiName: string = 'ui') {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const outDir = join(UiDir, "./src/assets/");
   await fs.promises.mkdir(outDir, { recursive: true });

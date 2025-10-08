@@ -3,10 +3,11 @@ import { Injection, InjectType, inject_file } from "..";
 import { AppData } from "../../readers/get_app_data";
 
 const inject_socket_to_endpoint = async ({
-  WebDir,
+  AppDir,
   AppNameCamel,
   AppNameSnake,
-}: AppData) => {
+}: AppData, webName: string = 'web') => {
+  const WebDir = join(AppDir, `${AppNameSnake}_${webName}`);
   const file = join(WebDir || "", `lib/${AppNameSnake}_web/endpoint.ex`);
   const injections: Injection[] = [
     [
