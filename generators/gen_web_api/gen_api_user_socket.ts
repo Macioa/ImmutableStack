@@ -1,0 +1,22 @@
+import { join } from "../../utils/path";
+import { generateFile } from "..";
+import { ApiAppData } from "./gen_api_endpoint";
+
+const gen_api_user_socket = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+  const filename = "user_socket.ex";
+  const apiAppName = `${ApiNameSnake}_web`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/channels`);
+  const content = `defmodule ${ApiNameCamel}.UserSocket do
+  use Phoenix.Socket
+
+  def connect(_params, socket, _connect_info) do
+    {:ok, socket}
+  end
+
+  def id(_socket), do: nil
+end`;
+  return generateFile({ filename, dir, content }, "gen_api_user_socket");
+};
+
+export { gen_api_user_socket };
+
