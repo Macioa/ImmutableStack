@@ -1,12 +1,14 @@
+import path from "path";
 import { AppData } from "@/readers/get_app_data";
 import { generateFile } from "@/generators/index";
 
-const gen_jest_config = async ({ AppNameSnake, UiDir }: AppData) => {
+const gen_jest_config = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const content = `
 export default {
     globals: {
         "ts-jest": {
-        tsconfig: "<rootDir>/../${AppNameSnake}_ui/tsconfig.app.json",
+        tsconfig: "<rootDir>/../${AppNameSnake}_${uiName}/tsconfig.app.json",
         },
     },
     preset: "ts-jest",
@@ -28,7 +30,8 @@ export default {
   );
 };
 
-const gen_jest_setup = async ({ UiDir }: AppData) => {
+const gen_jest_setup = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const content = `
 require("@testing-library/jest-dom");
             `;

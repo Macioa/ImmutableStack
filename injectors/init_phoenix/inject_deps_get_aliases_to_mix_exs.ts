@@ -5,7 +5,7 @@ import { AppData } from "../../readers/get_app_data";
 const inject_deps_get_aliases_to_mix_exs = async ({
   AppNameSnake,
   UmbrellaDir,
-}: AppData, uiName: string = 'ui') => {
+}: AppData, uiName: string = 'temp_ui') => {
   const file = path.join(UmbrellaDir, `mix.exs`);
   
   const injections: Injection[] = [

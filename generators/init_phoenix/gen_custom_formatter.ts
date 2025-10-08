@@ -2,7 +2,7 @@ import { join } from "../../utils/path";
 import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_custom_formatter = async ({ AppNameSnake, LibDir }: AppData, uiName: string = 'ui') => {
+const gen_custom_formatter = async ({ AppNameSnake, LibDir }: AppData, uiName: string = 'temp_ui') => {
   const formatterPath = join(LibDir, `/lib/mix/tasks/`);
 
   const content = `

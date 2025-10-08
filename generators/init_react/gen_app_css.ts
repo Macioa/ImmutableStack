@@ -1,8 +1,10 @@
+import path from "path";
 import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_app_css = async ({ UiDir }: AppData) => {
+const gen_app_css = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const filename = "App.css";
   const dir = join(UiDir, "/src/");
   const content = `#root {

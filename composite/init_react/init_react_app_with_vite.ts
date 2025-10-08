@@ -31,17 +31,13 @@ const init_react_app_with_vite = async (appdata: AppData, uiName: string = 'temp
     "\nConfiguring Vite build output and aliases..."
   );
 
-  // Create dynamic UiDir for this specific UI
-  const dynamicUiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
-  const appdataWithUi = { ...appdata, UiDir: dynamicUiDir };
-
   const tasks = [
-    await inject_build_aliases(appdataWithUi),
-    await inject_vite_build_output(appdataWithUi),
+    await inject_build_aliases(appdata, uiName),
+    await inject_vite_build_output(appdata, uiName),
     await gen_vite_supervisor(appdata, uiName),
-    await inject_vite_supervisor_to_application_ex(appdataWithUi),
-    await gen_app_tsx(appdataWithUi),
-    await gen_app_css(appdataWithUi),
+    await inject_vite_supervisor_to_application_ex(appdata),
+    await gen_app_tsx(appdata, uiName),
+    await gen_app_css(appdata, uiName),
   ];
 
   return tasks.flat();

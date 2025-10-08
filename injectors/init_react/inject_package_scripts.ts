@@ -2,7 +2,8 @@ import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const inject_package_scripts = async ({ AppNameSnake, UiDir }: AppData) => {
+const inject_package_scripts = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const file = path.join(UiDir, "package.json");
   const injections: Injection[] = [
     [
