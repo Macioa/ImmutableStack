@@ -6,9 +6,9 @@ const addReducerToGlobal = async (generator: ImmutableGenerator) => {
   const {
     name: { singleUpperCamel },
     generate: { appstate },
-    AppData: { UiDir },
+    ui_path,
   } = generator;
-  const file = path.join(UiDir as string, "src/store/index.tsx");
+  const file = path.join(ui_path, "src/store/index.tsx");
 
   const injections: Injection[] = [
     [

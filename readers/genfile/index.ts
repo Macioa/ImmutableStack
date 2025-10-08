@@ -26,6 +26,7 @@ const readGenFile = async (filePath: string): Promise<GenData> => {
   )) as unknown as ImmutableGenerator;
 
   const AppData = await getAppData();
+  if (!AppData) throw new Error("AppData not found");
   const generator = {
     ...genFileParsed,
     name: getNames(genFileParsed?.name as unknown as string) || {},

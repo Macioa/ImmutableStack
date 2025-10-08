@@ -35,7 +35,7 @@ async function main() {
     .replace(/[\s-]/g, "_")
     .replace(/[^a-z0-9_]/g, "");
 
-  const AppData = appDataFromAppnNameSnake(projectName, false);
+  const AppData = await appDataFromAppnNameSnake(projectName, false);
   setAppData(AppData);
   const { AppNameSnake, UmbrellaDir } = AppData;
 
