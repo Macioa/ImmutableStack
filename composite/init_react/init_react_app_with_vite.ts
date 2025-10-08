@@ -9,7 +9,7 @@ import { AppData } from "../../readers/get_app_data";
 import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
 
-const init_react_app_with_vite = async (appdata: AppData, uiName: string = 'ui') => {
+const init_react_app_with_vite = async (appdata: AppData, uiName: string = 'temp_ui') => {
   const { AppNameSnake, AppDir } = appdata;
   log(
     { level: 1, color: "BLUE" },
