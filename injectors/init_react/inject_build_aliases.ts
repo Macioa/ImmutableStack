@@ -48,7 +48,7 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
   return inject_file({ file, injections }, "inject_tsconfig");
 };
 
-const inject_build_aliases = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+const inject_build_aliases = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   return Promise.all([
     inject_viteconfig(AppNameSnake, UiDir),

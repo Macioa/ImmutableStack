@@ -2,7 +2,7 @@ import path from "path";
 import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_readme_react = async ({ AppNameSnake, AppDir, AppNameCamel }: AppData, uiName: string = 'temp_ui') => {
+const gen_readme_react = async ({ AppNameSnake, AppDir, AppNameCamel }: AppData, uiName: string = 'ui') => {
   const dir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const filename = "README.md";
   const content = `# ${AppNameCamel} UI

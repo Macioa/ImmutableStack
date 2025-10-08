@@ -2,7 +2,7 @@ import path from "path";
 import { AppData } from "@/readers/get_app_data";
 import { generateFile } from "@/generators/index";
 
-const gen_jest_config = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+const gen_jest_config = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const content = `
 export default {
@@ -30,7 +30,7 @@ export default {
   );
 };
 
-const gen_jest_setup = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+const gen_jest_setup = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const content = `
 require("@testing-library/jest-dom");

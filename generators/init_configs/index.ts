@@ -10,7 +10,7 @@ import { gen_readme_react } from "./gen_readme_react";
 import { gen_dev_config_env } from "./gen_devcfgenv";
 import { gen_docker_config_env } from "./gen_dockercfgenv";
 
-const gen_all_configs = async (appdata: any, uiName: string = 'temp_ui') =>
+const gen_all_configs = async (appdata: any, uiName: string = 'ui') =>
   Promise.all([
     gen_gitignore(appdata),
     gen_gitignore_phoenix(appdata),

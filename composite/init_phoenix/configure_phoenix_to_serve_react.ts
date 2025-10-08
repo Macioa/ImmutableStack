@@ -6,13 +6,13 @@ import { inject_page_to_router } from "@/injectors/init_phoenix/inject_page_to_r
 import { inject_static_output_to_endpoint } from "@/injectors/init_phoenix/inject_static_ouput_to_endpoint";
 import { AppData } from "@/readers/get_app_data";
 
-const configure_phoenix_to_serve_react = async (appdata: AppData) => {
-  const page_controller = await gen_page_controller(appdata);
-  const endpoint = await inject_static_output_to_endpoint(appdata);
-  const router = await inject_page_to_router(appdata);
-  const custom_compile = await gen_custom_compiler(appdata);
+const configure_phoenix_to_serve_react = async (appdata: AppData, uiName: string = 'ui', webName: string = 'web') => {
+  const page_controller = await gen_page_controller(appdata, webName);
+  const endpoint = await inject_static_output_to_endpoint(appdata, webName);
+  const router = await inject_page_to_router(appdata, webName);
+  const custom_compile = await gen_custom_compiler(appdata, uiName);
   const export_config = await gen_config_export(appdata);
-  const mix = await inject_custom_compile_to_mix_exs(appdata);
+  const mix = await inject_custom_compile_to_mix_exs(appdata, webName);
 
   return [
     page_controller,

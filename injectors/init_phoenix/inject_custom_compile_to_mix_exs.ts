@@ -2,7 +2,8 @@ import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
 import { AppData } from "@/readers/get_app_data";
 
-const inject_custom_compile_to_web_mix_exs = async ({ WebDir }: AppData) => {
+const inject_custom_compile_to_web_mix_exs = async ({ AppDir, AppNameSnake }: AppData, webName: string = 'web') => {
+  const WebDir = path.join(AppDir, `${AppNameSnake}_${webName}`);
   const file = path.join(WebDir, `mix.exs`);
   const injections: Injection[] = [
     [

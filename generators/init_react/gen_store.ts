@@ -3,7 +3,7 @@ import { join } from "../../utils/path";
 import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const gen_store = async ({ AppNameCamel, AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+const gen_store = async ({ AppNameCamel, AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const storePath = join(UiDir, "/src/store");
 

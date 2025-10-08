@@ -2,7 +2,7 @@ import path from "path";
 import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_gitignore_react = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'temp_ui') => {
+const gen_gitignore_react = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
   const dir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const filename = ".gitignore";
   const content = `# Logs
