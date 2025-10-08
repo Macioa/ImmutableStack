@@ -12,6 +12,7 @@ type AppDirs = {
   AppDir: string;
   LibDir: string;
   UiDirs: string[];
+  WebApiDirs: string[];
   WebDir: string;
   UmbrellaDir: string;
 };
@@ -50,6 +51,52 @@ async function findViteProjects(appsDir: string): Promise<string[]> {
   }
 }
 
+async function findPhoenixWebApis(appsDir: string): Promise<string[]> {
+  if (!existsSync(appsDir)) {
+    return [];
+  }
+
+  try {
+    const entries = await readdir(appsDir, { withFileTypes: true });
+    const phoenixApisWithAge: Array<{ path: string; birthtime: Date }> = [];
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const dirPath = path.join(appsDir, entry.name);
+        const mixExsPath = path.join(dirPath, "mix.exs");
+        
+        if (existsSync(mixExsPath)) {
+          // Check for router.ex file which indicates a Phoenix web app with API support
+          const libPath = path.join(dirPath, "lib");
+          if (existsSync(libPath)) {
+            const libEntries = await readdir(libPath, { withFileTypes: true });
+            for (const libEntry of libEntries) {
+              if (libEntry.isDirectory()) {
+                const routerPath = path.join(libPath, libEntry.name, "router.ex");
+                if (existsSync(routerPath)) {
+                  const stats = await stat(dirPath);
+                  phoenixApisWithAge.push({
+                    path: dirPath,
+                    birthtime: stats.birthtime,
+                  });
+                  break; // Found router, no need to check other lib subdirs
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    phoenixApisWithAge.sort((a, b) => a.birthtime.getTime() - b.birthtime.getTime());
+
+    return phoenixApisWithAge.map(p => p.path);
+  } catch (error) {
+    log({ level: 8 }, `Error finding Phoenix Web APIs in ${appsDir}: ${error}`);
+    return [];
+  }
+}
+
 const getDirs = async (AppNameSnake: string, home: boolean = true) => {
   const curDir = process.cwd();
   const UmbrellaDir = home
@@ -60,8 +107,9 @@ const getDirs = async (AppNameSnake: string, home: boolean = true) => {
     WebDir = path.join(AppDir, `${AppNameSnake}_web`);
   
   const UiDirs = await findViteProjects(AppDir);
+  const WebApiDirs = await findPhoenixWebApis(AppDir);
   
-  return { AppDir, LibDir, UiDirs, WebDir, UmbrellaDir };
+  return { AppDir, LibDir, UiDirs, WebApiDirs, WebDir, UmbrellaDir };
 };
 
 const getNames = (AppNameCamel: string) => {
