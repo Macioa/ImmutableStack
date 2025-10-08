@@ -25,10 +25,12 @@ const readGenFile = async (filePath: string): Promise<GenData> => {
     fileContent
   )) as unknown as ImmutableGenerator;
 
+  const AppData = await getAppData();
   const generator = {
     ...genFileParsed,
     name: getNames(genFileParsed?.name as unknown as string) || {},
-    AppData: await getAppData(),
+    AppData,
+    ui_path: genFileParsed.ui_path || AppData.UiDirs[0] || "",
   } as ImmutableGenerator;
 
 

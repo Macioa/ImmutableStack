@@ -8,6 +8,7 @@ import fs from "fs";
 import { join } from "@/utils/path";
 import { getNamesFromSingularSnakeCase as getNames } from "@/utils/string";
 import { log } from "@/utils/logger";
+import { getAppData } from "@/readers/get_app_data";
 
 const [, , genName] = process.argv;
 const file = join(process.cwd(), `.genfile_${genName}.ts`);
@@ -17,9 +18,9 @@ if (!genName) {
   process.exit(1);
 }
 
-const main = () => (fs.existsSync(file) ? update_genfile() : new_genfile());
+const main = async () => (fs.existsSync(file) ? update_genfile() : await new_genfile());
 
-const new_genfile = () => {
+const new_genfile = async () => {
   const {
     singleUpperCamel,
     singleLowerCamel,
@@ -27,6 +28,8 @@ const new_genfile = () => {
     pluralLowerCamel,
     pluralSnake,
   } = getNames(genName) || {};
+  const appData = await getAppData();
+  const defaultUiPath = appData?.UiDirs?.[0] || "";
   const tsContent = `
 /*
                     *****************************
@@ -77,6 +80,7 @@ interface TsType extends GenType<{
 */
 const Immutable: ImmutableGenerator = {
   name: "${genName}",
+  ui_path: "${defaultUiPath}",
   generate: {
     // BACK END
     http_controller: {
@@ -232,6 +236,7 @@ type GenType<T extends AllowedTypes> = T;
 
 interface ImmutableGenerator {
   name: string;
+  ui_path: string;
   generate: {
     requests?: ImmutableRequests;
     stateSlice?: ImmutableStateSlice;
@@ -328,7 +333,7 @@ const update_genfile = () => {
   log({ level: 1, color: "BLUE" }, `    in ${file}\n\n`);
 };
 
-main();
+main().catch(console.error);
 
 // Utils
 

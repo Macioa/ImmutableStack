@@ -18,6 +18,7 @@ setLogLevel(5);
 type ImmutableGenerator = {
   name: Names;
   AppData: AppData;
+  ui_path: string;
   generate: {
     requests?: ImmutableRequests;
     stateSlice?: ImmutableStateSlice;
