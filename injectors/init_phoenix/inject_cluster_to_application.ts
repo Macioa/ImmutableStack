@@ -2,8 +2,8 @@ import path from "path";
 import { inject_file, Injection, InjectType as T } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const inject_cluster_to_application = async ({ LibDir, AppNameCamel }: AppData) => {
-  const file = path.join(LibDir, `lib/${AppNameCamel.toLowerCase()}/application.ex`);
+const inject_cluster_to_application = async ({ LibDir, AppNameCamel, AppNameSnake }: AppData) => {
+  const file = path.join(LibDir, `lib/${AppNameSnake}/application.ex`);
   
   // Read the file to check if cluster configuration already exists
   const fs = require('fs');
@@ -22,7 +22,7 @@ const inject_cluster_to_application = async ({ LibDir, AppNameCamel }: AppData) 
       T.AFTER,
       /def start\(_type, _args\) do\s*\n/,
       `    topologies = [
-      ${AppNameCamel.toLowerCase()}: [
+      ${AppNameSnake}: [
         strategy: Cluster.Strategy.Epmd,
         config: [hosts: [:"a@localhost", :"b@localhost"]]
       ]
@@ -33,7 +33,7 @@ const inject_cluster_to_application = async ({ LibDir, AppNameCamel }: AppData) 
     [
       T.AFTER,
       /children = \[\s*\n/,
-      `      {DNSCluster, query: Application.get_env(:${AppNameCamel.toLowerCase()}, :dns_cluster_query) || :ignore},
+      `      {DNSCluster, query: Application.get_env(:${AppNameSnake}, :dns_cluster_query) || :ignore},
       {Cluster.Supervisor, [topologies, [name: ${AppNameCamel}.ClusterSupervisor]]},
       ${AppNameCamel}.ClusterMonitor,
 `,
