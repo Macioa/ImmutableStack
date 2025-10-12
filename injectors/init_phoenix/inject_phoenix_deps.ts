@@ -44,9 +44,9 @@ const inject_app_deps = async ({ LibDir }: AppData) => {
   return inject_file({ file, injections }, "inject_app_deps");
 };
 
-const inject_phoenix_deps = async (appdata: AppData) => {
+const inject_phoenix_deps = async (appdata: AppData, webName: string = 'web') => {
   return Promise.all([
-    inject_web_app_deps(appdata),
+    inject_web_app_deps(appdata, webName),
     inject_app_deps(appdata),
     inject_umbrella_deps(appdata),
   ]);

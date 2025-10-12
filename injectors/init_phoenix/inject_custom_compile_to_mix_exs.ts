@@ -33,10 +33,10 @@ const inject_custom_compile_to_app_mix_exs = async ({
 
   return inject_file({ file, injections }, "inject_custom_compile_to_mix_exs");
 };
-const inject_custom_compile_to_mix_exs = async (appdata: AppData) =>
+const inject_custom_compile_to_mix_exs = async (appdata: AppData, webName: string = 'web') =>
   Promise.all([
     inject_custom_compile_to_app_mix_exs(appdata),
-    inject_custom_compile_to_web_mix_exs(appdata),
+    inject_custom_compile_to_web_mix_exs(appdata, webName),
   ]);
 
 export {
