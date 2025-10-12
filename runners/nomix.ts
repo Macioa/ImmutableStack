@@ -14,7 +14,7 @@ const mixOrDocker = async (cmd: string, appNameSnake: string) => {
   if (hasnew) {
     // Halt existing containers to prevent port conflicts
     const haltCmd = `docker compose -f ${dockerdir} down 2>/dev/null || true && docker stop $(docker ps -q --filter "publish=4000" --filter "publish=5432" --filter "publish=5173") 2>/dev/null || true && docker rm $(docker ps -aq --filter "publish=4000" --filter "publish=5432" --filter "publish=5173") 2>/dev/null || true`;
-    pref = `mkdir -p ${appNameSnake}_umbrella && cd ${appNameSnake}_umbrella && ${haltCmd} && `;
+    pref = `${haltCmd} && mkdir -p ${appNameSnake}_umbrella && cd ${appNameSnake}_umbrella && `;
     cmd = `${cmd} && cp -rf ${appNameSnake}_umbrella/* . && rm -rf ${appNameSnake}_umbrella`;
     dockerdir = "docker/compose.yaml";
   }
