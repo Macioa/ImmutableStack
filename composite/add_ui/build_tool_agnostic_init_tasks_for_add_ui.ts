@@ -17,6 +17,7 @@ import { inject_ui_package_minimal_for_add_ui } from "../../injectors/add_ui/inj
 import { inject_ui_to_custom_compiler } from "../../injectors/add_ui/inject_ui_to_custom_compiler";
 import { inject_ui_to_page_controller } from "../../injectors/add_ui/inject_ui_to_page_controller";
 import { inject_ui_to_router } from "../../injectors/add_ui/inject_ui_to_router";
+import { inject_ui_static_serving } from "../../injectors/add_ui/inject_ui_static_serving";
 import { AppData } from "../../readers/get_app_data";
 
 const build_tool_agnostic_init_tasks_for_add_ui = async (appdata: AppData, uiName: string) => {
@@ -26,6 +27,7 @@ const build_tool_agnostic_init_tasks_for_add_ui = async (appdata: AppData, uiNam
     inject_ui_to_custom_compiler(appdata, uiName),
     inject_ui_to_page_controller(appdata, uiName),
     inject_ui_to_router(appdata, uiName),
+    inject_ui_static_serving(appdata, uiName),
     gen_store(appdata, uiName),
     await inject_redux_provider(appdata, uiName),
     inject_socket_provider(appdata, uiName),
