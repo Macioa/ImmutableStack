@@ -7,27 +7,9 @@ ImmutableStack is a comprehensive toolkit for creating applications with the "Im
 ```
 ImmutableStack/
 ├── assets/                    # Static assets (logo, images)
-├── composite/                 # High-level generation orchestrators
-│   ├── gen_phoenix/          # Phoenix backend generation coordinator
-│   ├── gen_react/             # React frontend generation coordinator
-│   ├── init_docker/          # Docker initialization coordinator
-│   ├── init_phoenix/         # Phoenix project initialization
-│   └── init_react/           # React project initialization
-├── generators/                 # Core code generation modules
-│   ├── gen_channel/          # Phoenix Channel generation
-│   ├── gen_phoenix/          # Phoenix-specific generators
-│   ├── gen_react/             # React-specific generators
-│   ├── init_configs/          # Configuration file generation
-│   ├── init_docker/          # Docker file generation
-│   ├── init_phoenix/         # Phoenix project setup
-│   └── init_react/           # React project setup
-├── injectors/                 # Code injection utilities
-│   ├── gen_channel/          # Channel injection
-│   ├── gen_phoenix/          # Phoenix code injection
-│   ├── gen_react/            # React code injection
-│   ├── init_docker/          # Docker injection
-│   ├── init_phoenix/         # Phoenix injection
-│   └── init_react/           # React injection
+├── composite/                 # High-level generation orchestrators (see subfolder structure below)
+├── generators/                 # Core code generation modules (see subfolder structure below)
+├── injectors/                 # Code injection utilities (see subfolder structure below)
 ├── readers/                   # File parsing and data extraction
 │   ├── genfile/              # Genfile parsing
 │   └── get_app_data.ts       # Application data extraction
@@ -55,6 +37,18 @@ ImmutableStack/
 ├── Vagrantfile               # Vagrant development environment
 ├── versions.sh               # Version definitions for asdf
 └── dev_kit_macos.sh          # macOS development tools installation
+
+### Subfolder structure
+PARENT_DIR
+│   ├── gen_channel/          # Phoenix Channel processes
+│   ├── gen_phoenix/          # Phoenix-specific processes
+│   ├── gen_react/            # React-specific processes
+│   ├── init_configs/         # Configuration file processes
+│   ├── init_docker/          # Docker file processes
+│   ├── init_phoenix/         # Phoenix project setup processes
+│   └── init_react/           # React project setup processes
+│   └── add_api/              # API setup processes
+│   └── add_worker/           # Worker setup processes
 ```
 
 ### Generated Project Structure (Output)
