@@ -1,19 +1,10 @@
-import path from "path";
-import { inject_file, Injection, InjectType } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const inject_package_scripts = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
-  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
-  const file = path.join(UiDir, "package.json");
-  const injections: Injection[] = [
-    [
-      InjectType.AFTER,
-      /\"scripts\":\s+\{/,
-      `\n    "postinstall": "if [ -d '../${AppNameSnake}/lib/typescript' ]; then rm -f ../${AppNameSnake}/lib/typescript/node_modules && ln -sf $(pwd)/node_modules ../${AppNameSnake}/lib/typescript/node_modules && echo 'Symlink created: ../${AppNameSnake}/lib/typescript/node_modules -> $(pwd)/node_modules'; else echo 'Warning: ${AppNameSnake}/lib/typescript directory not found, skipping symlink creation'; fi",`,
-    ],
-  ];
-
-  return inject_file({ file, injections }, "inject_package_scripts");
+const inject_package_scripts = async (appdata: AppData, uiName: string = 'ui') => {
+  return {
+    type: "no_op",
+    message: "Package scripts are now managed centrally in apps/package.json"
+  };
 };
 
 export { inject_package_scripts };
