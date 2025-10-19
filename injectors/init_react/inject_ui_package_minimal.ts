@@ -8,6 +8,8 @@ const inject_ui_package_minimal = async (appdata: AppData, uiName: string = 'ui'
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const file = path.join(UiDir, "package.json");
   
+  const appsNodeModulesPath = path.join(AppDir, "node_modules");
+  
   log(
     { level: 2, color: "BLUE" },
     `\nCreating minimal package.json for ${AppNameSnake}_${uiName}...`
@@ -20,7 +22,7 @@ const inject_ui_package_minimal = async (appdata: AppData, uiName: string = 'ui'
     type: "module",
     scripts: {
       "test": "jest",
-      "postinstall": `if [ -d '../${AppNameSnake}/lib/typescript' ]; then rm -f ../${AppNameSnake}/lib/typescript/node_modules && ln -sf $(pwd)/node_modules ../${AppNameSnake}/lib/typescript/node_modules && echo 'Symlink created: ../${AppNameSnake}/lib/typescript/node_modules -> $(pwd)/node_modules'; else echo 'Warning: ${AppNameSnake}/lib/typescript directory not found, skipping symlink creation'; fi`,
+      "postinstall": `if [ -d '../${AppNameSnake}/lib/typescript' ]; then rm -f ../${AppNameSnake}/lib/typescript/node_modules && ln -sf ${appsNodeModulesPath} ../${AppNameSnake}/lib/typescript/node_modules && echo 'Symlink created: ../${AppNameSnake}/lib/typescript/node_modules -> ${appsNodeModulesPath}'; else echo 'Warning: ${AppNameSnake}/lib/typescript directory not found, skipping symlink creation'; fi`,
       "dev": "vite",
       "build": "tsc -b && vite build",
       "lint": "eslint .",

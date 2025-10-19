@@ -33,9 +33,8 @@ defmodule Mix.Tasks.CustomFormatter do
     js_paths = Enum.join(paths, " ")
 
     {_result, 0} =
-      System.cmd("bash", ["-c", "npm run format #{js_paths}"], cd: "./apps/${AppNameSnake}_${uiName}")
+      System.cmd("bash", ["-c", "npm run format #{js_paths}"], cd: "./apps")
 
-    # IO.puts(result)
   end
 end
 `;

@@ -1,5 +1,5 @@
 import { fetch_assets } from "@/assets";
-import { build_tool_agnostic_init_tasks } from "@/composite/init_react/build_tool_agnostic_init_tasks";
+import { build_tool_agnostic_init_tasks_for_add_ui } from "@/composite/add_ui/build_tool_agnostic_init_tasks_for_add_ui";
 import { init_react_app_for_add_ui } from "@/composite/add_ui/init_react_app_for_add_ui";
 import { getAppData } from "@/readers/get_app_data";
 import { execute as exec } from "@/runners";
@@ -41,17 +41,17 @@ async function main() {
 
   const _react = await init_react_app_for_add_ui(AppData, uiName);
   const _assets = await fetch_assets(AppData, uiName);
-  const _build_tools = await build_tool_agnostic_init_tasks(AppData, uiName);
+  const _build_tools = await build_tool_agnostic_init_tasks_for_add_ui(AppData, uiName);
   
   log(
     { level: 1, color: "BLUE" },
-    `\n\n Installing React dependencies for ${AppNameSnake}_${uiName}...\n\n`
+    `\n\n Installing React dependencies from centralized apps/package.json...\n\n`
   );
   
   const _deps = await exec(
     {
       command: `npm install`,
-      dir: `${UmbrellaDir}/apps/${AppNameSnake}_${uiName}`,
+      dir: `${UmbrellaDir}/apps`,
     },
     "add_ui"
   );
