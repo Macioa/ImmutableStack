@@ -1,6 +1,6 @@
 import { fetch_assets } from "@/assets";
 import { build_tool_agnostic_init_tasks } from "@/composite/init_react/build_tool_agnostic_init_tasks";
-import { init_react_app_with_vite } from "@/composite/init_react/init_react_app_with_vite";
+import { init_react_app_for_add_ui } from "@/composite/add_ui/init_react_app_for_add_ui";
 import { getAppData } from "@/readers/get_app_data";
 import { execute as exec } from "@/runners";
 import { writeLog } from "@/utils/history_cache";
@@ -40,7 +40,7 @@ async function main() {
     `\n\n Adding new UI: ${AppNameSnake}_${uiName}\n\n`
   );
 
-  const _react = await init_react_app_with_vite(AppData, uiName);
+  const _react = await init_react_app_for_add_ui(AppData, uiName);
   const _assets = await fetch_assets(AppData, uiName);
   const _build_tools = await build_tool_agnostic_init_tasks(AppData, uiName);
 
