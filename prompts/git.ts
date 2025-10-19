@@ -5,8 +5,8 @@ export const promptGitDomain = async (): Promise<string> => {
   const defaultDomain = await getSetting("gitDom");
   
   // @ts-ignore
-  if (defaultDomain === false || typeof defaultDomain === "string")
-    return defaultDomain || "";
+  if (defaultDomain === "false") return false
+  else if (typeof defaultDomain === "string") return defaultDomain
   
   const domain = await promptUser("Enter git domain for remote repository", defaultDomain);
   
