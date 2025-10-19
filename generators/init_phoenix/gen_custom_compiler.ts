@@ -18,15 +18,18 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
   def run(_args) do
     %{${AppNameSnake}: app_path} = Mix.Project.deps_paths()
 
-    ui_path =
-      Path.join([app_path, "./..", "${AppNameSnake}_${uiName}"])
-      |> Path.expand()
+    project_uis = [
+      {"npm run build:${uiName}", Path.join([app_path, "./..", "${AppNameSnake}_${uiName}"]) |> Path.expand()}
+    ]
 
     typescript_path =
       Path.join([app_path, "lib", "typescript"])
       |> Path.expand()
 
-    ${AppNameCamel}.Tasks.ExportConfig.generate_env_file(ui_path)
+    # Generate env files for all UI projects
+    Enum.each(project_uis, fn {_build_cmd, ui_path} ->
+      ${AppNameCamel}.Tasks.ExportConfig.generate_env_file(ui_path)
+    end)
 
     # Create symlink if paths exist
     typescript_node_modules = Path.join(typescript_path, "node_modules")
@@ -40,12 +43,15 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
       IO.puts("Warning: TypeScript directory or apps node_modules not found, skipping symlink creation")
     end
 
-    # Build with retry on dependency errors
-    build_with_retry("${AppDir}")
+    # Build all UI projects with retry on dependency errors
+    Enum.each(project_uis, fn {build_cmd, _ui_path} ->
+      build_with_retry("${AppDir}", build_cmd)
+    end)
   end
 
-  defp build_with_retry(apps_path) do
-    case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
+  defp build_with_retry(apps_path, build_cmd) do
+    [cmd | args] = String.split(build_cmd, " ")
+    case System.cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
       {output, 0} ->
         IO.puts(output)
         {:ok, []}
@@ -54,20 +60,21 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
         
         if dependency_error?(output) do
           IO.puts("Detected dependency error, attempting clean install...")
-          retry_after_clean_install(apps_path)
+          retry_after_clean_install(apps_path, build_cmd)
         else
           {:error, []}
         end
     end
   end
 
-  defp retry_after_clean_install(apps_path) do
+  defp retry_after_clean_install(apps_path, build_cmd) do
     case System.cmd("npm", ["ci"], stderr_to_stdout: true, cd: apps_path) do
       {install_output, 0} ->
         IO.puts("Clean install successful, retrying build...")
         IO.puts(install_output)
         
-        case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
+        [cmd | args] = String.split(build_cmd, " ")
+        case System.cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
           {retry_output, 0} ->
             IO.puts("Build successful after clean install!")
             IO.puts(retry_output)
