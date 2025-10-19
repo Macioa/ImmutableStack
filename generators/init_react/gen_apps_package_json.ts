@@ -57,7 +57,8 @@ const gen_apps_package_json = async (appdata: AppData) => {
       "globals": "^16.0.0",
       "typescript": "~5.8.3",
       "typescript-eslint": "^8.30.1",
-      "vite": "^6.3.5"
+      "vite": "^6.3.5",
+      "prettier": "^3.4.2"
     }
   };
 

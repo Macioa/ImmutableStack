@@ -29,12 +29,15 @@ defmodule Mix.Tasks.CustomFormatter do
     IO.puts("Complete.")
   end
 
-  defp format_react_files(paths) do
-    js_paths = Enum.join(paths, " ")
-
-    {_result, 0} =
-      System.cmd("bash", ["-c", "npm run format #{js_paths}"], cd: "./apps")
-
+  defp format_react_files(_paths) do
+    case System.cmd("npm", ["run", "format", "--prefix", "${AppNameSnake}_${uiName}"], cd: "./apps") do
+      {result, 0} ->
+        IO.puts(result)
+      {result, exit_code} ->
+        IO.puts(:stderr, "Format command failed with exit code #{exit_code}:")
+        IO.puts(:stderr, result)
+        System.halt(1)
+    end
   end
 end
 `;
