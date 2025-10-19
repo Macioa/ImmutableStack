@@ -6,7 +6,7 @@ const gen_page_controller = async ({
   AppNameSnake,
   AppNameCamel,
   AppDir,
-}: AppData, webName: string = 'web') => {
+}: AppData, uiName: string = 'ui', webName: string = 'web') => {
   const WebDir = join(AppDir, `${AppNameSnake}_${webName}`);
   const controllersPath = join(WebDir, `/lib/${AppNameSnake}_web/controllers`);
 
@@ -15,10 +15,10 @@ defmodule ${AppNameCamel}Web.PageController do
   use ${AppNameCamel}Web, :controller
 
   def index(conn, _params) do
-    # Serve the static index.html file
+    # Serve the static index.html file from ${uiName} directory
     conn
     |> put_resp_content_type("text/html")
-    |> send_file(200, Path.join([:code.priv_dir(:${AppNameSnake}_web), "static", "index.html"]))
+    |> send_file(200, Path.join([:code.priv_dir(:${AppNameSnake}_web), "static", "${uiName}", "index.html"]))
   end
 end
 

@@ -7,7 +7,7 @@ import { inject_static_output_to_endpoint } from "@/injectors/init_phoenix/injec
 import { AppData } from "@/readers/get_app_data";
 
 const configure_phoenix_to_serve_react = async (appdata: AppData, uiName: string = 'ui', webName: string = 'web') => {
-  const page_controller = await gen_page_controller(appdata, webName);
+  const page_controller = await gen_page_controller(appdata, uiName, webName);
   const endpoint = await inject_static_output_to_endpoint(appdata, webName);
   const router = await inject_page_to_router(appdata, webName);
   const custom_compile = await gen_custom_compiler(appdata, uiName);

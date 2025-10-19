@@ -11,7 +11,7 @@ const inject_vite_build_output = async ({ AppNameSnake, AppDir }: AppData, uiNam
       /export\s+default\s+defineConfig\(\{/,
       `\n
   build: {
-    outDir: '../${AppNameSnake}_web/priv/static', // Output the build to priv/static/assets
+    outDir: '../${AppNameSnake}_web/priv/static/${uiName}', // Output the build to priv/static/${uiName}/assets
     assetsDir: 'assets', 
   },
 `,
