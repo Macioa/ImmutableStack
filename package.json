@@ -1,6 +1,6 @@
 {
   "name": "immutablestack",
-  "version": "v0.911.130",
+  "version": "v0.911.153",
   "scripts": {
     "fetchMD": "curl -s https://raw.githubusercontent.com/macioa/ImmutableStuff/master/intro.md > README.md",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -19,7 +19,7 @@
     "b_add_ui": "esbuild commands/immutable_add_ui.ts --minify --bundle --outfile=.build/add_ui.js --platform=node",
     "build": "tsc && npm run b_genhandle && npm run b_genfile && npm run b_init && npm run b_bash && npm run b_gentemplate && npm run b_links && npm run b_settings && npm run b_repair && npm run b_channel && npm run b_gen_api && npm run b_start && npm run b_add_ui",
     "build-test-runner": "esbuild runners/test_runner.ts --bundle --outfile=.build/test_runner.js --platform=node",
-    "zip": "VERSION=\"v0.911.130\"; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_IMM_PATH\"",
+    "zip": "VERSION=\"v0.911.153\"; tar -czvf ImmutableStack-$VERSION.tar.gz -C .build . && mv -f ImmutableStack-$VERSION.tar.gz \"$HBREW_IMM_PATH\"",
     "p": "npm run build && npm run zip"
   },
   "keywords": [],

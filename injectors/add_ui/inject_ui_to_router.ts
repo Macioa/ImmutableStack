@@ -16,7 +16,7 @@ const inject_ui_to_router = async (appdata: AppData, uiName: string) => {
     [
       InjectType.AFTER,
       /get\("\/", PageController, :index\)/,
-      `    get("/${uiName}", PageController, :${uiName})`,
+      `\n    get("/${uiName}", PageController, :${uiName})`,
     ],
   ];
 

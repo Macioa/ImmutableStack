@@ -38,7 +38,12 @@ const inject_file = async (
               typeof new_content == "function"
                 ? new_content(new_file)
                 : new_file.replace(regex, new_content);
-            if (!!new_content && (replaced == new_file || replaced == "")) {
+            if (typeof new_content == "function") {
+              // For function-based replacements, always accept the result
+              log({ level: 8 }, `Applied function replacement in ${file}`);
+              new_file = replaced;
+            } else if (!!new_content && (replaced == new_file || replaced == "")) {
+              // Only check for pattern not found for string-based replacements
               error(regex, file, reject);
               return;
             } else {

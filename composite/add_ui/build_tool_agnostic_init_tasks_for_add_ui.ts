@@ -15,9 +15,11 @@ import { inject_redux_provider } from "../../injectors/init_react/inject_redux_p
 import { inject_socket_provider } from "../../injectors/init_react/inject_socket_provider";
 import { inject_ui_package_minimal_for_add_ui } from "../../injectors/add_ui/inject_ui_package_minimal_for_add_ui";
 import { inject_ui_to_custom_compiler } from "../../injectors/add_ui/inject_ui_to_custom_compiler";
-import { inject_ui_to_page_controller } from "../../injectors/add_ui/inject_ui_to_page_controller";
+import { inject_ui_to_custom_formatter } from "../../injectors/add_ui/inject_ui_to_custom_formatter";
+import { inject_ui_to_page_controller_add_ui } from "../../injectors/add_ui/inject_ui_to_page_controller_add_ui";
 import { inject_ui_to_router } from "../../injectors/add_ui/inject_ui_to_router";
 import { inject_ui_static_serving } from "../../injectors/add_ui/inject_ui_static_serving";
+import { inject_ui_to_vite_supervisor } from "../../injectors/add_ui/inject_ui_to_vite_supervisor";
 import { AppData } from "../../readers/get_app_data";
 
 const build_tool_agnostic_init_tasks_for_add_ui = async (appdata: AppData, uiName: string) => {
@@ -25,9 +27,11 @@ const build_tool_agnostic_init_tasks_for_add_ui = async (appdata: AppData, uiNam
     gen_update_apps_package_json(appdata, uiName),
     inject_ui_package_minimal_for_add_ui(appdata, uiName),
     inject_ui_to_custom_compiler(appdata, uiName),
-    inject_ui_to_page_controller(appdata, uiName),
+    inject_ui_to_custom_formatter(appdata, uiName),
+    inject_ui_to_page_controller_add_ui(appdata, uiName),
     inject_ui_to_router(appdata, uiName),
     inject_ui_static_serving(appdata, uiName),
+    inject_ui_to_vite_supervisor(appdata, uiName),
     gen_store(appdata, uiName),
     await inject_redux_provider(appdata, uiName),
     inject_socket_provider(appdata, uiName),

@@ -44,7 +44,7 @@ async function main() {
   const _build_tools = await build_tool_agnostic_init_tasks_for_add_ui(AppData, uiName);
   
   log(
-    { level: 1, color: "BLUE" },
+    { level: 2, color: "BLUE" },
     `\n\n Installing React dependencies from centralized apps/package.json...\n\n`
   );
   
@@ -57,7 +57,7 @@ async function main() {
   );
 
   log(
-    { level: 1, color: "GREEN" },
+    { level: 2, color: "GREEN" },
     `\n\nNew UI added: ${AppNameSnake}_${uiName}\n\n`
   );
 }
