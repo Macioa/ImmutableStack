@@ -16,7 +16,7 @@ const inject_static_output_to_endpoint = async ({
     ],
     [
       InjectType.AFTER,
-      /plug\(Plug\.Static,\s*\n\s*at:\s*"\/",\s*\n\s*from:\s*:${AppNameSnake}_web,\s*\n\s*gzip:\s*false,\s*\n\s*only:\s*~w\(assets fonts images js css vite\.svg index\.html\)\s*\n\s*\)/s,
+      new RegExp(`plug\\(Plug\\.Static,\\s*\\n\\s*at:\\s*"\\/",\\s*\\n\\s*from:\\s*:${AppNameSnake}_web,\\s*\\n\\s*gzip:\\s*false,\\s*\\n\\s*only:\\s*[^\\n]*\\s*\\n\\s*\\)`, 's'),
       `\n\n  # Serve ${uiName} assets from subdirectory\n  plug(Plug.Static,\n    at: "/${uiName}",\n    from: {:${AppNameSnake}_web, "priv/static/${uiName}"},\n    gzip: false\n  )`,
     ],
   ];

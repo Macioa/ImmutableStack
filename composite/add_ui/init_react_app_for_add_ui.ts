@@ -1,5 +1,4 @@
 import path from "path";
-import { gen_vite_supervisor } from "../../generators/init_phoenix/gen_vite_supervisor";
 import { gen_app_css } from "../../generators/init_react/gen_app_css";
 import { gen_app_tsx } from "../../generators/init_react/gen_app_tsx";
 import { inject_build_aliases } from "../../injectors/init_react/inject_build_aliases";
@@ -33,7 +32,6 @@ const init_react_app_for_add_ui = async (appdata: AppData, uiName: string = 'ui'
   const tasks = [
     await inject_build_aliases(appdata, uiName),
     await inject_vite_build_output(appdata, uiName),
-    await gen_vite_supervisor(appdata, uiName),
     await gen_app_tsx(appdata, uiName),
     await gen_app_css(appdata, uiName),
   ];
