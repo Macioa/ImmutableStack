@@ -4,7 +4,7 @@ import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
 import { execute as exec } from "@/runners";
 
-setLogLevel(5);
+setLogLevel(3);
 
 const main = async () => {
   const args = process.argv.slice(2);
@@ -49,11 +49,7 @@ const main = async () => {
 
   writeLog(UmbrellaDir, `add_api_${apiName}`);
 
-  log({ level: 1, color: "GREEN" }, `\n\nWeb API Generation Complete.\n\nGenerated ${apiAppName}`);
-  log({ level: 2, color: "YELLOW" }, "\nNext steps:");
-  log({ level: 4, color: "BLUE" }, `  1. Run: mix deps.get`);
-  log({ level: 4, color: "BLUE" }, `  2. Run: mix compile`);
-  log({ level: 4, color: "BLUE" }, `  3. Start your application\n`);
+  log({ level: 1, color: "GREEN" }, `\n\nWeb API Generation Complete.\n\nGenerated ${apiAppName}\n`);
 };
 
 main().catch(console.error);
