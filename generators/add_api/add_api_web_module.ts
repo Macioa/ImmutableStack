@@ -1,8 +1,8 @@
 import { join } from "../../utils/path";
 import { generateFile } from "..";
-import { ApiAppData } from "./gen_api_endpoint";
+import { ApiAppData } from "./add_api_endpoint";
 
-const gen_api_web_module = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_web_module = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = `${ApiNameSnake}_web.ex`;
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib`);
@@ -72,8 +72,8 @@ const gen_api_web_module = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiApp
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_web_module");
+  return generateFile({ filename, dir, content }, "add_api_web_module");
 };
 
-export { gen_api_web_module };
+export { add_api_web_module };
 

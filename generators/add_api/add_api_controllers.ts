@@ -1,8 +1,8 @@
 import { join } from "../../utils/path";
 import { generateFile } from "..";
-import { ApiAppData } from "./gen_api_endpoint";
+import { ApiAppData } from "./add_api_endpoint";
 
-const gen_api_error_json = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_error_json = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "error_json.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
@@ -12,10 +12,10 @@ const gen_api_error_json = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiApp
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_error_json");
+  return generateFile({ filename, dir, content }, "add_api_error_json");
 };
 
-const gen_api_fallback_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_fallback_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "fallback_controller.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
@@ -37,10 +37,10 @@ const gen_api_fallback_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel 
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_fallback_controller");
+  return generateFile({ filename, dir, content }, "add_api_fallback_controller");
 };
 
-const gen_api_page_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_page_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "page_controller.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
@@ -54,10 +54,10 @@ const gen_api_page_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: A
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_page_controller");
+  return generateFile({ filename, dir, content }, "add_api_page_controller");
 };
 
-const gen_api_status_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_status_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "status_controller.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
@@ -79,8 +79,8 @@ const gen_api_status_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }:
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_status_controller");
+  return generateFile({ filename, dir, content }, "add_api_status_controller");
 };
 
-export { gen_api_error_json, gen_api_fallback_controller, gen_api_page_controller, gen_api_status_controller };
+export { add_api_error_json, add_api_fallback_controller, add_api_page_controller, add_api_status_controller };
 

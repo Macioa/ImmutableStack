@@ -1,8 +1,8 @@
 import { join } from "../../utils/path";
 import { generateFile } from "..";
-import { ApiAppData } from "./gen_api_endpoint";
+import { ApiAppData } from "./add_api_endpoint";
 
-const gen_api_conn_case = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_conn_case = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "conn_case.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/test/support`);
@@ -24,19 +24,19 @@ const gen_api_conn_case = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppD
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_conn_case");
+  return generateFile({ filename, dir, content }, "add_api_conn_case");
 };
 
-const gen_api_test_helper = async ({ AppDir, ApiNameSnake }: ApiAppData) => {
+const add_api_test_helper = async ({ AppDir, ApiNameSnake }: ApiAppData) => {
   const filename = "test_helper.exs";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/test`);
   const content = `ExUnit.start()`;
 
-  return generateFile({ filename, dir, content }, "gen_api_test_helper");
+  return generateFile({ filename, dir, content }, "add_api_test_helper");
 };
 
-const gen_api_error_json_test = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_error_json_test = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "error_json_test.exs";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/test/${ApiNameSnake}_web/controllers`);
@@ -53,8 +53,8 @@ const gen_api_error_json_test = async ({ AppDir, ApiNameSnake, ApiNameCamel }: A
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_error_json_test");
+  return generateFile({ filename, dir, content }, "add_api_error_json_test");
 };
 
-export { gen_api_conn_case, gen_api_test_helper, gen_api_error_json_test };
+export { add_api_conn_case, add_api_test_helper, add_api_error_json_test };
 

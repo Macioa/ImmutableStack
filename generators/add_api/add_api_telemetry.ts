@@ -1,8 +1,8 @@
 import { join } from "../../utils/path";
 import { generateFile } from "..";
-import { ApiAppData } from "./gen_api_endpoint";
+import { ApiAppData } from "./add_api_endpoint";
 
-const gen_api_telemetry = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_telemetry = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "telemetry.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web`);
@@ -88,8 +88,8 @@ const gen_api_telemetry = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCa
   end
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_telemetry");
+  return generateFile({ filename, dir, content }, "add_api_telemetry");
 };
 
-export { gen_api_telemetry };
+export { add_api_telemetry };
 

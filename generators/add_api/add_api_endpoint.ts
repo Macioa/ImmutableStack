@@ -5,7 +5,7 @@ import crypto from "crypto";
 
 type ApiAppData = AppData & { ApiNameSnake: string; ApiNameCamel: string; ApiPort?: number };
 
-const gen_api_endpoint = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_endpoint = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "endpoint.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web`);
@@ -63,9 +63,9 @@ const gen_api_endpoint = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCam
   plug(${ApiNameCamel}.Router)
 end`;
 
-  return generateFile({ filename, dir, content }, "gen_api_endpoint");
+  return generateFile({ filename, dir, content }, "add_api_endpoint");
 };
 
-export { gen_api_endpoint };
+export { add_api_endpoint };
 export type { ApiAppData };
 
