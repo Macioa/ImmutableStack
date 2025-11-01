@@ -5,7 +5,7 @@ import crypto from "crypto";
 
 const inject_api_to_config = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const file = path.join(UmbrellaDir, "config/config.exs");
-  const apiAppName = `${ApiNameSnake}_web`;
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const signingKey = crypto.randomBytes(8).toString("hex");
   const AppNameCamel = AppNameSnake.replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()).replace(/^./, (g: string) => g.toUpperCase());
   const injections: Injection[] = [

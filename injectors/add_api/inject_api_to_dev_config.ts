@@ -3,9 +3,9 @@ import { inject_file, Injection, InjectType } from "../index";
 import { ApiAppData } from "../../generators/add_api";
 import crypto from "crypto";
 
-const inject_api_to_dev_config = async ({ UmbrellaDir, ApiNameSnake, ApiNameCamel, ApiPort }: ApiAppData) => {
+const inject_api_to_dev_config = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake, ApiNameCamel, ApiPort }: ApiAppData) => {
   const file = path.join(UmbrellaDir, "config/dev.exs");
-  const apiAppName = `${ApiNameSnake}_web`;
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   
   let port: number;
   let portEnv: string;

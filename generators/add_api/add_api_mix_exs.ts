@@ -4,7 +4,7 @@ import { ApiAppData } from "./add_api_endpoint";
 
 const add_api_mix_exs = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "mix.exs";
-  const apiAppName = `${ApiNameSnake}_web`;
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const dir = join(AppDir || "", `${apiAppName}`);
   const content = `defmodule ${ApiNameCamel}.MixProject do
   use Mix.Project

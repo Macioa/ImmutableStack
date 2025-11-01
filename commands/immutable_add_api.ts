@@ -18,14 +18,11 @@ const main = async () => {
 
   const apiName = args[0].toLowerCase().replace(/[^a-z0-9_]/g, "");
   const port = args[1] ? parseInt(args[1]) : undefined;
-  const apiAppName = `${apiName}_web`;
   
   if (port && (isNaN(port) || port < 1024 || port > 65535)) {
     console.error(`Invalid port: ${args[1]}. Port must be between 1024 and 65535.`);
     process.exit(1);
   }
-  
-  log({ level: 1, color: "GREEN" }, `\n\n Generating Web API: ${apiAppName}${port ? ` on port ${port}` : ''}\n\n`);
 
   const appData = await getAppData() as AppData;
   if (!appData) {
@@ -34,6 +31,9 @@ const main = async () => {
   }
 
   const { AppNameSnake, UmbrellaDir } = appData;
+  const apiAppName = `${AppNameSnake}_${apiName}`;
+  
+  log({ level: 1, color: "GREEN" }, `\n\n Generating Web API: ${apiAppName}${port ? ` on port ${port}` : ''}\n\n`);
   
   const apiNameCamel = apiName.replace(/_([a-z])/g, (g) => g[1].toUpperCase()).replace(/^./, (g) => g.toUpperCase());
   const apiAppData = {

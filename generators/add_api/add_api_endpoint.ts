@@ -7,8 +7,8 @@ type ApiAppData = AppData & { ApiNameSnake: string; ApiNameCamel: string; ApiPor
 
 const add_api_endpoint = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "endpoint.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}`);
   const signingKey = crypto.randomBytes(8).toString("hex");
   const content = `defmodule ${ApiNameCamel}.Endpoint do
   use Phoenix.Endpoint, otp_app: :${apiAppName}

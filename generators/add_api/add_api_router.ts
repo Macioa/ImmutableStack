@@ -3,10 +3,10 @@ import { generateFile } from "..";
 import { mark, CommentType } from "../../repair";
 import { ApiAppData } from "./add_api_endpoint";
 
-const add_api_router = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_router = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "router.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}`);
   const routerContent = `defmodule ${ApiNameCamel}.Router do
   use ${ApiNameCamel}, :router
 

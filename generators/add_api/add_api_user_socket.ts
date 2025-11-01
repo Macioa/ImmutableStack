@@ -2,9 +2,9 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "./add_api_endpoint";
 
-const add_api_user_socket = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_user_socket = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "user_socket.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const dir = join(AppDir || "", `${apiAppName}/lib/channels`);
   const content = `defmodule ${ApiNameCamel}.UserSocket do
   use Phoenix.Socket

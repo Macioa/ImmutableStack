@@ -2,10 +2,10 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "./add_api_endpoint";
 
-const add_api_error_json = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_error_json = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "error_json.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/controllers`);
   const content = `defmodule ${ApiNameCamel}.ErrorJSON do
   def render(template, _assigns) do
     %{errors: %{detail: Phoenix.Controller.status_message_from_template(template)}}
@@ -15,10 +15,10 @@ end`;
   return generateFile({ filename, dir, content }, "add_api_error_json");
 };
 
-const add_api_fallback_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_fallback_controller = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "fallback_controller.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/controllers`);
   const content = `defmodule ${ApiNameCamel}.FallbackController do
   use ${ApiNameCamel}, :controller
 
@@ -40,10 +40,10 @@ end`;
   return generateFile({ filename, dir, content }, "add_api_fallback_controller");
 };
 
-const add_api_page_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_page_controller = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "page_controller.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/controllers`);
   const content = `defmodule ${ApiNameCamel}.PageController do
   use ${ApiNameCamel}, :controller
   
@@ -57,10 +57,10 @@ end`;
   return generateFile({ filename, dir, content }, "add_api_page_controller");
 };
 
-const add_api_status_controller = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_status_controller = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "status_controller.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web/controllers`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/controllers`);
   const content = `defmodule ${ApiNameCamel}.StatusController do
   use ${ApiNameCamel}, :controller
 
