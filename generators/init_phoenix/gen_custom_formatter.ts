@@ -30,14 +30,25 @@ defmodule Mix.Tasks.CustomFormatter do
   end
 
   defp format_react_files(_paths) do
-    case System.cmd("npm", ["run", "format", "--prefix", "${AppNameSnake}_${uiName}"], cd: "./apps") do
-      {result, 0} ->
-        IO.puts(result)
-      {result, exit_code} ->
-        IO.puts(:stderr, "Format command failed with exit code #{exit_code}:")
-        IO.puts(:stderr, result)
-        System.halt(1)
-    end
+    format_dirs = ["${AppNameSnake}_${uiName}", "${AppNameSnake}/lib/typescript"] |> Enum.uniq()
+    
+    Enum.each(format_dirs, fn dir ->
+      # Use npm run format for UI dirs with package.json, npx prettier for typescript symlink
+      format_cmd = if dir == "${AppNameSnake}/lib/typescript" do
+        ["exec", "npx", "--prefix", dir, "prettier", "--write", "."]
+      else
+        ["run", "format", "--prefix", dir]
+      end
+      
+      case System.cmd("npm", format_cmd, cd: "./apps") do
+        {result, 0} ->
+          IO.puts("Formatted #{dir}: #{result}")
+
+        {result, exit_code} ->
+          IO.puts(:stderr, "Format command failed for #{dir} with exit code #{exit_code}:")
+          IO.puts(:stderr, result)
+      end
+    end)
   end
 end
 `;
