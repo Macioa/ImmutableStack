@@ -6,8 +6,8 @@ const format = async (file: string) => {
     const isElixir = file.endsWith(".ex") || file.endsWith(".exs");
     
     try {
-      if (isReact) execSync(`npx prettier --write ${file}`, { stdio: "inherit" });
-      if (isElixir) execSync(`mix format ${file}`, { stdio: "inherit" });
+      if (isReact) execSync(`npx prettier --write ${file}`, { stdio: "pipe" });
+      if (isElixir) execSync(`mix format ${file}`, { stdio: "pipe" });
     } catch (error) {
       // If mix format fails due to missing dependencies, that's OK - 
       // the file will be formatted later when deps are installed
