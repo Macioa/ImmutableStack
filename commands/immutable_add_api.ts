@@ -1,4 +1,4 @@
-import { gen_web_api } from "@/composite/gen_web_api";
+import { add_api } from "@/composite/add_api";
 import { getAppData, AppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
@@ -10,9 +10,9 @@ const main = async () => {
   const args = process.argv.slice(2);
   
   if (args.length < 1) {
-    console.error("Usage: immutable -gen_api <api_name> [port]");
-    console.error("Example: immutable -gen_api web2");
-    console.error("Example: immutable -gen_api admin 5000");
+    console.error("Usage: immutable -add_api <api_name> [port]");
+    console.error("Example: immutable -add_api web2");
+    console.error("Example: immutable -add_api admin 5000");
     process.exit(1);
   }
 
@@ -45,9 +45,9 @@ const main = async () => {
 
   setUmbrellaDirCache(UmbrellaDir);
 
-  await gen_web_api(apiAppData);
+  await add_api(apiAppData);
 
-  writeLog(UmbrellaDir, `gen_api_${apiName}`);
+  writeLog(UmbrellaDir, `add_api_${apiName}`);
 
   log({ level: 1, color: "GREEN" }, `\n\nWeb API Generation Complete.\n\nGenerated ${apiAppName}`);
   log({ level: 2, color: "YELLOW" }, "\nNext steps:");

@@ -1,6 +1,6 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
-import { ApiAppData } from "../../generators/gen_web_api";
+import { ApiAppData } from "../../generators/add_api";
 import crypto from "crypto";
 
 const inject_api_to_config = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {

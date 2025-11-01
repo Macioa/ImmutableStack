@@ -1,8 +1,8 @@
 import { join } from "../../utils/path";
 import { generateFile } from "..";
-import { ApiAppData } from "./gen_api_endpoint";
+import { ApiAppData } from "./add_api_endpoint";
 
-const gen_api_user_socket = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_user_socket = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "user_socket.ex";
   const apiAppName = `${ApiNameSnake}_web`;
   const dir = join(AppDir || "", `${apiAppName}/lib/channels`);
@@ -15,8 +15,8 @@ const gen_api_user_socket = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAp
 
   def id(_socket), do: nil
 end`;
-  return generateFile({ filename, dir, content }, "gen_api_user_socket");
+  return generateFile({ filename, dir, content }, "add_api_user_socket");
 };
 
-export { gen_api_user_socket };
+export { add_api_user_socket };
 
