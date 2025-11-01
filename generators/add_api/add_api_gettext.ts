@@ -2,10 +2,10 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "./add_api_endpoint";
 
-const add_api_gettext = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_gettext = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "gettext.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}`);
   const content = `defmodule ${ApiNameCamel}.Gettext do
   @moduledoc """
   A module providing Internationalization with a gettext-based API.
@@ -28,7 +28,7 @@ const add_api_gettext = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppDat
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :${ApiNameSnake}_web
+  use Gettext, otp_app: :${apiAppName}
 end`;
 
   return generateFile({ filename, dir, content }, "add_api_gettext");

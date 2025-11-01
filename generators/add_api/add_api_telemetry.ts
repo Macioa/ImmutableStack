@@ -4,8 +4,8 @@ import { ApiAppData } from "./add_api_endpoint";
 
 const add_api_telemetry = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "telemetry.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}`);
   const content = `defmodule ${ApiNameCamel}.Telemetry do
   use Supervisor
   import Telemetry.Metrics

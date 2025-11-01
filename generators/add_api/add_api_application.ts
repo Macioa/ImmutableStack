@@ -2,10 +2,10 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "./add_api_endpoint";
 
-const add_api_application = async ({ AppDir, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
+const add_api_application = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "application.ex";
-  const apiAppName = `${ApiNameSnake}_web`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${ApiNameSnake}_web`);
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}`);
   const content = `defmodule ${ApiNameCamel}.Application do
   @moduledoc false
 

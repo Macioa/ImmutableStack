@@ -2,9 +2,9 @@ import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
 import { ApiAppData } from "../../generators/add_api";
 
-const inject_api_to_umbrella_mix = async ({ UmbrellaDir, ApiNameSnake }: ApiAppData) => {
+const inject_api_to_umbrella_mix = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake }: ApiAppData) => {
   const file = path.join(UmbrellaDir, "mix.exs");
-  const apiAppName = `${ApiNameSnake}_web`;
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const injections: Injection[] = [
     [
       InjectType.REPLACE,
