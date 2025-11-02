@@ -9,6 +9,7 @@ import { gen_request_lib } from "../../generators/init_react/gen_request_lib";
 import { gen_socket_context } from "../../generators/init_react/gen_socket_context";
 import { gen_store } from "../../generators/init_react/gen_store";
 import { gen_update_apps_package_json } from "../../generators/add_ui/gen_update_apps_package_json";
+import { gen_docker_ui_prod } from "../../generators/init_docker/gen_docker_ui_prod";
 import { inject_package_scripts } from "../../injectors/init_react/inject_package_scripts";
 import { inject_react_deps } from "../../injectors/init_react/inject_react_deps";
 import { inject_redux_provider } from "../../injectors/init_react/inject_redux_provider";
@@ -32,6 +33,7 @@ const build_tool_agnostic_init_tasks_for_add_ui = async (appdata: AppData, uiNam
     inject_ui_to_router(appdata, uiName),
     inject_ui_static_serving(appdata, uiName),
     inject_ui_to_vite_supervisor(appdata, uiName),
+    gen_docker_ui_prod(appdata, uiName),
     gen_store(appdata, uiName),
     await inject_redux_provider(appdata, uiName),
     inject_socket_provider(appdata, uiName),
