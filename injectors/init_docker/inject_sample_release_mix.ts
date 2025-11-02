@@ -9,7 +9,7 @@ const inject_sample_release_mix = async ({
   const file = join(UmbrellaDir || "", "mix.exs");
 
   const content = `\n      releases: [
-        your_release_name: [
+        ${AppNameSnake}_web: [
           applications: [${AppNameSnake}_web: :permanent, ${AppNameSnake}: :permanent],
           include_erts: true,
           include_src: false

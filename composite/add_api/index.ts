@@ -8,6 +8,7 @@ import {
   add_api_mix_exs,
   add_api_user_socket,
   add_api_readme,
+  add_api_docker_prod,
   add_api_error_json,
   add_api_fallback_controller,
   add_api_page_controller,
@@ -21,6 +22,7 @@ import {
   inject_api_to_umbrella_mix,
   inject_api_to_config,
   inject_api_to_dev_config,
+  inject_api_release_to_mix,
 } from "../../injectors/add_api";
 import { log } from "../../utils/logger";
 import { execute as exec } from "../../runners";
@@ -47,6 +49,7 @@ const add_api = async (apiAppData: ApiAppData) => {
     add_api_test_helper(apiAppData),
     add_api_error_json_test(apiAppData),
     add_api_readme(apiAppData),
+    add_api_docker_prod(apiAppData),
   ]);
 
   log({ level: 2, color: "BLUE" }, "\nInjecting API into umbrella configuration...");
@@ -55,6 +58,7 @@ const add_api = async (apiAppData: ApiAppData) => {
     inject_api_to_umbrella_mix(apiAppData),
     inject_api_to_config(apiAppData),
     inject_api_to_dev_config(apiAppData),
+    inject_api_release_to_mix(apiAppData),
   ]);
 
   log({ level: 2, color: "GREEN" }, `\nWeb API ${AppNameSnake}_${ApiNameSnake} generated successfully!`);
