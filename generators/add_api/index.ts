@@ -7,6 +7,7 @@ export { add_api_web_module } from "./add_api_web_module";
 export { add_api_mix_exs } from "./add_api_mix_exs";
 export { add_api_user_socket } from "./add_api_user_socket";
 export { add_api_readme } from "./add_api_readme";
+export { add_api_docker_prod } from "./add_api_docker_prod";
 export { 
   add_api_error_json, 
   add_api_fallback_controller, 
