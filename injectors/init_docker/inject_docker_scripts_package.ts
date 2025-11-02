@@ -27,7 +27,7 @@ const inject_docker_scripts_package = ({
     "d.hold": "m='Holding Containers (** Docker **) ...' && echo $m && yarn d.up && docker compose -f docker/compose.yaml exec ${AppNameSnake}_dev sleep 1000000",
     "d.kill": "m='Killing Apps (** Docker **) ...' && echo $m && docker compose -f docker/compose.yaml kill",
     "PRODUCTION BUILD": "echo 'PRODUCTION BUILD'",
-    "p.build": "m='Building Production Container (** Docker **) ...' && echo $m && docker build -f docker/prod.dockerfile -t ${AppNameSnake}_prod .",
+    "p.build": "m='Building Production Container (** Docker **) ...' && echo $m && docker build -f docker/prod/${AppNameSnake}_web.dockerfile -t ${AppNameSnake}_prod .",
     "p.hold": "m='Holding Production Container (** Docker **) ...' && echo $m && docker run -it --rm -p 4000:4000 ${AppNameSnake}_prod bash",\n`;
   const injections: Injection[] = [
     [InjectType.AFTER, /"scripts"\s*:\s\{/g, content],

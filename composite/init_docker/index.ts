@@ -21,7 +21,7 @@ const init_docker = async (appdata: AppData) => {
   await execute(
     {
       dir: UmbrellaDir,
-      command: "mkdir -p docker/pgdata",
+      command: "mkdir -p docker/pgdata docker/prod",
     },
     "init_docker"
   );
