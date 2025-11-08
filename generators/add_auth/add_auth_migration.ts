@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "fs";
+import { existsSync, readdirSync, unlinkSync } from "fs";
 import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "../add_api";
@@ -21,7 +21,8 @@ const add_auth_migration = async ({
   AppNameSnake,
   AppNameCamel,
 }: ApiAppData) => {
-  const dir = join(AppDir || "", `${AppNameSnake}/priv/repo/migrations`);
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const legacyDir = join(AppDir || "", `${AppNameSnake}/priv/repo/migrations`);
   const baseName = "create_users_auth_tables.exs";
 
   let filename = `${timestamp()}_${baseName}`;
@@ -33,7 +34,14 @@ const add_auth_migration = async ({
     }
   }
 
-  const content = `defmodule ${AppNameCamel}.Repo.Migrations.CreateUsersAuthTables do
+  if (existsSync(legacyDir)) {
+    const legacyMigration = readdirSync(legacyDir).find(name => name.endsWith(baseName));
+    if (legacyMigration) {
+      unlinkSync(join(legacyDir, legacyMigration));
+    }
+  }
+
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateUsersAuthTables do
   use Ecto.Migration
 
   def change do

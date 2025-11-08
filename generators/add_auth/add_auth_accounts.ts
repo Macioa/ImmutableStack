@@ -18,7 +18,7 @@ const add_auth_accounts_context = async ({
   """
 
   import Ecto.Query, warn: false
-  alias ${AppNameCamel}.Repo
+  alias ${AppNameCamel}.AuthRepo, as: Repo
 
   alias ${ApiNameCamel}.Accounts.{User, UserToken, UserNotifier}
 
@@ -461,7 +461,7 @@ const add_auth_user_schema = async ({
   defp maybe_validate_unique_email(changeset, opts) do
     if Keyword.get(opts, :validate_email, true) do
       changeset
-      |> unsafe_validate_unique(:email, ${AppNameCamel}.Repo)
+      |> unsafe_validate_unique(:email, ${AppNameCamel}.AuthRepo)
       |> unique_constraint(:email)
     else
       changeset

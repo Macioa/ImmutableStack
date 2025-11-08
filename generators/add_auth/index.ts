@@ -14,7 +14,10 @@ export {
 } from "./add_auth_controllers";
 
 export { add_auth_user_auth } from "./add_auth_user_auth";
+export { add_auth_repo } from "./add_auth_repo";
+export { add_auth_docker_init_db } from "./add_auth_docker_init_db";
 export { add_auth_router } from "./add_auth_router";
 export { add_auth_migration } from "./add_auth_migration";
+
 
 

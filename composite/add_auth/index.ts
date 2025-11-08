@@ -11,10 +11,22 @@ import {
   add_auth_user_session_controller,
   add_auth_user_settings_controller,
   add_auth_user_auth,
+  add_auth_repo,
+  add_auth_docker_init_db,
   add_auth_router,
   add_auth_migration,
 } from "../../generators/add_auth";
-import { add_auth_mix_dependency, add_auth_test_config } from "../../injectors/add_auth";
+import {
+  add_auth_mix_dependency,
+  add_auth_test_config,
+  add_auth_application_supervisor,
+  add_auth_config_root,
+  add_auth_dev_config,
+  add_auth_docker_config,
+  add_auth_runtime_config,
+  add_auth_docker_compose,
+  add_auth_custom_compiler,
+} from "../../injectors/add_auth";
 import { log } from "../../utils/logger";
 
 const add_auth = async (apiAppData: ApiAppData) => {
@@ -38,6 +50,8 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_user_session_controller(apiAppData),
     add_auth_user_settings_controller(apiAppData),
     add_auth_migration(apiAppData),
+    add_auth_repo(apiAppData),
+    add_auth_docker_init_db(apiAppData),
   ]);
 
   log({ level: 2, color: "BLUE" }, "\nApplying authentication configuration updates...");
@@ -45,6 +59,13 @@ const add_auth = async (apiAppData: ApiAppData) => {
   const authInjectors = await Promise.all([
     add_auth_mix_dependency(apiAppData),
     add_auth_test_config(apiAppData),
+    add_auth_application_supervisor(apiAppData),
+    add_auth_config_root(apiAppData),
+    add_auth_dev_config(apiAppData),
+    add_auth_docker_config(apiAppData),
+    add_auth_runtime_config(apiAppData),
+    add_auth_docker_compose(apiAppData),
+    add_auth_custom_compiler(apiAppData),
   ]);
 
   log({ level: 2, color: "GREEN" }, "\nAuth enhancements applied successfully.");
