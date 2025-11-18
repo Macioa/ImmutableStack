@@ -314,12 +314,247 @@ end`;
   return generateFile({ dir, filename, content }, "add_auth_user_settings_controller");
 };
 
+const add_auth_user_json = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const dir = buildControllersDir(AppDir, AppNameSnake, ApiNameSnake);
+  const filename = "user_json.ex";
+  const content = `defmodule ${ApiNameCamel}.UserJSON do
+  @doc """
+  Renders a user or list of users.
+  """
+  def show(%{user: user, token: token}) when not is_nil(token) do
+    %{data: transform(user), token: token}
+  end
+
+  def show(%{user: user}) do
+    %{data: transform(user)}
+  end
+
+  def show(%{users: users}) when is_list(users) do
+    %{data: transform(users), count: length(users)}
+  end
+
+  def show(%{count: c}), do: %{success_count: c, fail_count: 0}
+
+  defp transform(users) when is_list(users), do: Enum.map(users, &transform/1)
+
+  defp transform(user) when is_map(user) do
+    accounts = Map.get(user, :accounts)
+    access_tags = Map.get(user, :access_tags) || []
+
+    %{
+      id: Map.get(user, :id),
+      email: Map.get(user, :email),
+      confirmed_at: Map.get(user, :confirmed_at),
+      access_tags: access_tags,
+      accounts: transform_accounts(accounts),
+      inserted_at: Map.get(user, :inserted_at),
+      updated_at: Map.get(user, :updated_at)
+    }
+  end
+
+  defp transform_accounts(%Ecto.Association.NotLoaded{}), do: []
+  defp transform_accounts(nil), do: []
+  defp transform_accounts(accounts) when is_list(accounts), do: Enum.map(accounts, &transform_account/1)
+  defp transform_accounts(_), do: []
+
+  defp transform_account(account) when is_map(account) do
+    %{
+      id: Map.get(account, :id),
+      name: Map.get(account, :name),
+      parent_account_id: Map.get(account, :parent_account_id),
+      owner_id: Map.get(account, :owner_id),
+      inserted_at: Map.get(account, :inserted_at),
+      updated_at: Map.get(account, :updated_at)
+    }
+  end
+
+  defp transform_account(_), do: nil
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_json");
+};
+
+const add_auth_user_registration_json_controller = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const dir = buildControllersDir(AppDir, AppNameSnake, ApiNameSnake);
+  const filename = "user_registration_json_controller.ex";
+  const content = `defmodule ${ApiNameCamel}.UserRegistrationJSONController do
+  use ${ApiNameCamel}, :controller
+
+  alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.UserAuth
+
+  action_fallback ${ApiNameCamel}.FallbackController
+
+  def create(conn, params) do
+    user_params = params["user"] || params
+
+    case Accounts.register_user(user_params) do
+      {:ok, user} ->
+        Accounts.deliver_user_confirmation_instructions(
+          user,
+          &url(~p"/users/confirm/#{&1}")
+        )
+
+        conn = UserAuth.log_in_user_json(conn, user)
+        user_token = get_session(conn, :user_token)
+        token = if user_token, do: Base.url_encode64(user_token), else: nil
+
+        conn
+        |> put_status(:created)
+        |> put_view(json: ${ApiNameCamel}.UserJSON)
+        |> render(:show, user: user, token: token)
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+    end
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_registration_json_controller");
+};
+
+const add_auth_user_session_json_controller = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const dir = buildControllersDir(AppDir, AppNameSnake, ApiNameSnake);
+  const filename = "user_session_json_controller.ex";
+  const content = `defmodule ${ApiNameCamel}.UserSessionJSONController do
+  use ${ApiNameCamel}, :controller
+
+  alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.UserAuth
+
+  action_fallback ${ApiNameCamel}.FallbackController
+
+  def create(conn, params) do
+    user_params = params["user"] || params
+    email = user_params["email"]
+    password = user_params["password"]
+
+    if email && password do
+      if user = Accounts.get_user_by_email_and_password(email, password) do
+        conn = UserAuth.log_in_user_json(conn, user, user_params)
+        user_token = get_session(conn, :user_token)
+        token = if user_token, do: Base.url_encode64(user_token), else: nil
+
+        conn
+        |> put_view(json: ${ApiNameCamel}.UserJSON)
+        |> render(:show, user: user, token: token)
+      else
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{error: "Invalid email or password"})
+      end
+    else
+      conn
+      |> put_status(:unprocessable_entity)
+      |> json(%{error: "Email and password are required"})
+    end
+  end
+
+  def delete(conn, _params) do
+    conn
+    |> UserAuth.log_out_user_json()
+    |> put_view(json: ${ApiNameCamel}.UserJSON)
+    |> render(:show, count: 1)
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_session_json_controller");
+};
+
+const add_auth_user_settings_json_controller = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const dir = buildControllersDir(AppDir, AppNameSnake, ApiNameSnake);
+  const filename = "user_settings_json_controller.ex";
+  const content = `defmodule ${ApiNameCamel}.UserSettingsJSONController do
+  use ${ApiNameCamel}, :controller
+
+  action_fallback ${ApiNameCamel}.FallbackController
+
+  def show(conn, _params) do
+    user = conn.assigns.current_user
+    user_token = get_session(conn, :user_token)
+    token = if user_token, do: Base.url_encode64(user_token), else: nil
+
+    conn
+    |> put_view(json: ${ApiNameCamel}.UserJSON)
+    |> render(:show, user: user, token: token)
+  end
+
+  def update(conn, _params) do
+    user = conn.assigns.current_user
+    user_token = get_session(conn, :user_token)
+    token = if user_token, do: Base.url_encode64(user_token), else: nil
+
+    conn
+    |> put_view(json: ${ApiNameCamel}.UserJSON)
+    |> render(:show, user: user, token: token)
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_settings_json_controller");
+};
+
+const add_auth_changeset_json = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const dir = buildControllersDir(AppDir, AppNameSnake, ApiNameSnake);
+  const filename = "changeset_json.ex";
+  const content = `defmodule ${ApiNameCamel}.ChangesetJSON do
+  @doc """
+  Renders changeset errors.
+  """
+  def error(%{changeset: changeset}) do
+    %{errors: Ecto.Changeset.traverse_errors(changeset, &translate_error/1)}
+  end
+
+  defp translate_error({msg, opts}) do
+    Enum.reduce(opts, msg, fn {key, value}, acc ->
+      value_str = case value do
+        v when is_list(v) -> inspect(v)
+        v when is_atom(v) -> Atom.to_string(v)
+        v -> to_string(v)
+      end
+      String.replace(acc, "%{#{key}}", value_str)
+    end)
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_changeset_json");
+};
+
 export {
   add_auth_user_confirmation_controller,
   add_auth_user_registration_controller,
   add_auth_user_reset_password_controller,
   add_auth_user_session_controller,
   add_auth_user_settings_controller,
+  add_auth_user_json,
+  add_auth_user_registration_json_controller,
+  add_auth_user_session_json_controller,
+  add_auth_user_settings_json_controller,
+  add_auth_changeset_json,
 };
 
 
