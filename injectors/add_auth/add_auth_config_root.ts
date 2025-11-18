@@ -4,6 +4,7 @@ import { ApiAppData } from "@/generators/add_api";
 
 const add_auth_config_root = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
   const file = join(UmbrellaDir, "config/config.exs");
+  const apiAppName = `${AppNameSnake}_auth`;
 
   const injections: Injection[] = [
     [
@@ -22,12 +23,28 @@ const add_auth_config_root = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }:
           )
           .replace(
             new RegExp(
-              `config :${AppNameSnake}_auth,\\s*ecto_repos: \\[${AppNameCamel}\\.Repo\\],`,
+              `config :${apiAppName},\\s*ecto_repos: \\[${AppNameCamel}\\.Repo\\],`,
               "m"
             ),
-            `config :${AppNameSnake}_auth,\n  ecto_repos: [${AppNameCamel}.AuthRepo],`
+            `config :${apiAppName},\n  ecto_repos: [${AppNameCamel}.AuthRepo],`
           );
       },
+    ],
+    [
+      InjectType.AFTER,
+      new RegExp(`config :${apiAppName}, AuthWeb\\.Endpoint,[\\s\\S]*?live_view: \\[signing_salt: "[^"]+"\\]`),
+      `\n# OAuth configuration
+# Google OAuth: https://console.cloud.google.com/apis/credentials
+config :${apiAppName}, :oauth,
+  google: [
+    client_id: System.get_env("GOOGLE_CLIENT_ID") || "",
+    client_secret: System.get_env("GOOGLE_CLIENT_SECRET") || ""
+  ],
+  # Microsoft OAuth: https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
+  microsoft: [
+    client_id: System.get_env("MICROSOFT_CLIENT_ID") || "",
+    client_secret: System.get_env("MICROSOFT_CLIENT_SECRET") || ""
+  ]\n`
     ],
   ];
 

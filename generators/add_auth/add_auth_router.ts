@@ -12,7 +12,8 @@ const add_auth_router = async ({
   const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}`);
   const filename = "router.ex";
-  const routerContent = `defmodule ${ApiNameCamel}.Router do
+  const routerContent = `# ** IMMUTABLE  ROUTER b12c9b12-eb42-4f84-88b7-90bae1609733 **
+defmodule ${ApiNameCamel}.Router do
   use ${ApiNameCamel}, :router
 
   import ${ApiNameCamel}.UserAuth
@@ -20,6 +21,8 @@ const add_auth_router = async ({
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug :fetch_flash
+    plug Plug.CSRFProtection
     plug :put_secure_browser_headers
     plug :fetch_current_user
   end
@@ -33,10 +36,30 @@ const add_auth_router = async ({
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug(:fetch_session)
+    plug(:fetch_current_user)
+  end
+
+  pipeline :api_authenticated do
+    plug(:accepts, ["json"])
+    plug(:fetch_session)
+    plug(:fetch_current_user)
+    plug(:require_authenticated_user_api)
   end
 
   scope "/api", ${ApiNameCamel} do
     pipe_through(:api)
+
+    post("/users/log_in", UserSessionJSONController, :create)
+    post("/users/register", UserRegistrationJSONController, :create)
+    delete("/users/log_out", UserSessionJSONController, :delete)
+  end
+
+  scope "/api", ${ApiNameCamel} do
+    pipe_through(:api_authenticated)
+
+    get("/users/settings", UserSettingsJSONController, :show)
+    put("/users/settings", UserSettingsJSONController, :update)
   end
 
   if Application.compile_env(:${apiAppName}, :dev_routes) do
@@ -82,7 +105,18 @@ const add_auth_router = async ({
     get "/users/confirm/:token", UserConfirmationController, :edit
     post "/users/confirm/:token", UserConfirmationController, :update
   end
-end`;
+
+  ## OAuth routes
+
+  scope "/", ${ApiNameCamel} do
+    pipe_through(:browser)
+
+    get("/oauth/:provider", OAuthController, :initiate)
+    get("/oauth/:provider/callback", OAuthController, :callback)
+  end
+end
+# ** IMMUTABLE  ROUTER b12c9b12-eb42-4f84-88b7-90bae1609733 **
+`;
 
   const content = mark({ str: routerContent, type: "ROUTER" }, "EX" as CommentType);
 
@@ -90,6 +124,9 @@ end`;
 };
 
 export { add_auth_router };
+
+
+
 
 
 

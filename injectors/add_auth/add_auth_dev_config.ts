@@ -4,6 +4,7 @@ import { ApiAppData } from "@/generators/add_api";
 
 const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
   const file = join(UmbrellaDir, "config/dev.exs");
+  const apiAppName = `${AppNameSnake}_auth`;
 
   const injections: Injection[] = [
     [
@@ -29,6 +30,21 @@ config :${AppNameSnake}, ${AppNameCamel}.AuthRepo,
 `
         );
       },
+    ],
+    [
+      InjectType.AFTER,
+      new RegExp(`config :${apiAppName}, AuthWeb\\.Endpoint,[\\s\\S]*?watchers: \\[\\]`),
+      `\n# OAuth configuration for development
+# Set these in your environment or uncomment and set directly here for testing
+config :${apiAppName}, :oauth,
+  google: [
+    client_id: System.get_env("GOOGLE_CLIENT_ID") || "",
+    client_secret: System.get_env("GOOGLE_CLIENT_SECRET") || ""
+  ],
+  microsoft: [
+    client_id: System.get_env("MICROSOFT_CLIENT_ID") || "",
+    client_secret: System.get_env("MICROSOFT_CLIENT_SECRET") || ""
+  ]\n`
     ],
   ];
 

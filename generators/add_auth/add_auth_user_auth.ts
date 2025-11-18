@@ -239,6 +239,50 @@ const add_auth_user_auth = async ({
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: ~p"/"
+
+  @doc """
+  Logs the user in and returns the connection (does not redirect).
+  Used for JSON API endpoints.
+  """
+  def log_in_user_json(conn, user, params \\\\ %{}) do
+    token = Accounts.generate_user_session_token(user)
+
+    conn
+    |> renew_session()
+    |> put_token_in_session(token)
+    |> maybe_write_remember_me_cookie(token, params)
+  end
+
+  @doc """
+  Logs the user out and returns JSON (does not redirect).
+  """
+  def log_out_user_json(conn) do
+    user_token = get_session(conn, :user_token)
+    user_token && Accounts.delete_user_session_token(user_token)
+
+    if live_socket_id = get_session(conn, :live_socket_id) do
+      ${ApiNameCamel}.Endpoint.broadcast(live_socket_id, "disconnect", %{})
+    end
+
+    conn
+    |> renew_session()
+    |> delete_resp_cookie(@remember_me_cookie)
+  end
+
+  @doc """
+  Used for API routes that require the user to be authenticated.
+  Returns JSON error instead of redirecting.
+  """
+  def require_authenticated_user_api(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+    else
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "Not authenticated"})
+      |> halt()
+    end
+  end
 end`;
 
   return generateFile({ dir, filename, content }, "add_auth_user_auth");

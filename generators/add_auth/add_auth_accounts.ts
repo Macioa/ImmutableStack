@@ -20,7 +20,18 @@ const add_auth_accounts_context = async ({
   import Ecto.Query, warn: false
   alias ${AppNameCamel}.AuthRepo, as: Repo
 
-  alias ${ApiNameCamel}.Accounts.{User, UserToken, UserNotifier}
+  alias ${ApiNameCamel}.Accounts.{
+    Account,
+    AccountAccess,
+    AccessGroup,
+    AccessTag,
+    OAuthState,
+    OAuthToken,
+    User,
+    UserAccess,
+    UserToken,
+    UserNotifier
+  }
 
   ## Database getters
 
@@ -363,6 +374,115 @@ const add_auth_accounts_context = async ({
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+  ## OAuth
+
+  @doc """
+  Creates an OAuth state for CSRF protection.
+  """
+  def create_oauth_state(provider, state) when provider in [:google, :microsoft] do
+    provider_string = Atom.to_string(provider)
+    expires_at = DateTime.utc_now() |> DateTime.add(10, :minute) |> DateTime.truncate(:second)
+
+    %OAuthState{}
+    |> OAuthState.changeset(%{
+      state: state,
+      provider: provider_string,
+      expires_at: expires_at
+    })
+    |> Repo.insert()
+  end
+
+  @doc """
+  Validates and consumes an OAuth state.
+  Returns :ok if valid, :error if invalid or expired.
+  """
+  def validate_oauth_state(state, provider) when provider in [:google, :microsoft] do
+    provider_string = Atom.to_string(provider)
+    now = DateTime.utc_now()
+
+    case Repo.get_by(OAuthState, state: state, provider: provider_string) do
+      nil ->
+        :error
+
+      oauth_state ->
+        if DateTime.compare(oauth_state.expires_at, now) == :gt do
+          Repo.delete(oauth_state)
+          :ok
+        else
+          Repo.delete(oauth_state)
+          :error
+        end
+    end
+  end
+
+  @doc """
+  Cleans up expired OAuth states.
+  """
+  def cleanup_expired_oauth_states do
+    now = DateTime.utc_now()
+
+    from(os in OAuthState, where: os.expires_at < ^now)
+    |> Repo.delete_all()
+  end
+
+  @doc """
+  Stores or updates an OAuth token for a user.
+  """
+  def upsert_oauth_token(user, provider, attrs) when provider in [:google, :microsoft] do
+    if is_nil(user.id) do
+      {:error, "User ID is nil - user must be saved before storing OAuth token"}
+    else
+      provider_string = Atom.to_string(provider)
+
+      case Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string) do
+        nil ->
+          %OAuthToken{}
+          |> OAuthToken.changeset(Map.merge(attrs, %{user_id: user.id, provider: provider_string}))
+          |> Repo.insert()
+
+        oauth_token ->
+          oauth_token
+          |> OAuthToken.changeset(attrs)
+          |> Repo.update()
+      end
+    end
+  end
+
+  @doc """
+  Gets an OAuth token for a user and provider.
+  """
+  def get_oauth_token(user, provider) when provider in [:google, :microsoft] do
+    provider_string = Atom.to_string(provider)
+    Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string)
+  end
+
+  @doc """
+  Gets a user by OAuth provider and provider user ID.
+  Returns the user if found, nil otherwise.
+  """
+  def get_user_by_oauth_provider(provider, provider_user_id) when provider in [:google, :microsoft] do
+    provider_string = Atom.to_string(provider)
+
+    from(ot in OAuthToken,
+      where: ot.provider == ^provider_string and ot.provider_user_id == ^provider_user_id,
+      join: u in assoc(ot, :user),
+      select: u
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Deletes an OAuth token for a user and provider.
+  """
+  def delete_oauth_token(user, provider) when provider in [:google, :microsoft] do
+    provider_string = Atom.to_string(provider)
+
+    case Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string) do
+      nil -> {:ok, nil}
+      oauth_token -> Repo.delete(oauth_token)
+    end
+  end
 end`;
 
   return generateFile({ dir, filename, content }, "add_auth_accounts_context");
@@ -382,12 +502,34 @@ const add_auth_user_schema = async ({
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias ${ApiNameCamel}.Accounts.{Account, UserAccess}
+
+  @primary_key {:id, :binary_id, autogenerate: false, read_after_writes: true}
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          email: String.t() | nil,
+          hashed_password: String.t() | nil,
+          confirmed_at: DateTime.t() | nil,
+          access_entries: [UserAccess.t()] | nil,
+          accounts: [Account.t()] | nil,
+          access_tags: [map()] | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+
+    field :access_tags, {:array, :map}, virtual: true, default: []
+
+    has_many :access_entries, UserAccess, foreign_key: :user_id
+    has_many :accounts, Account, foreign_key: :owner_id
 
     timestamps(type: :utc_datetime)
   end
@@ -556,6 +698,8 @@ const add_auth_user_token = async ({
   use Ecto.Schema
   import Ecto.Query
   alias ${ApiNameCamel}.Accounts.UserToken
+
+  @foreign_key_type :binary_id
 
   @hash_algorithm :sha256
   @rand_size 32
@@ -829,10 +973,507 @@ end`;
   return generateFile({ dir, filename, content }, "add_auth_user_notifier");
 };
 
+const add_auth_oauth_state = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "oauth_state.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.OAuthState do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          state: String.t() | nil,
+          provider: String.t() | nil,
+          expires_at: DateTime.t() | nil,
+          inserted_at: DateTime.t() | nil
+        }
+
+  schema "oauth_states" do
+    field(:state, :string)
+    field(:provider, :string)
+    field(:expires_at, :utc_datetime)
+
+    timestamps(type: :utc_datetime, updated_at: false)
+  end
+
+  @doc false
+  def changeset(oauth_state, attrs) do
+    oauth_state
+    |> cast(attrs, [:state, :provider, :expires_at])
+    |> validate_required([:state, :provider, :expires_at])
+    |> validate_inclusion(:provider, ["google", "microsoft"])
+    |> unique_constraint(:state)
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_oauth_state");
+};
+
+const add_auth_oauth_token = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "oauth_token.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.OAuthToken do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.User
+
+  @primary_key {:id, :binary_id, autogenerate: false, read_after_writes: true}
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          user_id: Ecto.UUID.t() | nil,
+          provider: String.t() | nil,
+          access_token: String.t() | nil,
+          refresh_token: String.t() | nil,
+          expires_at: DateTime.t() | nil,
+          provider_user_id: String.t() | nil,
+          user: User.t() | Ecto.Association.NotLoaded.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  schema "oauth_tokens" do
+    field(:provider, :string)
+    field(:access_token, :string)
+    field(:refresh_token, :string)
+    field(:expires_at, :utc_datetime)
+    field(:provider_user_id, :string)
+    belongs_to(:user, User)
+
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc false
+  def changeset(oauth_token, attrs) do
+    oauth_token
+    |> cast(attrs, [:provider, :access_token, :refresh_token, :expires_at, :provider_user_id, :user_id])
+    |> validate_required([:provider, :access_token, :user_id])
+    |> validate_inclusion(:provider, ["google", "microsoft"])
+    |> unique_constraint([:user_id, :provider])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_oauth_token");
+};
+
+const add_auth_account_schema = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+  AppNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "account.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.Account do
+  use Ecto.Schema
+  import Ecto.Changeset
+  import Ecto.Query
+
+  alias ${ApiNameCamel}.Accounts.{Account, AccountAccess, User}
+  alias ${AppNameCamel}.AuthRepo, as: AuthRepo
+
+  @primary_key {:id, :binary_id, autogenerate: false, read_after_writes: true}
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          name: String.t() | nil,
+          parent_account_id: Ecto.UUID.t() | nil,
+          owner_id: Ecto.UUID.t() | nil,
+          parent_account: Account.t() | nil,
+          owner: %User{} | nil,
+          master_account: Account.t() | nil,
+          access_entries: [AccountAccess.t()] | nil,
+          parent_accounts: [Account.t()] | nil,
+          access_tags: [map()] | nil
+        }
+
+  schema "accounts" do
+    field :name, :string
+    belongs_to :parent_account, Account, foreign_key: :parent_account_id
+    belongs_to :owner, User, foreign_key: :owner_id
+    field :master_account, :any, virtual: true, default: nil
+    field :parent_accounts, {:array, :map}, virtual: true, default: []
+    field :access_tags, {:array, :map}, virtual: true, default: []
+    has_many :access_entries, AccountAccess, foreign_key: :account_id
+
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc false
+  def changeset(account, attrs) do
+    account
+    |> cast(attrs, [:name, :parent_account_id, :owner_id])
+    |> validate_required([:name, :owner_id])
+    |> assoc_constraint(:parent_account)
+    |> assoc_constraint(:owner)
+  end
+
+  @doc """
+  Populates the \`master_account\` virtual field by recursively walking
+  the account's parents until the root account is found.
+  """
+  @spec put_master_account(t()) :: t()
+  def put_master_account(%Account{id: nil} = account), do: %{account | master_account: nil}
+
+  def put_master_account(%Account{id: id} = account) do
+    master =
+      Account
+      |> build_master_account_cte(id)
+      |> AuthRepo.one()
+
+    %{account | master_account: master}
+  end
+
+  defp build_master_account_cte(queryable, id) do
+    base_query =
+      from a in queryable,
+        where: a.id == ^id,
+        select: %{id: a.id, parent_account_id: a.parent_account_id}
+
+    recursive_query =
+      from a in queryable,
+        join: ancestor in "account_ancestors",
+        on: ancestor.parent_account_id == a.id,
+        select: %{id: a.id, parent_account_id: a.parent_account_id}
+
+    cte =
+      base_query
+      |> union_all(^recursive_query)
+
+    queryable
+    |> recursive_ctes(true)
+    |> with_cte("account_ancestors", as: ^cte)
+    |> join(:inner, [account], ancestor in "account_ancestors", on: ancestor.id == account.id)
+    |> where([account, ancestor], is_nil(ancestor.parent_account_id))
+    |> select([account, _ancestor], account)
+    |> limit(1)
+  end
+
+  @doc """
+  Builds a recursive query that returns all accounts owned by the given user along with their ancestor chain.
+  Each row contains the account struct, the descendant account id (an account owned by the user), and the depth
+  of the ancestor relative to that descendant (0 for the descendant itself, increasing by 1 per level).
+  """
+  @spec build_account_hierarchy_query(Ecto.Queryable.t(), Ecto.UUID.t()) :: Ecto.Query.t()
+  def build_account_hierarchy_query(queryable \\\\ Account, user_id) do
+    base_query =
+      from a in queryable,
+        where: a.owner_id == ^user_id,
+        select: %{
+          descendant_id: a.id,
+          account_id: a.id,
+          parent_account_id: a.parent_account_id,
+          depth: 0
+        }
+
+    recursive_query =
+      from a in queryable,
+        join: path in "account_hierarchy",
+        on: path.parent_account_id == a.id,
+        select: %{
+          descendant_id: path.descendant_id,
+          account_id: a.id,
+          parent_account_id: a.parent_account_id,
+          depth: path.depth + 1
+        }
+
+    cte =
+      base_query
+      |> union_all(^recursive_query)
+
+    queryable
+    |> recursive_ctes(true)
+    |> with_cte("account_hierarchy", as: ^cte)
+    |> join(:inner, [account], path in "account_hierarchy", on: path.account_id == account.id)
+    |> select([account, path], %{
+      account: account,
+      descendant_id: path.descendant_id,
+      depth: path.depth
+    })
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_account_schema");
+};
+
+const add_auth_access_group = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "access_group.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.AccessGroup do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.AccessTag
+
+  @type t :: %__MODULE__{
+          name: String.t() | nil,
+          desc: String.t() | nil,
+          tags: [AccessTag.t()] | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key {:name, :string, autogenerate: false}
+  schema "access_groups" do
+    field :desc, :string
+
+    many_to_many :tags, AccessTag,
+      join_through: "group_tags",
+      join_keys: [group_id: :name, tag_id: :name],
+      on_replace: :delete
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(group, attrs) do
+    group
+    |> cast(attrs, [:name, :desc])
+    |> validate_required([:name])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_access_group");
+};
+
+const add_auth_access_tag = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "access_tag.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.AccessTag do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.AccessGroup
+
+  @type t :: %__MODULE__{
+          name: String.t() | nil,
+          desc: String.t() | nil,
+          groups: [AccessGroup.t()] | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key {:name, :string, autogenerate: false}
+  schema "access_tags" do
+    field :desc, :string
+
+    many_to_many :groups, AccessGroup,
+      join_through: "group_tags",
+      join_keys: [tag_id: :name, group_id: :name],
+      on_replace: :delete
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(tag, attrs) do
+    tag
+    |> cast(attrs, [:name, :desc])
+    |> validate_required([:name])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_access_tag");
+};
+
+const add_auth_account_access = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "account_access.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.AccountAccess do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.{AccessTag, Account}
+
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          account_id: Ecto.UUID.t() | nil,
+          tag_id: String.t() | nil,
+          group_ids: [String.t()],
+          account: Account.t() | nil,
+          tag: AccessTag.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key false
+  schema "account_access" do
+    belongs_to :account, Account, primary_key: true
+
+    belongs_to :tag, AccessTag,
+      foreign_key: :tag_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    field :group_ids, {:array, :string}, default: []
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(account_access, attrs) do
+    account_access
+    |> cast(attrs, [:account_id, :tag_id, :group_ids])
+    |> validate_required([:account_id, :tag_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_account_access");
+};
+
+const add_auth_user_access = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "user_access.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.UserAccess do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.{AccessGroup, AccessTag, User}
+
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          user_id: Ecto.UUID.t() | nil,
+          tag_id: String.t() | nil,
+          group_id: String.t() | nil,
+          user: User.t() | nil,
+          tag: AccessTag.t() | nil,
+          group: AccessGroup.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key false
+  schema "user_access" do
+    belongs_to :user, User, primary_key: true
+
+    belongs_to :tag, AccessTag,
+      foreign_key: :tag_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    belongs_to :group, AccessGroup,
+      foreign_key: :group_id,
+      references: :name,
+      type: :string
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(user_access, attrs) do
+    user_access
+    |> cast(attrs, [:user_id, :tag_id, :group_id])
+    |> validate_required([:user_id, :tag_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_access");
+};
+
+const add_auth_group_tag = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "group_tag.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.GroupTag do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.{AccessGroup, AccessTag}
+
+  @type t :: %__MODULE__{
+          group_id: String.t() | nil,
+          tag_id: String.t() | nil,
+          group: AccessGroup.t() | nil,
+          tag: AccessTag.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key false
+  schema "group_tags" do
+    belongs_to :group, AccessGroup,
+      foreign_key: :group_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    belongs_to :tag, AccessTag,
+      foreign_key: :tag_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(group_tag, attrs) do
+    group_tag
+    |> cast(attrs, [:group_id, :tag_id])
+    |> validate_required([:group_id, :tag_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_group_tag");
+};
+
 export {
   add_auth_accounts_context,
   add_auth_user_schema,
   add_auth_user_token,
   add_auth_user_notifier,
+  add_auth_oauth_state,
+  add_auth_oauth_token,
+  add_auth_account_schema,
+  add_auth_access_group,
+  add_auth_access_tag,
+  add_auth_account_access,
+  add_auth_user_access,
+  add_auth_group_tag,
 };
 
