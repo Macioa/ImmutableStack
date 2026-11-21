@@ -33,7 +33,8 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
 
     # Create symlink if paths exist
     typescript_node_modules = Path.join(typescript_path, "node_modules")
-    apps_node_modules = Path.join("${AppDir}", "node_modules")
+    apps_dir = Path.expand(Path.join(app_path, ".."))
+    apps_node_modules = Path.join(apps_dir, "node_modules")
     
     if File.exists?(typescript_path) and File.exists?(apps_node_modules) do
       File.rm_rf(typescript_node_modules)
@@ -45,13 +46,20 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
 
     # Build all UI projects with retry on dependency errors
     Enum.each(project_uis, fn {build_cmd, _ui_path} ->
-      build_with_retry("${AppDir}", build_cmd)
+      build_with_retry(apps_dir, build_cmd)
     end)
+  end
+
+  defp run_cmd(cmd, args, opts) do
+    case :os.type() do
+      {:win32, _} -> System.cmd("cmd", ["/c", cmd | args], opts)
+      _ -> System.cmd(cmd, args, opts)
+    end
   end
 
   defp build_with_retry(apps_path, build_cmd) do
     [cmd | args] = String.split(build_cmd, " ")
-    case System.cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
+    case run_cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
       {output, 0} ->
         IO.puts(output)
         {:ok, []}
@@ -68,13 +76,13 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
   end
 
   defp retry_after_clean_install(apps_path, build_cmd) do
-    case System.cmd("npm", ["ci"], stderr_to_stdout: true, cd: apps_path) do
+    case run_cmd("npm", ["ci"], stderr_to_stdout: true, cd: apps_path) do
       {install_output, 0} ->
         IO.puts("Clean install successful, retrying build...")
         IO.puts(install_output)
         
         [cmd | args] = String.split(build_cmd, " ")
-        case System.cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
+        case run_cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
           {retry_output, 0} ->
             IO.puts("Build successful after clean install!")
             IO.puts(retry_output)

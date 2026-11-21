@@ -39,7 +39,10 @@ async function SHA(filePath: string): Promise<string> {
   log({ level: 38 }, "Hashing file", {
     dir: join(await IMM_DIR, "bin/" + filePath),
   });
-  const stream = createReadStream(join(await IMM_DIR, "bin/" + filePath));
+  const immDir = await IMM_DIR;
+  const stream = createReadStream(
+    immDir ? join(immDir, "bin/" + filePath) : join(__dirname, filePath)
+  );
   return new Promise((resolve, reject) => {
     stream.on("data", (chunk) => hash.update(chunk));
     stream.on("end", () => {
