@@ -28,6 +28,18 @@ const versionsPath = path.join(__dirname, "versions.sh");
 //   }
 // }
 const main = async () => {
+  // Windows uses mise instead of asdf
+  if (isWin) {
+    await exec(
+      {
+        command: `powershell -NoProfile -ExecutionPolicy Bypass -File "${path.join(__dirname, "start_windows.ps1")}"`,
+        dir: home,
+      },
+      "start_script"
+    );
+    return;
+  }
+
   let asdfInstalled = false;
   try {
     await exec(
@@ -55,7 +67,7 @@ const main = async () => {
     log({ level: 3, color: "GREEN" }, "Sourcing versions.sh...");
     const lines = readFileSync(versionsPath, "utf8").split("\n");
     for (const line of lines) {
-      const match = line.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)=(.*)$/);
+      const match = line.match(/^\s*(?:export\s+)?([a-zA-Z_][a-zA-Z0-9_]*)=(.*)$/);
       if (match) {
         versions[match[1]] = match[2].replace(/['"]/g, "");
       }
@@ -88,8 +100,8 @@ const main = async () => {
 
   // Install Erlang, Elixir, Node.js
   if (asdfInstalled) {
-    if (versions.erlang) await asdfInstall("erlang", versions.erlang);
-    if (versions.elixir) await asdfInstall("elixir", versions.elixir);
+    if (versions.ERLANG_VERSION) await asdfInstall("erlang", versions.ERLANG_VERSION);
+    if (versions.ELIXIR_VERSION) await asdfInstall("elixir", versions.ELIXIR_VERSION);
     if (versions.nodejs) await asdfInstall("nodejs", versions.nodejs);
   }
 

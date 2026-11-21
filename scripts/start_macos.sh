@@ -46,8 +46,8 @@ if asdf list erlang >/dev/null 2>&1; then
 else
     echo "Installing Erlang..."
     asdf plugin-add erlang
-    asdf install erlang $erlang
-    asdf global erlang $erlang
+    asdf install erlang $ERLANG_VERSION
+    asdf global erlang $ERLANG_VERSION
 fi
 
 # Install Elixir using asdf
@@ -56,8 +56,8 @@ if asdf list elixir >/dev/null 2>&1; then
 else
     echo "Installing Elixir..."
     asdf plugin-add elixir
-    asdf install elixir $elixir
-    asdf global elixir $elixir
+    asdf install elixir $ELIXIR_VERSION
+    asdf global elixir $ELIXIR_VERSION
 fi
 
 # Install Node.js using asdf

@@ -15,7 +15,7 @@ const inject_vite_supervisor_to_application_ex = async ({
       new RegExp(`${AppNameCamel}Web\\.Endpoint\\n\\s+\\]`),
       `
       ${AppNameCamel}Web.Endpoint,
-      (if (Mix.env() == :dev), do: {${AppNameCamel}.ViteDevSupervisor, []})
+      (if (Mix.env() == :dev and match?({:unix, _}, :os.type())), do: {${AppNameCamel}.ViteDevSupervisor, []})
     ]
     |> Enum.filter(&(&1 != nil))
 `,
