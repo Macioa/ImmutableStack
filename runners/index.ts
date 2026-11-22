@@ -47,6 +47,7 @@ import { getAppData } from "../readers/get_app_data";
 import { chunkArray } from "../utils/chunk";
 import { cacheLogCommand } from "../utils/history_cache";
 import { log } from "@/utils/logger";
+import { resolveShell } from "../utils/os_adapter";
 import { getSetting } from "../utils/settings";
 import mixOrDocker from "./nomix";
 
@@ -89,7 +90,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
     ...ExecutionDefaults.options,
     ...options,
   };
-  const shell = (await getSetting("shell")) || true;
+  const shell = resolveShell(await getSetting("shell"));
 
   if (prereq) {
     const prereqDir = prereq.dir || dir;
