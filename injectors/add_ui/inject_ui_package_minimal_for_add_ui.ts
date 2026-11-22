@@ -2,6 +2,7 @@ import path from "path";
 import { writeFile } from "fs/promises";
 import { AppData } from "../../readers/get_app_data";
 import { log } from "../../utils/logger";
+import { linkNodeModulesScript } from "../../utils/os_adapter";
 
 const inject_ui_package_minimal_for_add_ui = async (appdata: AppData, uiName: string) => {
   const { AppNameSnake, AppDir } = appdata;
@@ -22,7 +23,7 @@ const inject_ui_package_minimal_for_add_ui = async (appdata: AppData, uiName: st
     type: "module",
     scripts: {
       "test": "jest",
-      "postinstall": `if [ -d '../${AppNameSnake}/lib/typescript' ]; then rm -f ../${AppNameSnake}/lib/typescript/node_modules && ln -sf ${appsNodeModulesPath} ../${AppNameSnake}/lib/typescript/node_modules && echo 'Symlink created: ../${AppNameSnake}/lib/typescript/node_modules -> ${appsNodeModulesPath}'; else echo 'Warning: ${AppNameSnake}/lib/typescript directory not found, skipping symlink creation'; fi`,
+      "postinstall": linkNodeModulesScript(`../${AppNameSnake}/lib/typescript`, appsNodeModulesPath),
       "dev": "vite",
       "build": "tsc -b && vite build",
       "lint": "eslint .",

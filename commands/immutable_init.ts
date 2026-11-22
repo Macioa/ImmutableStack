@@ -17,6 +17,7 @@ import { log, setLogLevel } from "@/utils/logger";
 import { promptGitDomain } from "@/prompts/git";
 import { initGitRepository, addGitSubmodules } from "@/utils/git";
 import { join } from "@/utils/path";
+import { applyPinnedVersions } from "@/utils/versions";
 
 setLogLevel(5);
 
@@ -29,6 +30,7 @@ async function main() {
     );
     process.exit(1);
   }
+  applyPinnedVersions(__dirname);
 
   let projectName = args[0]
     .toLowerCase()

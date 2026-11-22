@@ -1,4 +1,3 @@
-import { exec } from "child_process";
 import { createCipheriv, createDecipheriv, createHash } from "crypto";
 import {
   createReadStream,
@@ -11,17 +10,12 @@ import { homedir } from "os";
 import { join } from "../../utils/path";
 import { StringOnlyMap } from "../map";
 import { log } from "../logger";
+import { installPrefix } from "../os_adapter";
 
 const SETTINGS = ".immutable";
 const cred = gen();
 
-const IMM_DIR = (function (): Promise<string> {
-  return new Promise((resolve, reject) =>
-    exec("brew --prefix immutable", (err, stdout, stderr) =>
-      resolve(stdout.trim())
-    )
-  );
-})();
+const IMM_DIR = installPrefix();
 
 interface Settings {
   openai?: string;

@@ -1,6 +1,7 @@
 import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { AppData } from "../../readers/get_app_data";
+import { stopPhoenixServers } from "../../utils/os_adapter";
 
 const gen_cluster_test_script = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
   const filename = "test_cluster.sh";
@@ -12,7 +13,7 @@ echo ""
 
 # Kill any existing processes
 echo "Stopping any existing Phoenix servers..."
-pkill -f "mix phx.server" 2>/dev/null || true
+${stopPhoenixServers()}
 sleep 2
 
 # Start first node

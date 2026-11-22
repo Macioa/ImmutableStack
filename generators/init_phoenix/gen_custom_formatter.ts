@@ -40,7 +40,7 @@ defmodule Mix.Tasks.CustomFormatter do
         ["run", "format", "--prefix", dir]
       end
       
-      case System.cmd("npm", format_cmd, cd: "./apps") do
+      case run_npm(format_cmd, cd: "./apps") do
         {result, 0} ->
           IO.puts("Formatted #{dir}: #{result}")
 
@@ -49,6 +49,13 @@ defmodule Mix.Tasks.CustomFormatter do
           IO.puts(:stderr, result)
       end
     end)
+  end
+
+  defp run_npm(args, opts) do
+    case :os.type() do
+      {:win32, _} -> System.cmd("cmd", ["/c", "npm" | args], opts)
+      _ -> System.cmd("npm", args, opts)
+    end
   end
 end
 `;
