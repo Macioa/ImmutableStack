@@ -3,6 +3,7 @@ import { gen_docker_config_env } from "../../generators/init_configs/gen_dockerc
 import { gen_cluster_monitor } from "../../generators/init_phoenix/gen_cluster_monitor";
 import { gen_cluster_test_script } from "../../generators/init_phoenix/gen_cluster_test_script";
 import { gen_fallback_controller } from "../../generators/init_phoenix/gen_fallback_controller";
+import { gen_os_adapter } from "../../generators/init_phoenix/gen_os_adapter";
 import { gen_id_validation_plug } from "../../generators/init_phoenix/gen_id_validation_plug";
 import { gen_status_controller } from "../../generators/init_phoenix/gen_status_controller";
 import { gen_user_socket } from "../../generators/init_phoenix/gen_user_socket";
@@ -23,6 +24,7 @@ import { mark_router } from "../../injectors/init_phoenix/mark_router";
 import { AppData } from "../../readers/get_app_data";
 import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
+import { autoYes } from "../../utils/os_adapter";
 import { join } from "../../utils/path";
 import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
 import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
@@ -32,7 +34,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
   const init = await exec(
     {
-      command: `yes | mix phx.new ${AppNameSnake} --no-live --no-html --no-assets --binary-id --umbrella --no-install`,
+      command: autoYes(`mix phx.new ${AppNameSnake} --no-live --no-html --no-assets --binary-id --umbrella --no-install`),
       dir: join(UmbrellaDir, ".."),
     },
     "init_phoenix_umbrella_app"
@@ -45,6 +47,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
     inject_dev_config(appdata),
     inject_scrinever(appdata),
     gen_phx_utils(appdata),
+    gen_os_adapter(appdata),
     gen_id_validation_plug(appdata),
     gen_fallback_controller(appdata, webName),
     gen_status_controller(appdata, webName),

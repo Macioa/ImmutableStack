@@ -1,8 +1,12 @@
-import { existsSync, readFileSync } from "fs";
 import * as path from "path";
 import * as os from "os";
+import { detectGitBash, detectOS } from "@/utils/detect_os";
 import { log, setLogLevel } from "@/utils/logger";
+import { updateSetting } from "@/utils/settings";
 import { execute as exec } from "@/runners";
+import { installApp, installPackage, runPowerShellFile } from "@/utils/os_adapter";
+import { asdfEnv, readVersions } from "@/utils/versions";
+import type { Versions } from "@/utils/versions";
 setLogLevel(5);
 
 const isWin = process.platform === "win32";
@@ -15,8 +19,6 @@ const env = {
   ASDF_DIR: asdfDir,
 };
 
-const versionsPath = path.join(__dirname, "versions.sh");
-
 // Homebrew (macOS only)
 // if (!isWin) {
 //   try {
@@ -27,118 +29,109 @@ const versionsPath = path.join(__dirname, "versions.sh");
 //     await exec({command: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"', dir: home}, "start_script");
 //   }
 // }
-const main = async () => {
-  // Windows uses mise instead of asdf
-  if (isWin) {
-    await exec(
-      {
-        command: `powershell -NoProfile -ExecutionPolicy Bypass -File "${path.join(__dirname, "start_windows.ps1")}"`,
-        dir: home,
-      },
-      "start_script"
-    );
-    return;
-  }
+const run = (command: string, runEnv?: NodeJS.ProcessEnv) =>
+  exec({ command, dir: home, env: runEnv }, "start_script");
 
-  let asdfInstalled = false;
+const runInOrder = (commands: string[], runEnv?: NodeJS.ProcessEnv) =>
+  commands.reduce<Promise<unknown>>(
+    (previous, command) => previous.then(() => run(command, runEnv)),
+    Promise.resolve()
+  );
+
+type EnsureOptions = {
+  check: string;
+  install: string[];
+  found: string;
+  installing?: string;
+  installed?: string;
+};
+
+const ensureInstalled = async ({ check, install, found, installing, installed }: EnsureOptions) => {
   try {
-    await exec(
-      { command: isWin ? "where asdf" : "asdf --version", dir: home },
-      "start_script"
-    );
-    asdfInstalled = true;
-    log({ level: 5, color: "YELLOW" }, "asdf is installed.");
+    await run(check);
+    log({ level: 5, color: "YELLOW" }, found);
   } catch {
-    if (!isWin) {
-      log({ level: 3, color: "GREEN" }, "Installing asdf...");
-      await exec({ command: "brew install asdf", dir: home }, "start_script");
-      asdfInstalled = true;
-    } else {
-      console.error(
-        "asdf installation on Windows is not automated. Please install asdf manually."
-      );
-      process.exit(1);
-    }
+    if (installing) log({ level: 3, color: "GREEN" }, installing);
+    await runInOrder(install);
+    if (installed) log({ level: 3, color: "GREEN" }, installed);
   }
+};
 
-  // Source versions.sh (parse for env vars)
-  const versions: Record<string, string> = {};
-  if (existsSync(versionsPath)) {
-    log({ level: 3, color: "GREEN" }, "Sourcing versions.sh...");
-    const lines = readFileSync(versionsPath, "utf8").split("\n");
-    for (const line of lines) {
-      const match = line.match(/^\s*(?:export\s+)?([a-zA-Z_][a-zA-Z0-9_]*)=(.*)$/);
-      if (match) {
-        versions[match[1]] = match[2].replace(/['"]/g, "");
-      }
-    }
-  } else {
-    console.error("versions.sh not found in the same directory.");
-    process.exit(1);
-  }
+const requireGitBash = () => {
+  const shell = detectGitBash();
+  if (shell) return shell;
+  console.error("Git Bash not found. Please install Git for Windows: https://git-scm.com/download/win");
+  process.exit(1);
+};
 
-  // Helper for asdf install
-  async function asdfInstall(plugin: string, version: string) {
-    try {
-      await exec({ command: `asdf list ${plugin}`, dir: home }, "start_script");
-      log({ level: 5, color: "YELLOW" }, `${plugin} is already installed.`);
-    } catch {
-      await exec(
-        { command: `asdf plugin-add ${plugin}`, dir: home },
-        "start_script"
-      );
-      await exec(
-        { command: `asdf install ${plugin} ${version}`, dir: home },
-        "start_script"
-      );
-      await exec(
-        { command: `asdf global ${plugin} ${version}`, dir: home },
-        "start_script"
-      );
-    }
-  }
+// Store the OS with the shell used to run commands
+const storeEnvironment = async () => {
+  const detected = detectOS();
+  if (!isWin) return updateSetting({ os: detected });
+  return updateSetting({ os: detected, shell: requireGitBash() });
+};
 
-  // Install Erlang, Elixir, Node.js
-  if (asdfInstalled) {
-    if (versions.ERLANG_VERSION) await asdfInstall("erlang", versions.ERLANG_VERSION);
-    if (versions.ELIXIR_VERSION) await asdfInstall("elixir", versions.ELIXIR_VERSION);
-    if (versions.nodejs) await asdfInstall("nodejs", versions.nodejs);
-  }
+const ensureAsdf = () =>
+  ensureInstalled({
+    check: "asdf --version",
+    install: [installPackage("asdf")],
+    found: "asdf is installed.",
+    installing: "Installing asdf...",
+  });
 
-  if (!isWin) {
-    try {
-      await exec({ command: "docker --version", dir: home }, "start_script");
-      log({ level: 5, color: "YELLOW" }, "Docker is installed.");
-    } catch {
-      log({ level: 3, color: "GREEN" }, "Installing Docker...");
-      await exec(
-        { command: "brew install --cask docker", dir: home },
-        "start_script"
-      );
-      log(
-        { level: 3, color: "GREEN" },
-        "Docker installed. Please launch Docker Desktop manually if required."
-      );
-    }
-  } else {
-    log(
-      { level: 1, color: "RED" },
-      "!!! Please install Docker Desktop manually on Windows: https://www.docker.com/products/docker-desktop/ !!!"
+const ensureAsdfTool = ([plugin, version]: [string, string]) =>
+  ensureInstalled({
+    check: `asdf list ${plugin}`,
+    install: [
+      `asdf plugin-add ${plugin}`,
+      `asdf install ${plugin} ${version}`,
+      `asdf global ${plugin} ${version}`,
+    ],
+    found: `${plugin} is already installed.`,
+  });
+
+const ensureAsdfTools = ({ ERLANG_VERSION, ELIXIR_VERSION, nodejs }: Versions) =>
+  ([["erlang", ERLANG_VERSION], ["elixir", ELIXIR_VERSION], ["nodejs", nodejs]] as [string, string][])
+    .filter(([, version]) => version)
+    .reduce<Promise<unknown>>(
+      (previous, tool) => previous.then(() => ensureAsdfTool(tool)),
+      Promise.resolve()
     );
-  }
 
-  // Install Hex and Phoenix (Elixir)
+const ensureDocker = () =>
+  ensureInstalled({
+    check: "docker --version",
+    install: [installApp("docker")],
+    found: "Docker is installed.",
+    installing: "Installing Docker...",
+    installed: "Docker installed. Please launch Docker Desktop manually if required.",
+  });
+
+const installPhoenix = (versions: Versions) => {
   log({ level: 3, color: "GREEN" }, "Installing Hex and Phoenix...");
-  await exec(
-    { command: "mix local.hex --force", dir: home, env },
-    "start_script"
+  return runInOrder(
+    ["mix local.hex --force", "mix archive.install hex phx_new 1.7.14 --force"],
+    { ...env, ...asdfEnv(versions) }
   );
-  await exec(
-    { command: "mix archive.install hex phx_new 1.7.14 --force", dir: home },
-    "start_script"
-  );
+};
 
+// Windows uses mise instead of asdf
+const setupWindows = () =>
+  run(runPowerShellFile(path.join(__dirname, "start_windows.ps1")));
+
+const setupUnix = async () => {
+  await ensureAsdf();
+  log({ level: 3, color: "GREEN" }, "Sourcing versions.sh...");
+  const versions = readVersions(__dirname);
+  await ensureAsdfTools(versions);
+  await ensureDocker();
+  await installPhoenix(versions);
   log({ level: 1, color: "GREEN" }, "Setup complete.");
+};
+
+const main = async () => {
+  await storeEnvironment();
+  return isWin ? setupWindows() : setupUnix();
 };
 
 main().catch((error) => {

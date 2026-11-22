@@ -37,8 +37,7 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
     apps_node_modules = Path.join(apps_dir, "node_modules")
     
     if File.exists?(typescript_path) and File.exists?(apps_node_modules) do
-      File.rm_rf(typescript_node_modules)
-      File.ln_s(apps_node_modules, typescript_node_modules)
+      link_dir(apps_node_modules, typescript_node_modules)
       IO.puts("Symlink created: #{typescript_node_modules} -> #{apps_node_modules}")
     else
       IO.puts("Warning: TypeScript directory or apps node_modules not found, skipping symlink creation")
@@ -56,6 +55,21 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
       _ -> System.cmd(cmd, args, opts)
     end
   end
+
+  # Windows uses a junction, which needs no admin rights. rmdir removes only the link.
+  defp link_dir(target, link) do
+    case :os.type() do
+      {:win32, _} ->
+        System.cmd("cmd", ["/c", "rmdir", win_path(link)], stderr_to_stdout: true)
+        System.cmd("cmd", ["/c", "mklink", "/J", win_path(link), win_path(target)], stderr_to_stdout: true)
+
+      _ ->
+        File.rm_rf(link)
+        File.ln_s(target, link)
+    end
+  end
+
+  defp win_path(path), do: String.replace(path, "/", "\\\\")
 
   defp build_with_retry(apps_path, build_cmd) do
     [cmd | args] = String.split(build_cmd, " ")

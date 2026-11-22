@@ -1,14 +1,15 @@
 import { execute } from "../runners";
 import { log } from "./logger";
 import { join } from "./path";
+import { installPackage, tempDir, username } from "./os_adapter";
 import { readdir } from "fs/promises";
 
 const gitPrereq = {
   command: "git --version && git config --global user.name && git config --global user.email",
   recover: [
-    "brew install git",
-    "git config --global user.name '$(whoami)'",
-    "git config --global user.email '$(whoami)@localhost'"
+    installPackage("git"),
+    `git config --global user.name '${username()}'`,
+    `git config --global user.email '${username()}@localhost'`
   ]
 };
 
@@ -51,7 +52,7 @@ export const deleteAppRepositories = async (appName: string, gitDomain?: string)
   await execute(
     { 
       command: deleteCommands, 
-      dir: "/tmp"
+      dir: tempDir()
     },
     "deleteAppRepositories"
   );
@@ -75,7 +76,7 @@ export const addGitSubmodules = async (projectDir: string, appsDir: string, gitD
     await execute(
       {
         command: repoCreationCommands,
-        dir: "/tmp"
+        dir: tempDir()
       },
       "git"
     );
@@ -98,7 +99,7 @@ export const addGitSubmodules = async (projectDir: string, appsDir: string, gitD
     await execute(
       {
         command: appInitCommands,
-        dir: "/tmp",
+        dir: tempDir(),
         prereq: gitPrereq
       },
       "git"

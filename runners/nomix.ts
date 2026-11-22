@@ -1,27 +1,38 @@
 import { log } from "@/utils/logger";
+import { ignoreErrors } from "../utils/os_adapter";
 import { getSetting } from "../utils/settings";
 
-const mixOrDocker = async (cmd: string, appNameSnake: string) => {
-  const usemix = (await getSetting("nomix")) != "true";
-  if (usemix) return cmd;
-  const hasmix = !!cmd.match(/\bmix\b/g);
-  const hasnew = !!cmd.match(/\bphx.new\b/g);
-  let pref = ""
-  let dockerdir = "docker/compose.yaml";
-  if (hasmix) { 
-    log({ level: 2, color: "PINK" }, `Running MIX in Docker...`)
-  }
-  if (hasnew) {
-    // Halt existing containers to prevent port conflicts
-    const haltCmd = `docker compose -f ${dockerdir} down 2>/dev/null || true && docker stop $(docker ps -q --filter "publish=4000" --filter "publish=5432" --filter "publish=5173") 2>/dev/null || true && docker rm $(docker ps -aq --filter "publish=4000" --filter "publish=5432" --filter "publish=5173") 2>/dev/null || true`;
-    pref = `${haltCmd} && mkdir -p ${appNameSnake}_umbrella && cd ${appNameSnake}_umbrella && `;
-    cmd = `${cmd} && cp -rf ${appNameSnake}_umbrella/* . && rm -rf ${appNameSnake}_umbrella`;
-    dockerdir = "docker/compose.yaml";
-  }
+const COMPOSE_FILE = "docker/compose.yaml";
+const PORT_FILTERS = [4000, 5432, 5173]
+  .map((port) => `--filter "publish=${port}"`)
+  .join(" ");
 
-  return hasmix
-    ? `${pref}docker compose -f ${dockerdir} run --rm ${appNameSnake}_dev bash -c "shopt -s dotglob && ${cmd}"`
-    : cmd;
+// Halt existing containers to prevent port conflicts
+const haltContainers = () =>
+  [
+    `docker compose -f ${COMPOSE_FILE} down`,
+    `docker stop $(docker ps -q ${PORT_FILTERS})`,
+    `docker rm $(docker ps -aq ${PORT_FILTERS})`,
+  ]
+    .map(ignoreErrors)
+    .join(" && ");
+
+const newProjectPrefix = (app: string) =>
+  `${haltContainers()} && mkdir -p ${app}_umbrella && cd ${app}_umbrella && `;
+
+const newProjectCommand = (cmd: string, app: string) =>
+  `${cmd} && cp -rf ${app}_umbrella/* . && rm -rf ${app}_umbrella`;
+
+const mixOrDocker = async (cmd: string, appNameSnake: string) => {
+  if ((await getSetting("nomix")) != "true") return cmd;
+  const hasmix = /\bmix\b/.test(cmd);
+  const hasnew = /\bphx.new\b/.test(cmd);
+  const command = hasnew ? newProjectCommand(cmd, appNameSnake) : cmd;
+  if (!hasmix) return command;
+
+  log({ level: 2, color: "PINK" }, `Running MIX in Docker...`);
+  const prefix = hasnew ? newProjectPrefix(appNameSnake) : "";
+  return `${prefix}docker compose -f ${COMPOSE_FILE} run --rm ${appNameSnake}_dev bash -c "shopt -s dotglob && ${command}"`;
 };
 
 export default mixOrDocker;
