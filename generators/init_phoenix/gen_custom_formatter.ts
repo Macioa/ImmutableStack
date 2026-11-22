@@ -1,6 +1,7 @@
 import { join } from "../../utils/path";
 import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
+import { elixirRunCmd } from "./elixir_os_helpers";
 
 const gen_custom_formatter = async ({ AppNameSnake, LibDir }: AppData, uiName: string = 'ui') => {
   const formatterPath = join(LibDir, `/lib/mix/tasks/`);
@@ -40,7 +41,7 @@ defmodule Mix.Tasks.CustomFormatter do
         ["run", "format", "--prefix", dir]
       end
       
-      case run_npm(format_cmd, cd: "./apps") do
+      case run_cmd("npm", format_cmd, cd: "./apps") do
         {result, 0} ->
           IO.puts("Formatted #{dir}: #{result}")
 
@@ -51,12 +52,7 @@ defmodule Mix.Tasks.CustomFormatter do
     end)
   end
 
-  defp run_npm(args, opts) do
-    case :os.type() do
-      {:win32, _} -> System.cmd("cmd", ["/c", "npm" | args], opts)
-      _ -> System.cmd("npm", args, opts)
-    end
-  end
+${elixirRunCmd}
 end
 `;
 

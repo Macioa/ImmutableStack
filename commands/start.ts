@@ -1,15 +1,13 @@
 import * as path from "path";
 import * as os from "os";
-import { detectGitBash, detectOS } from "@/utils/detect_os";
 import { log, setLogLevel } from "@/utils/logger";
-import { updateSetting } from "@/utils/settings";
+import { readSettings } from "@/utils/settings";
 import { execute as exec } from "@/runners";
-import { installApp, installPackage, runPowerShellFile } from "@/utils/os_adapter";
+import { installApp, installPackage, isWindows, resolveShell, runPowerShellFile } from "@/utils/os_adapter";
 import { asdfEnv, readVersions } from "@/utils/versions";
 import type { Versions } from "@/utils/versions";
 setLogLevel(5);
 
-const isWin = process.platform === "win32";
 const home = os.homedir();
 const asdfDir = path.join(home, ".asdf");
 const asdfShims = path.join(home, ".asdf", "shims");
@@ -20,7 +18,7 @@ const env = {
 };
 
 // Homebrew (macOS only)
-// if (!isWin) {
+// if (!isWindows) {
 //   try {
 //     await exec({command: "brew --version", dir: home}, "start_script");
 //     log({level: 5, color: "YELLOW"}, "Homebrew is installed.")
@@ -57,18 +55,11 @@ const ensureInstalled = async ({ check, install, found, installing, installed }:
   }
 };
 
-const requireGitBash = () => {
-  const shell = detectGitBash();
-  if (shell) return shell;
-  console.error("Git Bash not found. Please install Git for Windows: https://git-scm.com/download/win");
-  process.exit(1);
-};
-
-// Store the OS with the shell used to run commands
+// Reading settings resyncs a missing OS or shell
 const storeEnvironment = async () => {
-  const detected = detectOS();
-  if (!isWin) return updateSetting({ os: detected });
-  return updateSetting({ os: detected, shell: requireGitBash() });
+  const { os: detected, shell } = await readSettings();
+  log({ level: 3, color: "GREEN" }, `Detected OS: ${detected}`);
+  if (isWindows) log({ level: 3, color: "GREEN" }, `Detected Git Bash: ${resolveShell(shell)}`);
 };
 
 const ensureAsdf = () =>
@@ -131,7 +122,7 @@ const setupUnix = async () => {
 
 const main = async () => {
   await storeEnvironment();
-  return isWin ? setupWindows() : setupUnix();
+  return isWindows ? setupWindows() : setupUnix();
 };
 
 main().catch((error) => {
