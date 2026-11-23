@@ -13,12 +13,14 @@ const gen_react = async (generator: ImmutableGenerator, genTypes: GenTypes) => {
   const stateDir = join(generator.AppData.LibDir, "lib/typescript/state");
   await exec({ dir: generator.AppData.LibDir, command: `mkdir -p lib/typescript/state` }, "gen_react");
 
+  const { stateSlice, requests, demoComponents } = generator.generate;
+
   return Promise.all([
-    addReducerToGlobal(generator),
-    gen_demo_components(generator, genTypes),
-    gen_entity_store(generator, genTypes),
-    gen_entity_requests(generator, genTypes),
-    gen_entity_api_response(generator, genTypes),
+    stateSlice && addReducerToGlobal(generator),
+    demoComponents && stateSlice && requests && gen_demo_components(generator, genTypes),
+    stateSlice && gen_entity_store(generator, genTypes),
+    requests && gen_entity_requests(generator, genTypes),
+    requests && gen_entity_api_response(generator, genTypes),
   ]);
 };
 
