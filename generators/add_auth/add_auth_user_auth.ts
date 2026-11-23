@@ -110,6 +110,24 @@ const add_auth_user_auth = async ({
   end
 
   defp ensure_user_token(conn) do
+    case bearer_token(conn) do
+      {:ok, token} -> {token, conn}
+      :error -> ensure_session_token(conn)
+    end
+  end
+
+  # A malformed Authorization header is unauthenticated and never falls back to cookies.
+  defp bearer_token(conn) do
+    with ["Bearer " <> encoded] <- get_req_header(conn, "authorization"),
+         {:ok, token} <- Base.url_decode64(encoded) do
+      {:ok, token}
+    else
+      [] -> :error
+      _invalid -> {:ok, nil}
+    end
+  end
+
+  defp ensure_session_token(conn) do
     if token = get_session(conn, :user_token) do
       {token, conn}
     else
@@ -257,7 +275,12 @@ const add_auth_user_auth = async ({
   Logs the user out and returns JSON (does not redirect).
   """
   def log_out_user_json(conn) do
-    user_token = get_session(conn, :user_token)
+    user_token =
+      case bearer_token(conn) do
+        {:ok, token} -> token
+        :error -> get_session(conn, :user_token)
+      end
+
     user_token && Accounts.delete_user_session_token(user_token)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
