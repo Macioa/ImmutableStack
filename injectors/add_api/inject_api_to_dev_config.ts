@@ -5,18 +5,22 @@ import crypto from "crypto";
 
 const DEV_ROUTES = /# Enable dev routes/;
 
-const nextDevPort = (content: string) =>
-  Math.max(
-    4000,
-    ...[...content.matchAll(/get_env\("\w*PORT\w*",\s*"(\d+)"\)/g)].map(([, port]) => Number(port))
-  ) + 1;
+const usedDevPorts = (content: string) =>
+  [...content.matchAll(/get_env\("\w*PORT\w*",\s*"(\d+)"\)/g)].map(([, port]) => Number(port));
+
+const nextDevPort = (content: string) => Math.max(4000, ...usedDevPorts(content)) + 1;
+
+const numberedDevPort = (content: string, apiNumber: string) => {
+  const preferred = 4000 + parseInt(apiNumber) - 1;
+  return usedDevPorts(content).includes(preferred) ? nextDevPort(content) : preferred;
+};
 
 const get_dev_port = (content: string, ApiNameSnake: string, ApiPort?: number) => {
   const apiNumber = ApiNameSnake.match(/\d+$/)?.[0];
   const namedEnv = `${ApiNameSnake.toUpperCase()}_PORT`;
   if (ApiPort) return { port: ApiPort, portEnv: namedEnv };
   return apiNumber
-    ? { port: 4000 + parseInt(apiNumber) - 1, portEnv: `PORT${apiNumber}` }
+    ? { port: numberedDevPort(content, apiNumber), portEnv: `PORT${apiNumber}` }
     : { port: nextDevPort(content), portEnv: namedEnv };
 };
 
