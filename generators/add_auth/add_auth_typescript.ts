@@ -5,10 +5,11 @@ import { ApiAppData } from "../add_api";
 const add_auth_user_requests = async ({
   LibDir,
   ApiNameSnake,
+  ApiPort,
 }: ApiAppData) => {
   const dir = join(LibDir || "", "lib/typescript/requests");
   const filename = "User.tsx";
-  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:4002"`;
+  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}"`;
   const content = `import type { Dispatch } from "redux";
 import { Request } from "./index";
 import { setUserdata, setToken } from "../state/User";
