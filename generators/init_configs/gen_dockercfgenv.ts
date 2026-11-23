@@ -1,6 +1,7 @@
 import { join } from "@/utils/path";
 import { generateFile } from "@/generators/index";
 import { AppData } from "@/readers/get_app_data";
+import { devCorsConfig } from "@/utils/cors";
 
 const gen_docker_config_env = async ({
   UmbrellaDir,
@@ -34,7 +35,7 @@ config :${AppNameSnake}, ${AppNameCamel}.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :${AppNameSnake}, CORSPlug, origin: "*"
+${devCorsConfig(AppNameSnake)}
 
 config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
