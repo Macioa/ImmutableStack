@@ -41,7 +41,7 @@ config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
   # Change to \`ip: {0, 0, 0, 0}\` to allow access from other machines.
   http: [ip: {0, 0, 0, 0}, port: 4000],
   check_origin: false,
-  code_reloader: true,
+  code_reloader: System.get_env("CODE_RELOADER", "true") == "true",
   debug_errors: true,
   secret_key_base: "gU20Dle/0HOrq6LTY4AdzGi8GZ9kGO28xbIEhQmGTKA0D9mJQwbtFbUxL5Y9Oyj6",
   watchers: []

@@ -24,6 +24,7 @@ import {
   inject_api_to_dev_config,
   inject_api_release_to_mix,
 } from "../../injectors/add_api";
+import { gen_gitignore_api } from "../../generators/init_configs/gen_gitignore_phoenix";
 import { log } from "../../utils/logger";
 import { execute as exec } from "../../runners";
 
@@ -50,6 +51,7 @@ const add_api = async (apiAppData: ApiAppData) => {
     add_api_error_json_test(apiAppData),
     add_api_readme(apiAppData),
     add_api_docker_prod(apiAppData),
+    gen_gitignore_api(apiAppData),
   ]);
 
   log({ level: 2, color: "BLUE" }, "\nInjecting API into umbrella configuration...");
