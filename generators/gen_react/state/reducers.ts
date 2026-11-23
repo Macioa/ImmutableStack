@@ -25,10 +25,13 @@ const setMany = ({
         }`,
 });
 
-const customReducer = (header: string) => `${header} {
-      // TODO: implement custom reducer 
-      return state;   
-  `;
+const customReducer = (header: string) => {
+  const [, payloadArg] = header.match(/,\s*(\w+)\s*:/) || [];
+  return `${header} {
+      // TODO: implement custom reducer ${payloadArg ? `\n      void ${payloadArg};` : ""}
+      return state;
+    }`;
+};
 
 const setOneTest = (
   {

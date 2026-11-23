@@ -1,5 +1,6 @@
 import { gen_channel_demo_component } from "@/generators/gen_channel/gen_demo_component";
 import { gen_phx_channel } from "@/generators/gen_channel/gen_phx_channel";
+import { gen_phx_channel_case } from "@/generators/gen_channel/gen_phx_channel_case";
 import { gen_phx_channel_test } from "@/generators/gen_channel/gen_phx_channel_test";
 import { gen_phx_channel_cluster_test } from "@/generators/gen_channel/gen_phx_channel_cluster_test";
 import { gen_react_channel } from "@/generators/gen_channel/gen_react_channel";
@@ -28,6 +29,7 @@ const main = async () => {
     gen_react_channel(name, appdata),
     inject_channel_to_socket(name, appdata),
     gen_channel_demo_component(name, appdata),
+    gen_phx_channel_case(appdata),
     gen_phx_channel_test(name, appdata),
     gen_phx_channel_cluster_test(name, appdata),
   ]);

@@ -298,7 +298,7 @@ const update_genfile = () => {
   const fileContent = fs.readFileSync(file, "utf8");
   let updatedContent = fileContent;
   const interfaces = fileContent.match(
-    /interface \w+.*?extends GenType<.*?> \{\}/gs
+    /interface \w+\s+extends GenType<.*?> \{\}/gs
   );
   const parsed = interfaces?.map((str: string) => parse_interface(str));
   const [_, global_def] =
@@ -309,8 +309,8 @@ const update_genfile = () => {
         let res = "";
         interfaces?.[i].replace(
           /interface\s(\w+).*?extends\sGenType<\{(.*?)\}?> \{\}/gs,
-          (name, _attr, _str) => {
-            res = `interface ${name} extends GenType<{${global_def}}> {}`;
+          (_match, name) => {
+            res = `interface ${name} extends GenType<{\n${global_def}\n}> {}`;
             return res;
           }
         );
@@ -333,8 +333,6 @@ const update_genfile = () => {
   log({ level: 1, color: "BLUE" }, `    in ${file}\n\n`);
 };
 
-main().catch(console.error);
-
 // Utils
 
 const parse_interface = (str: string): [string, string, string] => {
@@ -342,3 +340,5 @@ const parse_interface = (str: string): [string, string, string] => {
   const attr = str.match(/\w+\:\s\w+/gs)?.join("\n") || "";
   return [name, attr, str];
 };
+
+main().catch(console.error);
