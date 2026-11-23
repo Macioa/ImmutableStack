@@ -20,16 +20,20 @@ Each test ran on Windows (mise, Git Bash) and WSL (Ubuntu 24.04, asdf). Results 
 | G5 frontend only | Pass | Pass | | |
 | G6 custom functions | Pass | Pass | Fixed custom reducer syntax and unused `action` error | |
 | G7 subset, no factory | Pass | Pass | Removed unused `Lorem` import when factory is off | |
-| A1 add_api | Pass | Pass | Unnumbered APIs now get a free dev port | Issue 3 |
+| A1 add_api | Pass | Pass | APIs now get a free dev port, including numbered APIs whose usual port is taken | Issue 3 |
 | A2 add_api with port | Pass | Pass | | |
 | U1 add_ui | Pass | Pass | | Issue 5 |
 | C1 gen_channel | **Fail** (`mix test`) | **Fail** (`mix test`) | Added missing `ChannelCase`; fixed test compile errors | Issue 2 |
-| AU1 add_auth | Pass* | Pass* | | Issue 6 |
+| AU1 add_auth | Pass* | Pass* | Replaced `bcrypt_elixir` with `pbkdf2_elixir` (210,000 rounds outside tests) | Issue 6 |
 | X1 gen into second UI | Pass* | Pass* | | |
 | T1 gentemplate | Pass | Pass | | |
 | S1 server boot, UI and API | Pass | Pass | | |
 
 \* The harness removes C1's failing channel tests after recording C1, so these rows test their own feature. A real project with a channel still has the Issue 2 failures.
+
+### Auth and port retest
+
+After the hasher and port changes, a focused retest passed on both platforms with no Visual Studio tools on the path. It covered four API variants with unique ports, `add_auth`, compile, `gen` after auth, password hash and verify, `mix test`, and a server boot with all five endpoints responding. The full suite was not rerun after these changes.
 
 ## Additional issues not addressed (critical-only mandate)
 
@@ -38,5 +42,5 @@ Each test ran on Windows (mise, Git Bash) and WSL (Ubuntu 24.04, asdf). Results 
 3. **Production API ports can still collide.** `add_api_docker_prod.ts` keeps the old port logic that was fixed for dev.
 4. **The CLI can exit 0 on failure.** `main().catch(console.error)` logs the error without setting a failing exit code, so scripts can miss it.
 5. **A second UI shares Vite's default port.** It moves to another port when 5173 is in use.
-6. **`bcrypt_elixir` needs C++ build tools on Windows.** Auth projects need Visual Studio Build Tools and `nmake`. Tracked in [issue #17](https://github.com/Macioa/ImmutableStack/issues/17).
+6. **Existing auth projects keep bcrypt.** Bcrypt and PBKDF2 hashes are not interchangeable, so moving an existing project needs a rehash-on-login path. See [issue #17](https://github.com/Macioa/ImmutableStack/issues/17).
 7. **Regenerating an existing entity was not tested.**

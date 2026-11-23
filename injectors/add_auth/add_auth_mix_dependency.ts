@@ -16,17 +16,17 @@ const add_auth_mix_dependency = async ({
   const corsPlugRegex = /{:cors_plug,\s*"~> 2\.0"},/;
   let content = readFileSync(file, "utf8");
 
-  if (content.includes("{:bcrypt_elixir")) {
+  if (content.includes("{:pbkdf2_elixir")) {
     return [];
   }
 
   if (!corsPlugRegex.test(content)) {
-    throw new Error("Failed to locate cors_plug dependency block while adding bcrypt_elixir");
+    throw new Error("Failed to locate cors_plug dependency block while adding pbkdf2_elixir");
   }
 
   content = content.replace(
     corsPlugRegex,
-    `{:bcrypt_elixir, "~> 3.0"},\n      {:cors_plug, "~> 2.0"},`
+    `{:pbkdf2_elixir, "~> 2.0"},\n      {:cors_plug, "~> 2.0"},`
   );
 
   writeFileSync(file, content, "utf8");

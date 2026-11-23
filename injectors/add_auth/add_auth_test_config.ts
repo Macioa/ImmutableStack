@@ -8,7 +8,7 @@ const add_auth_test_config = async ({
   AppNameCamel,
 }: ApiAppData) => {
   const file = join(UmbrellaDir, "config/test.exs");
-  const marker = "config :bcrypt_elixir, :log_rounds, 1";
+  const marker = "config :pbkdf2_elixir, :rounds, 1";
 
   const injections: Injection[] = [
     [
@@ -19,7 +19,7 @@ const add_auth_test_config = async ({
 
         return content.replace(
           /import Config\n/,
-          `import Config\n\n# Only in tests, remove the complexity from the password hashing algorithm\nconfig :bcrypt_elixir, :log_rounds, 1\n\n`
+          `import Config\n\n# Only in tests, remove the complexity from the password hashing algorithm\nconfig :pbkdf2_elixir, :rounds, 1\n\n`
         );
       },
     ],
