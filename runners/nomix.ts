@@ -7,12 +7,11 @@ const PORT_FILTERS = [4000, 5432, 5173]
   .map((port) => `--filter "publish=${port}"`)
   .join(" ");
 
-// Halt existing containers to prevent port conflicts
+// Stops port conflicts without deleting containers. Compose removes only this project's containers.
 const haltContainers = () =>
   [
     `docker compose -f ${COMPOSE_FILE} down`,
     `docker stop $(docker ps -q ${PORT_FILTERS})`,
-    `docker rm $(docker ps -aq ${PORT_FILTERS})`,
   ]
     .map(ignoreErrors)
     .join(" && ");
