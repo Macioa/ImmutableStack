@@ -19,6 +19,7 @@ import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_
 import { inject_socket_to_endpoint } from "../../injectors/init_phoenix/inject_socket_to_endpoint";
 import { inject_status_route } from "../../injectors/init_phoenix/inject_status_route";
 import { inject_test_helper_exclusions } from "../../injectors/init_phoenix/inject_test_helper_exclusions";
+import { inject_test_config } from "../../injectors/init_phoenix/inject_test_config";
 import { inject_web_endpoint } from "../../injectors/init_phoenix/inject_web_endpoint";
 import { mark_router } from "../../injectors/init_phoenix/mark_router";
 import { AppData } from "../../readers/get_app_data";
@@ -45,6 +46,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
     inject_cluster_deps(appdata),
     inject_web_endpoint(appdata, webName),
     inject_dev_config(appdata),
+    inject_test_config(appdata),
     inject_scrinever(appdata),
     gen_phx_utils(appdata),
     gen_os_adapter(appdata),
