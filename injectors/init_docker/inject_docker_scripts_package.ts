@@ -14,7 +14,7 @@ const dockerScripts = (app: string): DockerScript[] => [
   ["d.comp", dockerMessage("Compiling Apps"), `${COMPOSE} run --rm ${app}_dev mix compile`],
   ["d.mig", dockerMessage("Running Database Migrations"), `${COMPOSE} run --rm ${app}_dev mix ecto.migrate`],
   ["APP STARTUP DOCKERIZED", "APP STARTUP"],
-  ["d.test", dockerMessage("Running Tests"), `${COMPOSE} run --rm test mix test`],
+  ["d.test", dockerMessage("Running Tests"), `${COMPOSE} run --rm -e MIX_ENV=test -e DB_HOST=${app}_db ${app}_dev bash -c \\\"mix deps.get && mix test\\\"`],
   ["d.serv", dockerMessage("Starting Server"), `${COMPOSE} up -d`],
   ["SERVICE LOGS", "SERVICE LOGS"],
   ["d.logs", dockerMessage("Fetching Logs"), `${COMPOSE} logs --follow`],

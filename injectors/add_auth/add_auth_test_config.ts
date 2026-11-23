@@ -38,7 +38,7 @@ const add_auth_test_config = async ({
 config :${AppNameSnake}, ${AppNameCamel}.AuthRepo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: System.get_env("DB_HOST", "localhost"),
   database: "${AppNameSnake}_auth_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
