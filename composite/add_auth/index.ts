@@ -42,6 +42,7 @@ import {
   add_auth_user_response,
   add_auth_user_state,
   add_auth_user_state_test,
+  add_auth_plug,
 } from "../../generators/add_auth";
 import {
   add_auth_mix_dependency,
@@ -122,9 +123,13 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_custom_compiler(apiAppData),
   ]);
 
+  log({ level: 2, color: "BLUE" }, "\nAdding access control plug...");
+
+  const authPlug = await add_auth_plug(apiAppData);
+
   log({ level: 2, color: "GREEN" }, "\nAuth enhancements applied successfully.");
 
-  return [...base, ...authGenerators.flat(), ...authInjectors.flat()];
+  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug];
 };
 
 export { add_auth };

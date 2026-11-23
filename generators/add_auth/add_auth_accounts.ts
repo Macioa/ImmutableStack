@@ -25,6 +25,7 @@ const add_auth_accounts_context = async ({
     AccountAccess,
     AccessGroup,
     AccessTag,
+    GroupTag,
     OAuthState,
     OAuthToken,
     User,
@@ -373,6 +374,24 @@ const add_auth_accounts_context = async ({
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
+  end
+
+  ## Access control
+
+  @doc """
+  Returns true when the user holds any of the given tags or groups.
+
+  Grants made through a group only count while that group still contains the tag.
+  """
+  def user_has_access?(%User{id: user_id}, tags, groups) when is_list(tags) and is_list(groups) do
+    from(ua in UserAccess,
+      left_join: gt in GroupTag,
+      on: gt.group_id == ua.group_id and gt.tag_id == ua.tag_id,
+      where: ua.user_id == ^user_id,
+      where: is_nil(ua.group_id) or not is_nil(gt.group_id),
+      where: ua.tag_id in ^tags or ua.group_id in ^groups
+    )
+    |> Repo.exists?()
   end
 
   ## OAuth
