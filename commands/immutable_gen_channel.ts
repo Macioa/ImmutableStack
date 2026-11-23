@@ -8,9 +8,11 @@ import { inject_channel_to_socket } from "@/injectors/gen_channel/inject_channel
 import { AppData, getAppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
+import { applyPinnedVersions } from "@/utils/versions";
 import { getNamesFromSingularSnakeCase, Names } from "@/utils/string";
 
 setLogLevel(5);
+applyPinnedVersions(__dirname);
 
 const main = async () => {
   const args = process.argv.slice(2);

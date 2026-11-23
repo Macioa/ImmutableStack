@@ -2,9 +2,11 @@ import { add_api } from "@/composite/add_api";
 import { getAppData, AppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
+import { applyPinnedVersions } from "@/utils/versions";
 import { execute as exec } from "@/runners";
 
 setLogLevel(3);
+applyPinnedVersions(__dirname);
 
 const main = async () => {
   const args = process.argv.slice(2);

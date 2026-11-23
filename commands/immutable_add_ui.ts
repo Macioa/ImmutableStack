@@ -5,8 +5,10 @@ import { init_react_app_for_add_ui } from "@/composite/add_ui/init_react_app_for
 import { getAppData } from "@/readers/get_app_data";
 import { execute as exec } from "@/runners";
 import { log, setLogLevel } from "@/utils/logger";
+import { applyPinnedVersions } from "@/utils/versions";
 
 setLogLevel(5);
+applyPinnedVersions(__dirname);
 
 const args = process.argv.slice(2);
 
