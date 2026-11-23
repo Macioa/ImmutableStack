@@ -21,16 +21,16 @@ export default function ${singleUpperCamel}ChannelComponent() {
     if (!joined || !channel) return;
 
     // Listen for a message
-    on("quack", (payload) => {
+    on("message", (payload) => {
       console.log("Received:", payload);
     });
 
     // Push a message to the channel
-    push("croak", { frog: "Kermit" });
+    push("message", { body: "Hello from ${singleUpperCamel}Channel" });
 
     // Clean up listener
     return () => {
-      off("ribbit");
+      off("message");
     };
   }, [joined, channel]);
 

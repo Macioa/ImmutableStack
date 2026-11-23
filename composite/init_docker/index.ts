@@ -1,5 +1,6 @@
 import { gen_docker_compose } from "../../generators/init_docker/gen_dockercompose";
-import { gen_docker_dev } from "../../generators/init_docker/gen_dockerdev";
+import { gen_docker_compose_cluster } from "../../generators/init_docker/gen_dockercompose_cluster";
+import { gen_docker_base } from "../../generators/init_docker/gen_dockerbase";
 import { gen_docker_env } from "../../generators/init_docker/gen_dockerenv";
 import { gen_docker_ignore } from "../../generators/init_docker/gen_dockerignore";
 import { gen_docker_prod } from "../../generators/init_docker/gen_dockerprod";
@@ -28,7 +29,8 @@ const init_docker = async (appdata: AppData) => {
   );
   const init = await Promise.all([
     gen_docker_compose(appdata),
-    gen_docker_dev(appdata),
+    gen_docker_compose_cluster(appdata),
+    gen_docker_base(appdata),
     gen_docker_prod(appdata),
     gen_docker_ui_prod(appdata, 'ui'),
     gen_docker_env(appdata),
