@@ -14,6 +14,7 @@ import { inject_cluster_to_application } from "../../injectors/init_phoenix/inje
 import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix/inject_deps_get_aliases_to_mix_exs";
 import { inject_dev_config } from "../../injectors/init_phoenix/inject_dev_config";
 import { inject_dynamic_port_config } from "../../injectors/init_phoenix/inject_dynamic_port_config";
+import { inject_lib_source_paths } from "../../injectors/init_phoenix/inject_lib_source_paths";
 import { inject_phoenix_deps } from "../../injectors/init_phoenix/inject_phoenix_deps";
 import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_to_repo";
 import { inject_socket_to_endpoint } from "../../injectors/init_phoenix/inject_socket_to_endpoint";
@@ -68,6 +69,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
   const status_route = await inject_status_route(appdata, webName);
   const test_helper_exclusions = await inject_test_helper_exclusions(appdata);
   const dynamic_port = await inject_dynamic_port_config(appdata);
+  const lib_source_paths = await inject_lib_source_paths(appdata);
 
   return [
     init,
@@ -82,6 +84,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
     status_route,
     test_helper_exclusions,
     dynamic_port,
+    lib_source_paths,
   ].flat();
 };
 
