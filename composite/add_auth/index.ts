@@ -43,6 +43,7 @@ import {
   add_auth_user_state,
   add_auth_user_state_test,
   add_auth_plug,
+  add_auth_api_auth_plug,
 } from "../../generators/add_auth";
 import {
   add_auth_mix_dependency,
@@ -54,6 +55,7 @@ import {
   add_auth_runtime_config,
   add_auth_docker_compose,
   add_auth_custom_compiler,
+  add_auth_web_api_auth,
 } from "../../injectors/add_auth";
 import { log } from "../../utils/logger";
 
@@ -127,9 +129,16 @@ const add_auth = async (apiAppData: ApiAppData) => {
 
   const authPlug = await add_auth_plug(apiAppData);
 
+  log({ level: 2, color: "BLUE" }, "\nRequiring auth tokens for the web API and sockets...");
+
+  const webApiAuth = [
+    await add_auth_api_auth_plug(apiAppData),
+    await add_auth_web_api_auth(apiAppData),
+  ].flat(2);
+
   log({ level: 2, color: "GREEN" }, "\nAuth enhancements applied successfully.");
 
-  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug];
+  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug, ...webApiAuth];
 };
 
 export { add_auth };

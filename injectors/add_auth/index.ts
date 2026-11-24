@@ -8,3 +8,4 @@ export { add_auth_runtime_config } from "./add_auth_runtime_config";
 export { add_auth_docker_compose } from "./add_auth_docker_compose";
 export { add_auth_custom_compiler } from "./add_auth_custom_compiler";
 
+export { add_auth_web_api_auth } from "./add_auth_web_api_auth";
