@@ -2,6 +2,7 @@ import { existsSync, readdirSync, unlinkSync } from "fs";
 import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "../add_api";
+import { db } from "../../utils/database";
 
 const MIGRATION_ORDER = [
   "create_users_auth_tables.exs",
@@ -29,7 +30,9 @@ const add_auth_migration = async ({
   AppDir,
   AppNameSnake,
   AppNameCamel,
+  Database,
 }: ApiAppData) => {
+  const { citext, uuid } = db(Database);
   const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
   const legacyDir = join(AppDir || "", `${AppNameSnake}/priv/repo/migrations`);
   const baseName = "create_users_auth_tables.exs";
@@ -54,10 +57,10 @@ const add_auth_migration = async ({
   use Ecto.Migration
 
   def change do
-    execute "CREATE EXTENSION IF NOT EXISTS citext", ""
+    ${citext}
 
     create table(:users, primary_key: false) do
-      add :id, :uuid, primary_key: true, null: false, default: fragment("gen_random_uuid()")
+      add :id, :uuid, primary_key: true, null: false, default: fragment("${uuid}")
       add :email, :citext, null: false
       add :hashed_password, :string, null: false
       add :confirmed_at, :utc_datetime
@@ -88,7 +91,9 @@ const add_auth_oauth_tokens_migration = async ({
   AppDir,
   AppNameSnake,
   AppNameCamel,
+  Database,
 }: ApiAppData) => {
+  const { uuid } = db(Database);
   const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
   const baseName = "create_oauth_tokens.exs";
   let filename = `${migrationVersion(baseName)}_${baseName}`;
@@ -105,7 +110,7 @@ const add_auth_oauth_tokens_migration = async ({
 
   def change do
     create table(:oauth_tokens, primary_key: false) do
-      add :id, :uuid, primary_key: true, null: false, default: fragment("gen_random_uuid()")
+      add :id, :uuid, primary_key: true, null: false, default: fragment("${uuid}")
       add :user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
       add :provider, :string, null: false
       add :access_token, :text, null: false
@@ -165,7 +170,9 @@ const add_auth_accounts_migration = async ({
   AppDir,
   AppNameSnake,
   AppNameCamel,
+  Database,
 }: ApiAppData) => {
+  const { uuid } = db(Database);
   const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
   const baseName = "create_accounts_table.exs";
   let filename = `${migrationVersion(baseName)}_${baseName}`;
@@ -182,7 +189,7 @@ const add_auth_accounts_migration = async ({
 
   def change do
     create table(:accounts, primary_key: false) do
-      add :id, :uuid, primary_key: true, null: false, default: fragment("gen_random_uuid()")
+      add :id, :uuid, primary_key: true, null: false, default: fragment("${uuid}")
       add :name, :string, null: false
       add :parent_account_id, references(:accounts, type: :uuid, on_delete: :nilify_all)
       add :owner_id, references(:users, type: :uuid, on_delete: :delete_all), null: false

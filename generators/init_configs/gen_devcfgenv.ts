@@ -3,13 +3,16 @@ import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { generateFile } from "@/generators/index";
 import { AppData } from "@/readers/get_app_data";
 import { devCorsConfig } from "@/utils/cors";
+import { db } from "@/utils/database";
 
 const gen_dev_config_env = async ({
   UmbrellaDir,
   AppNameCamel,
   AppNameSnake,
+  Database,
 }: AppData) => {
   const filename = "config.exs";
+  const connection = db(Database).connection(`${AppNameSnake}_db`);
   const dir = envConfigDir(UmbrellaDir, "dev");
   const content = `import Config
 
@@ -21,10 +24,7 @@ config :${AppNameSnake}, :ui,
 
 # Configure your database
 config :${AppNameSnake}, ${AppNameCamel}.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "${AppNameSnake}_db",
+  ${connection}
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

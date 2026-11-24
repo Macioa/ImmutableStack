@@ -1,8 +1,10 @@
 import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType } from "..";
 import { ApiAppData } from "@/generators/add_api";
+import { db } from "@/utils/database";
 
-const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel, Database }: ApiAppData) => {
+  const connection = db(Database).connection(`${AppNameSnake}_auth_db`);
   const file = envConfigFile(UmbrellaDir, "dev");
   const apiAppName = `${AppNameSnake}_auth`;
 
@@ -20,10 +22,7 @@ const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }: 
           ),
           `$1
 config :${AppNameSnake}, ${AppNameCamel}.AuthRepo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "${AppNameSnake}_auth_db",
+  ${connection}
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

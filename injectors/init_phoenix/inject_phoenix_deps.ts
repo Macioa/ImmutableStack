@@ -1,6 +1,7 @@
 import path from "path";
 import { inject_file, Injection, InjectType as T } from "../index";
 import { AppData } from "../../readers/get_app_data";
+import { db } from "../../utils/database";
 
 const inject_web_app_deps = async ({ AppDir, AppNameSnake }: AppData, webName: string = 'web') => {
   const WebDir = path.join(AppDir, `${AppNameSnake}_${webName}`);
@@ -23,7 +24,8 @@ const inject_umbrella_deps = async ({ UmbrellaDir }: AppData) => {
   return inject_file({ file, injections }, "inject_app_deps");
 };
 
-const inject_app_deps = async ({ LibDir }: AppData) => {
+const inject_app_deps = async ({ LibDir, Database }: AppData) => {
+  const { deps } = db(Database);
   const file = path.join(LibDir, "mix.exs");
   const injections: Injection[] = [
     [
@@ -35,9 +37,10 @@ const inject_app_deps = async ({ LibDir }: AppData) => {
       {:jason, "~> 1.2"},
       {:phoenix_pubsub, "~> 2.4"},
       {:ecto_sql, "~> 3.14"},
-      {:postgrex, ">= 0.0.0"},
+      {:postgrex, ">= 0.0.0"},${deps}
       {:swoosh, "~> 1.30"},
-      {:req, "~> 0.7"},\n`,
+      {:req, "~> 0.7"},
+`,
     ],
   ];
 

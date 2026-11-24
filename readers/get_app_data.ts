@@ -2,6 +2,8 @@ import { readFile, readdir, stat } from "fs/promises";
 import path from "path";
 import { log } from "@/utils/logger";
 import { existsSync } from "fs";
+import { Database } from "@/utils/database";
+import { getDatabase } from "./get_database";
 
 type AppNames = {
   AppNameCamel: string;
@@ -16,7 +18,10 @@ type AppDirs = {
   WebDir: string;
   UmbrellaDir: string;
 };
-type AppData = AppNames & AppDirs;
+type AppDb = {
+  Database: Database;
+};
+type AppData = AppNames & AppDirs & AppDb;
 
 const sortByBirthtime = (results: Array<{ path: string; birthtime: Date } | null>): string[] =>
   results
@@ -74,7 +79,7 @@ async function findPhoenixWebApis(appsDir: string): Promise<string[]> {
   return sortByBirthtime(results);
 }
 
-const getDirs = async (AppNameSnake: string, home: boolean = true) => {
+const getDirs = async (AppNameSnake: string, home: boolean = true, Database?: Database) => {
   const curDir = process.cwd();
   const UmbrellaDir = home ? curDir : path.join(curDir, `${AppNameSnake}_umbrella`);
   const AppDir = path.join(UmbrellaDir, "apps");
@@ -89,7 +94,8 @@ const getDirs = async (AppNameSnake: string, home: boolean = true) => {
     UiDirs, 
     WebApiDirs, 
     WebDir: path.join(AppDir, `${AppNameSnake}_web`), 
-    UmbrellaDir 
+    UmbrellaDir,
+    Database: Database || getDatabase(path.join(AppDir, AppNameSnake))
   };
 };
 
@@ -106,12 +112,12 @@ const appDataFromAppnNameCamel = async (AppNameCamel: string) => {
   return { ...names, ...await getDirs(names.AppNameSnake) };
 };
 
-const appDataFromAppnNameSnake = async (AppNameSnake: string, home: boolean = true) => {
+const appDataFromAppnNameSnake = async (AppNameSnake: string, home: boolean = true, Database?: Database) => {
   const AppNameCamel = AppNameSnake
     ?.replace(/_([a-z])/g, g => g[1].toUpperCase())
     ?.replace(/^./, g => g.toUpperCase());
   const names = getNames(AppNameCamel);
-  return { ...names, ...await getDirs(names.AppNameSnake, home) };
+  return { ...names, ...await getDirs(names.AppNameSnake, home, Database) };
 };
 
 const readAppData = async (): Promise<AppData | null> => {
@@ -139,4 +145,4 @@ export {
   appDataFromAppnNameSnake,
   setAppData,
 };
-export type { AppData, AppDirs, AppNames };
+export type { AppData, AppDb, AppDirs, AppNames };
