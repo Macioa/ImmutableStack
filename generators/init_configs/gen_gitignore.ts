@@ -44,6 +44,11 @@ lerna-debug.log*
 docker/pgdata/
 *.tar
 
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
 # Environment files
 .env
 !docker/.env
