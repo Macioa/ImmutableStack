@@ -38,7 +38,7 @@ const create = ({
   validate({ genName, camelUpperName, context, pluralNameSnake }, "create");
   return `
     def create(conn, ${genName}_params) do
-      with {:ok, %${camelUpperName}{} = ${genName}} <- ${genName}_params |> MapUtil.str_to_atom() |> ${context}.create_${genName}() do
+      with {:ok, %${camelUpperName}{} = ${genName}} <- ${genName}_params |> ${context}.create_${genName}() do
         conn
         |> put_status(:created)
         |> put_resp_header("location", ~p"/api/${genName}/#{${genName}.id}")
