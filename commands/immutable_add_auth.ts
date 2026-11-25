@@ -3,15 +3,19 @@ import { getAppData, AppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
 import { applyPinnedVersions } from "@/utils/versions";
+import { parseFlags, positionalArgs } from "@/utils/flags";
+import { run_command, start_quick_mode } from "@/utils/quick";
 
 setLogLevel(3);
 applyPinnedVersions(__dirname);
 
 const main = async () => {
-  const args = process.argv.slice(2);
+  const argv = process.argv.slice(2);
+  const { quick } = parseFlags(argv);
+  const args = positionalArgs(argv);
 
   if (args.length > 1) {
-    console.error("Usage: immutable -add_auth [port]");
+    console.error("Usage: immutable -add_auth [port] [-quick]");
     console.error("Example: immutable -add_auth");
     console.error("Example: immutable -add_auth 5001");
     process.exit(1);
@@ -35,6 +39,7 @@ const main = async () => {
   }
 
   const { AppNameSnake, UmbrellaDir } = appData;
+  start_quick_mode(AppNameSnake, "add_auth", { quick });
   const apiName = "auth";
   const apiAppName = `${AppNameSnake}_${apiName}`;
 
@@ -52,9 +57,10 @@ const main = async () => {
 
   setUmbrellaDirCache(UmbrellaDir);
 
-  await add_auth(apiAppData);
-
-  writeLog(UmbrellaDir, `add_auth_${apiName}`);
+  await run_command(async () => {
+    await add_auth(apiAppData);
+    writeLog(UmbrellaDir, `add_auth_${apiName}`);
+  });
 
   log({ level: 1, color: "GREEN" }, `\n\nAuth API Generation Complete.\n\nGenerated ${apiAppName}\n`);
 };

@@ -55,4 +55,7 @@ const log = async ({ level, color }: LogOptions, ...args: any[]) => {
 const sleep = (s: number) =>
   new Promise((resolve) => setTimeout(resolve, s * 1000));
 
-export { setLogLevel, setLogFile, log, sleep, log_level };
+// A reading pause, skipped when logs stream to a file
+const pause = (s: number) => (log_file ? Promise.resolve() : sleep(s));
+
+export { setLogLevel, setLogFile, log, sleep, pause, log_level };

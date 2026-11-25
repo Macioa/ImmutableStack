@@ -53,4 +53,7 @@ const link_dep_cache = (appData: AppData, { cacheDir = DEFAULT_CACHE_DIR }: { ca
   appendFileSync(join(appData.AppDir, "pnpm-workspace.yaml"), pnpmSettings(cacheDir));
 };
 
-export { link_dep_cache, DEFAULT_CACHE_DIR };
+// Projects initialized with -cache have deps linked into the cache
+const uses_dep_cache = ({ UmbrellaDir }: AppData) => isLinked(join(UmbrellaDir, "deps"));
+
+export { link_dep_cache, uses_dep_cache, DEFAULT_CACHE_DIR };

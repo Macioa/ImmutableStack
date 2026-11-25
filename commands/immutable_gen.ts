@@ -8,10 +8,13 @@ import * as path from "path";
 import { gen_phx } from "@/composite/gen_phoenix";
 import { gen_react } from "@/composite/gen_react";
 import { readGenFile } from "@/readers/genfile";
-import { AppData } from "@/readers/get_app_data";
+import { AppData, getAppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
 import { applyPinnedVersions } from "@/utils/versions";
+import { parseFlags, positionalArgs } from "@/utils/flags";
+import { run_command, start_quick_mode } from "@/utils/quick";
+import { timed } from "@/utils/profile";
 import { Names } from "@/utils/string";
 
 setLogLevel(5);
@@ -82,26 +85,32 @@ enum GenTypesKey {
 type GenTypes = { [key in GenTypesKey]?: TypeDict };
 
 const main = async () => {
-  const args = process.argv.slice(2);
+  const argv = process.argv.slice(2);
+  const { quick } = parseFlags(argv);
+  const args = positionalArgs(argv);
   const filePath = path.resolve(args[0]);
   if (args.length < 1) {
     console.error("Please provide the input file path as an argument.");
     process.exit(1);
   }
 
+  start_quick_mode((await getAppData())?.AppNameSnake || "app", "gen", { quick });
+
   log({ level: 1, color: "GREEN" }, `\n\n Reading genfile...\n\n`);
-  const { generator, genTypes } = await readGenFile(filePath);
+  const { generator, genTypes } = await timed("read genfile", () => readGenFile(filePath));
   const {
     name: { pluralUpperCamel, singleSnake },
     AppData: { AppNameCaps, UmbrellaDir },
   } = generator;
   setUmbrellaDirCache(UmbrellaDir);
 
-  log({ level: 1, color: "BLUE" }, `\nGenerating front end components...`);
-  await gen_react(generator, genTypes);
+  await run_command(async () => {
+    log({ level: 1, color: "BLUE" }, `\nGenerating front end components...`);
+    await timed("react generators", () => gen_react(generator, genTypes));
 
-  log({ level: 1, color: "BLUE" }, `\nGenerating server components...`);
-  await gen_phx(generator, genTypes);
+    log({ level: 1, color: "BLUE" }, `\nGenerating server components...`);
+    await timed("phoenix generators", () => gen_phx(generator, genTypes));
+  });
 
   writeLog(UmbrellaDir, `generate_${singleSnake}`);
 
