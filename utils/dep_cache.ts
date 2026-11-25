@@ -6,6 +6,7 @@
       - React: pnpm keeps one store in the cache and links packages into node_modules,
         apps/pnpm-workspace.yaml points the store at the cache with preferOffline
       - covers sqlite: ecto_sqlite3/exqlite (and its NIF) are cached like any dep
+      - assets: fetch_assets keeps downloaded UI assets in <cache>/assets
 */
 import { execSync } from "child_process";
 import { appendFileSync, existsSync, lstatSync, mkdirSync, rmSync, symlinkSync } from "fs";
