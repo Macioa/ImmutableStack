@@ -20,7 +20,7 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
     %{${AppNameSnake}: app_path} = Mix.Project.deps_paths()
 
     project_uis = [
-      {"npm run build:${uiName}", Path.join([app_path, "./..", "${AppNameSnake}_${uiName}"]) |> Path.expand()}
+      {"pnpm run build:${uiName}", Path.join([app_path, "./..", "${AppNameSnake}_${uiName}"]) |> Path.expand()}
     ]
 
     typescript_path =
@@ -73,7 +73,7 @@ ${elixirLinkDir}
   end
 
   defp retry_after_clean_install(apps_path, build_cmd) do
-    case run_cmd("npm", ["ci"], stderr_to_stdout: true, cd: apps_path) do
+    case run_cmd("pnpm", ["install", "--frozen-lockfile"], stderr_to_stdout: true, cd: apps_path) do
       {install_output, 0} ->
         IO.puts("Clean install successful, retrying build...")
         IO.puts(install_output)

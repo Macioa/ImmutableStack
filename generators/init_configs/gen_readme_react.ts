@@ -12,21 +12,21 @@ React/TypeScript frontend with Vite.
 ## Development
 
 \`\`\`bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 \`\`\`
 
 ## Testing
 
 \`\`\`bash
-npm test
+pnpm test
 \`\`\`
 
 ## Building
 
 \`\`\`bash
-npm run build
-npm run preview
+pnpm run build
+pnpm run preview
 \`\`\`
 
 ## Parent Repository

@@ -14,7 +14,7 @@ const inject_deps_get_aliases_to_mix_exs = async ({
       /defp\s+aliases\s+do[\s\n]+\[/,
       `
   defp npm_install(_) do
-    Mix.shell().cmd("npm install", cd: "apps")
+    unless System.get_env("SKIP_UI_INSTALL"), do: Mix.shell().cmd("pnpm install", cd: "apps")
   end\n\n
 `,
     ],

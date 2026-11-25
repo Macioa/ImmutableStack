@@ -18,8 +18,8 @@ defmodule ${AppNameCamel}.OSAdapter do
   def open_npm(args) do
     {exe, exe_args} =
       case family() do
-        :win32 -> {System.find_executable("cmd"), ["/c", "npm" | args]}
-        _ -> {System.find_executable("npm"), args}
+        :win32 -> {System.find_executable("cmd"), ["/c", "pnpm" | args]}
+        _ -> {System.find_executable("pnpm"), args}
       end
 
     Port.open({:spawn_executable, exe}, [:binary, :hide, {:cd, @root}, {:args, exe_args}, :stderr_to_stdout])

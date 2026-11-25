@@ -18,11 +18,11 @@ const gen_apps_package_json = async (appdata: AppData) => {
     private: true,
     scripts: {
       [`dev:ui`]: `cd ${AppNameSnake}_ui && vite`,
-      "dev": `npm run dev:ui`,
+      "dev": `pnpm run dev:ui`,
       [`build:ui`]: `cd ${AppNameSnake}_ui && tsc -b && vite build`,
-      "build": `npm run build:ui`,
+      "build": `pnpm run build:ui`,
       [`test:ui`]: `cd ${AppNameSnake}_ui && vitest run`,
-      "test": `npm run test:ui`
+      "test": `pnpm run test:ui`
     },
     dependencies: {
       "@reduxjs/toolkit": "^2.15.0",

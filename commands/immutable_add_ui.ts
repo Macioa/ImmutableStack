@@ -56,7 +56,7 @@ async function main() {
   
   const _deps = await exec(
     {
-      command: `npm install`,
+      command: `pnpm install`,
       dir: `${UmbrellaDir}/apps`,
     },
     "add_ui"

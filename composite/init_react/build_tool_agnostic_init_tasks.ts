@@ -1,3 +1,4 @@
+import { gen_apps_pnpm_workspace } from "../../generators/init_react/gen_apps_pnpm_workspace";
 import { gen_demo_component_styles } from "../../generators/gen_react/demo_components/gen_demo_component_styles";
 import { gen_index_html } from "../../generators/init_react/gen_index.html";
 import {
@@ -20,6 +21,7 @@ import { AppData } from "../../readers/get_app_data";
 const build_tool_agnostic_init_tasks = async (appdata: AppData, uiName: string = 'ui') => {
   const tasks = await Promise.all([
     gen_apps_package_json(appdata),
+    gen_apps_pnpm_workspace(appdata),
     inject_ui_package_minimal(appdata, uiName),
     gen_store(appdata, uiName),
     await inject_redux_provider(appdata, uiName),

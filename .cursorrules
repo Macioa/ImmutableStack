@@ -5,7 +5,8 @@ This rule takes priority over every other project rule.
 
 ### Architecture
 - Use simple SRP functions in correlating modules.
-- Use options args to create controller style management functions with SRP functions inside.
+- Use options args to create controller style management functions with SRP functions inside. When adding or changing parameters, prefer the JS options pattern: required inputs first, the last arg a destructured options object with defaults (e.g. `fn(appData, { uiName = "ui", cacheDir } = {})`) instead of more positional params.
+- Prefer AppData (`readers/get_app_data.ts`) for project-wide values such as names, dirs and database. When a new value is derived per project and used by multiple modules, add it to the AppData types and builder instead of recomputing it or threading it through extra params.
 - Use appropriate SRP modules, reuse existing modules when appropriate.
 
 ### Functional programming
