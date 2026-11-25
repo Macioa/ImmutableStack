@@ -42,6 +42,11 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
   },
 `,
     ],
+    [
+      InjectType.REPLACE,
+      /"types":\s*\["vite\/client"\]/,
+      `"types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"]`,
+    ],
   ];
 
   return inject_file({ file, injections }, "inject_tsconfig");
