@@ -10,4 +10,4 @@ export { add_auth_custom_compiler } from "./add_auth_custom_compiler";
 
 export { add_auth_web_api_auth } from "./add_auth_web_api_auth";
 export { add_auth_keys } from "./add_auth_keys";
-export { add_auth_ui_dependencies, add_auth_ui_wiring } from "./add_auth_ui_wiring";
+export { add_auth_ui_dependencies, add_auth_to_ui, add_auth_to_all_uis, has_auth_ui } from "./add_auth_ui_wiring";
