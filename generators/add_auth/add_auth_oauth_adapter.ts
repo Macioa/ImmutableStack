@@ -1,251 +1,250 @@
-import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "../add_api";
+import { OAUTH_PROVIDERS } from "./oauth_providers";
+import { oauthDir } from "./add_auth_oauth_providers";
 
-const add_auth_oauth_adapter = async ({
-  AppDir,
-  AppNameSnake,
-  ApiNameSnake,
-  ApiNameCamel,
-}: ApiAppData) => {
+const providerList = () => OAUTH_PROVIDERS.map(({ module }) => `    Providers.${module}`).join(",\n");
+
+// Runs the OAuth flow for every provider; providers themselves are data-only modules
+const add_auth_oauth_adapter = async (apiAppData: ApiAppData) => {
+  const { AppNameSnake, ApiNameSnake, ApiNameCamel } = apiAppData;
   const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
-  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/oauth`);
-  const filename = "adapter.ex";
   const content = `defmodule ${ApiNameCamel}.OAuth.Adapter do
   @moduledoc """
-  Minimal OAuth adapter for Microsoft and Google providers.
+  Runs the OAuth2 authorization code flow for any \`${ApiNameCamel}.OAuth.Provider\`.
+
+  Credentials come from \`config :${apiAppName}, :oauth\` (see \`config/<env>/keys.exs\`).
+  A provider without both a client ID and secret is treated as switched off:
+  it is left out of \`enabled_providers/0\` and \`fetch_provider/1\` refuses it.
   """
 
   alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.OAuth.Providers
 
-  @type provider :: :google | :microsoft
-  @type token_response :: {:ok, map()} | {:error, term()}
+  @providers [
+${providerList()}
+  ]
 
-  @doc """
-  Generates the OAuth authorization URL for the given provider.
-  Stores state in the database for CSRF protection.
-  Returns {:ok, url} on success, {:error, reason} on failure.
-  """
-  @spec authorization_url(provider(), String.t()) :: {:ok, String.t()} | {:error, term()}
-  def authorization_url(provider, redirect_uri) when provider in [:google, :microsoft] do
-    state = generate_state()
+  @user_agent "${apiAppName}-oauth/1.0"
 
-    case Accounts.create_oauth_state(provider, state) do
-      {:ok, _oauth_state} ->
-        url = build_authorization_url(provider, redirect_uri, state)
-        {:ok, url}
+  ## Providers
 
-      {:error, changeset} ->
-        {:error, changeset}
+  @doc "Providers whose keys are configured, with their credentials attached."
+  def enabled_providers, do: @providers |> Enum.map(&with_credentials/1) |> Enum.filter(&enabled?/1)
+
+  @doc "Name and label of each enabled provider, for the UI to render buttons."
+  def public_providers, do: Enum.map(enabled_providers(), &Map.take(&1, [:name, :label]))
+
+  @doc "Finds an enabled provider by its name, e.g. \\"google\\"."
+  def fetch_provider(name),
+    do: enabled_providers() |> Enum.find(&(to_string(&1.name) == name)) |> found()
+
+  defp found(nil), do: {:error, :provider_not_configured}
+  defp found(spec), do: {:ok, spec}
+
+  defp with_credentials(module) do
+    spec = module.spec()
+    keys = :${apiAppName} |> Application.get_env(:oauth, []) |> Keyword.get(spec.name, [])
+
+    Map.merge(spec, %{
+      client_id: resolve(keys[:client_id]),
+      client_secret: resolve(keys[:client_secret])
+    })
+  end
+
+  defp resolve({:system, var}), do: System.get_env(var, "")
+  defp resolve(value) when is_binary(value), do: value
+  defp resolve(_value), do: ""
+
+  defp enabled?(%{client_id: id, client_secret: secret}), do: id != "" and secret != ""
+
+  ## Flow
+
+  @doc "Stores a CSRF state and returns the provider's authorization URL."
+  def authorization_url(spec, redirect_uri) do
+    state = random_token()
+
+    with {:ok, _oauth_state} <- Accounts.create_oauth_state(spec.name, state) do
+      query =
+        %{
+          client_id: spec.client_id,
+          redirect_uri: redirect_uri,
+          response_type: "code",
+          scope: spec.scope,
+          state: state
+        }
+        |> Map.merge(pkce_challenge(spec, state))
+        |> Map.merge(spec.authorize_params)
+
+      {:ok, spec.authorize_url <> "?" <> URI.encode_query(query, :rfc3986)}
     end
   end
 
-  defp build_authorization_url(:google, redirect_uri, state) do
-    client_id = get_config(:google, :client_id)
-    scope = "openid email profile"
+  @doc "Validates and consumes a CSRF state."
+  def validate_state(spec, state), do: Accounts.validate_oauth_state(state, spec.name)
 
-    "https://accounts.google.com/o/oauth2/v2/auth?" <>
-      URI.encode_query(%{
-        client_id: client_id,
-        redirect_uri: redirect_uri,
-        response_type: "code",
-        scope: scope,
-        state: state
-      })
+  @doc "Exchanges an authorization code for the provider's token response."
+  def exchange_code(spec, code, state, redirect_uri) do
+    form =
+      %{code: code, redirect_uri: redirect_uri, grant_type: "authorization_code"}
+      |> Map.merge(client_credentials(spec))
+      |> Map.merge(pkce_verifier(spec, state))
+
+    [url: spec.token_url, method: :post, form: form, headers: headers()]
+    |> Keyword.merge(basic_auth(spec))
+    |> request()
   end
 
-  defp build_authorization_url(:microsoft, redirect_uri, state) do
-    client_id = get_config(:microsoft, :client_id)
-    scope = "openid email profile User.Read"
-
-    "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?" <>
-      URI.encode_query(%{
-        client_id: client_id,
-        redirect_uri: redirect_uri,
-        response_type: "code",
-        scope: scope,
-        state: state
-      })
-  end
-
-  @doc """
-  Validates an OAuth state for CSRF protection.
-  Returns :ok if valid, :error if invalid or expired.
-  The state is consumed (deleted) after validation.
-  """
-  @spec validate_state(String.t(), provider()) :: :ok | :error
-  def validate_state(state, provider) when provider in [:google, :microsoft] do
-    Accounts.validate_oauth_state(state, provider)
-  end
-
-  @doc """
-  Exchanges an authorization code for an access token.
-  """
-  @spec exchange_code(provider(), String.t(), String.t()) :: token_response()
-  def exchange_code(:google, code, redirect_uri) do
-    client_id = get_config(:google, :client_id)
-    client_secret = get_config(:google, :client_secret)
-
-    body =
-      URI.encode_query(%{
-        code: code,
-        client_id: client_id,
-        client_secret: client_secret,
-        redirect_uri: redirect_uri,
-        grant_type: "authorization_code"
-      })
-
-    headers = [{"content-type", "application/x-www-form-urlencoded"}]
-
-    case http_post("https://oauth2.googleapis.com/token", body, headers) do
-      {:ok, %Req.Response{status: 200, body: response_body}} ->
-        {:ok, decode_json_response(response_body)}
-
-      {:ok, %Req.Response{status: status, body: response_body}} ->
-        {:error, {:http_error, status, response_body}}
-
-      {:error, reason} ->
-        {:error, reason}
+  @doc "Fetches the user's profile and normalizes it to id, email, name and picture."
+  def get_user_info(spec, access_token) do
+    with {:ok, profile} <- get(spec.user_url, access_token) do
+      {:ok, normalize(spec, profile, access_token)}
     end
   end
 
-  def exchange_code(:microsoft, code, redirect_uri) do
-    client_id = get_config(:microsoft, :client_id)
-    client_secret = get_config(:microsoft, :client_secret)
+  ## Client authentication and PKCE
 
-    body =
-      URI.encode_query(%{
-        code: code,
-        client_id: client_id,
-        client_secret: client_secret,
-        redirect_uri: redirect_uri,
-        grant_type: "authorization_code"
-      })
+  defp client_credentials(%{token_auth: :basic, client_id: id}), do: %{client_id: id}
+  defp client_credentials(%{client_id: id, client_secret: secret}), do: %{client_id: id, client_secret: secret}
 
-    headers = [{"content-type", "application/x-www-form-urlencoded"}]
+  defp basic_auth(%{token_auth: :basic, client_id: id, client_secret: secret}), do: [auth: {:basic, "#{id}:#{secret}"}]
+  defp basic_auth(_spec), do: []
 
-    case http_post("https://login.microsoftonline.com/common/oauth2/v2.0/token", body, headers) do
-      {:ok, %Req.Response{status: 200, body: response_body}} ->
-        {:ok, decode_json_response(response_body)}
+  # The verifier is derived from the single-use state, so nothing extra is stored
+  defp pkce_challenge(%{pkce: true} = spec, state),
+    do: %{code_challenge: spec |> verifier(state) |> sha256(), code_challenge_method: "S256"}
 
-      {:ok, %Req.Response{status: status, body: response_body}} ->
-        {:error, {:http_error, status, response_body}}
+  defp pkce_challenge(_spec, _state), do: %{}
 
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
+  defp pkce_verifier(%{pkce: true} = spec, state), do: %{code_verifier: verifier(spec, state)}
+  defp pkce_verifier(_spec, _state), do: %{}
 
-  @doc """
-  Fetches user information from the provider using an access token.
-  """
-  @spec get_user_info(provider(), String.t()) :: {:ok, map()} | {:error, term()}
-  def get_user_info(:google, access_token) do
-    headers = [{"authorization", "Bearer #{access_token}"}]
+  defp verifier(spec, state), do: :hmac |> :crypto.mac(:sha256, spec.client_secret, state) |> encode()
 
-    case http_get("https://www.googleapis.com/oauth2/v2/userinfo", headers) do
-      {:ok, %Req.Response{status: 200, body: response_body}} ->
-        {:ok, decode_json_response(response_body)}
+  defp sha256(value), do: :sha256 |> :crypto.hash(value) |> encode()
 
-      {:ok, %Req.Response{status: status, body: response_body}} ->
-        {:error, {:http_error, status, response_body}}
+  ## Profile normalization
 
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
+  defp normalize(spec, profile, access_token) do
+    id = profile |> field(spec.fields[:id]) |> stringify()
 
-  def get_user_info(:microsoft, access_token) do
-    headers = [{"authorization", "Bearer #{access_token}"}]
-
-    case http_get("https://graph.microsoft.com/v1.0/me", headers) do
-      {:ok, %Req.Response{status: 200, body: response_body}} ->
-        user_data = decode_json_response(response_body)
-        {:ok, normalize_microsoft_user(user_data)}
-
-      {:ok, %Req.Response{status: status, body: response_body}} ->
-        {:error, {:http_error, status, response_body}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp normalize_microsoft_user(%{"mail" => email, "displayName" => name} = data) do
     %{
-      "email" => email,
-      "name" => name,
-      "id" => Map.get(data, "id", ""),
-      "picture" => Map.get(data, "photo", nil)
+      "id" => id,
+      "email" => field(profile, spec.fields[:email]) || primary_email(spec, access_token) || placeholder_email(spec, id),
+      "name" => field(profile, spec.fields[:name]),
+      "picture" => field(profile, spec.fields[:picture])
     }
   end
 
-  defp normalize_microsoft_user(%{"userPrincipalName" => email, "displayName" => name} = data) do
-    %{
-      "email" => email,
-      "name" => name,
-      "id" => Map.get(data, "id", ""),
-      "picture" => Map.get(data, "photo", nil)
-    }
-  end
+  defp field(profile, paths), do: Enum.find_value(paths, &dig(profile, String.split(&1, ".")))
 
-  defp normalize_microsoft_user(data) do
-    %{
-      "email" => Map.get(data, "mail") || Map.get(data, "userPrincipalName") || "",
-      "name" => Map.get(data, "displayName") || "",
-      "id" => Map.get(data, "id", ""),
-      "picture" => Map.get(data, "photo", nil)
-    }
-  end
+  defp dig(value, []), do: value
+  defp dig(%{} = map, [key | rest]), do: dig(Map.get(map, key), rest)
+  defp dig(_value, _path), do: nil
 
-  defp get_config(provider, key) do
-    Application.get_env(:${apiAppName}, :oauth, [])
-    |> Keyword.get(provider, [])
-    |> Keyword.get(key, "")
-  end
+  defp primary_email(%{emails_url: nil}, _access_token), do: nil
 
-  defp generate_state do
-    :crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false)
-  end
-
-  defp http_post(url, body, headers) do
-    case Req.post(url, body: body, headers: headers) do
-      {:ok, %Req.Response{} = response} ->
-        {:ok, response}
-
-      {:error, reason} ->
-        {:error, reason}
+  defp primary_email(%{emails_url: url}, access_token) do
+    case get(url, access_token) do
+      {:ok, emails} when is_list(emails) -> Enum.find_value(emails, &(&1["primary"] && &1["verified"] && &1["email"]))
+      _ -> nil
     end
   end
 
-  defp http_get(url, headers) do
-    case Req.get(url, headers: headers) do
-      {:ok, %Req.Response{} = response} ->
-        {:ok, response}
+  # Providers that never share an email still need a unique, undeliverable address
+  defp placeholder_email(_spec, nil), do: nil
+  defp placeholder_email(spec, id), do: "#{id}@#{spec.name}.oauth.invalid"
 
-      {:error, reason} ->
-        {:error, reason}
+  ## HTTP
+
+  defp get(url, access_token),
+    do: request(url: url, method: :get, headers: [{"authorization", "Bearer #{access_token}"} | headers()])
+
+  defp headers, do: [{"accept", "application/json"}, {"user-agent", @user_agent}]
+
+  defp request(opts), do: opts |> Req.request() |> response()
+
+  defp response({:ok, %Req.Response{status: 200, body: body}}), do: {:ok, decode(body)}
+  defp response({:ok, %Req.Response{status: status, body: body}}), do: {:error, {:http_error, status, body}}
+  defp response({:error, reason}), do: {:error, reason}
+
+  # Req decodes JSON bodies; some token endpoints still answer form-encoded
+  defp decode(body) when is_binary(body) do
+    case Jason.decode(body) do
+      {:ok, decoded} -> decoded
+      {:error, _} -> URI.decode_query(body)
     end
   end
 
-  # Req automatically decodes JSON responses, so check if body is already decoded
-  defp decode_json_response(response_body) when is_map(response_body) do
-    response_body
-  end
+  defp decode(body), do: body
 
-  defp decode_json_response(response_body) when is_binary(response_body) do
-    Jason.decode!(response_body)
-  end
+  defp stringify(nil), do: nil
+  defp stringify(value), do: to_string(value)
 
-  defp decode_json_response(response_body) do
-    # Fallback: try to decode anyway
-    Jason.decode!(response_body)
-  end
-end`;
+  defp random_token, do: 32 |> :crypto.strong_rand_bytes() |> encode()
 
-  return generateFile({ dir, filename, content }, "add_auth_oauth_adapter");
+  defp encode(bytes), do: Base.url_encode64(bytes, padding: false)
+end
+`;
+
+  return generateFile({ dir: oauthDir(apiAppData), filename: "adapter.ex", content }, "add_auth_oauth_adapter");
 };
 
-export { add_auth_oauth_adapter };
+// Behaviour each provider module implements through `use ...OAuth.Provider`
+const add_auth_oauth_provider_behaviour = async (apiAppData: ApiAppData) => {
+  const { ApiNameCamel } = apiAppData;
+  const content = `defmodule ${ApiNameCamel}.OAuth.Provider do
+  @moduledoc """
+  Behaviour for OAuth providers.
 
+  A provider only describes itself (endpoints, scope, quirks and where the user
+  fields live in its profile response). \`${ApiNameCamel}.OAuth.Adapter\` does all of the
+  work, so adding a provider means adding one small module:
 
+      defmodule ${ApiNameCamel}.OAuth.Providers.Example do
+        use ${ApiNameCamel}.OAuth.Provider,
+          name: :example,
+          label: "Example",
+          authorize_url: "https://example.com/oauth/authorize",
+          token_url: "https://example.com/oauth/token",
+          user_url: "https://example.com/api/me",
+          scope: "email profile"
+      end
+
+  Options:
+    * \`:token_auth\` - \`:body\` (default) sends the client credentials in the form,
+      \`:basic\` sends them as HTTP basic auth
+    * \`:pkce\` - \`true\` adds a PKCE challenge (required by some providers)
+    * \`:authorize_params\` - extra query params for the authorize URL
+    * \`:emails_url\` - endpoint listing the user's emails, used when the profile has none
+    * \`:fields\` - where \`id\`, \`email\`, \`name\` and \`picture\` live in the profile.
+      Each is a list of dotted paths tried in order, e.g. \`email: ["mail", "upn"]\`
+  """
+
+  @callback spec() :: map()
+
+  @default_fields [id: ["id", "sub"], email: ["email"], name: ["name"], picture: ["picture"]]
+  @defaults [token_auth: :body, pkce: false, authorize_params: %{}, emails_url: nil]
+
+  def build(opts) do
+    @defaults
+    |> Keyword.merge(opts)
+    |> Keyword.put(:fields, Keyword.merge(@default_fields, Keyword.get(opts, :fields, [])))
+    |> Map.new()
+  end
+
+  defmacro __using__(opts) do
+    quote do
+      @behaviour ${ApiNameCamel}.OAuth.Provider
+
+      @impl true
+      def spec, do: ${ApiNameCamel}.OAuth.Provider.build(unquote(opts))
+    end
+  end
+end
+`;
+
+  return generateFile({ dir: oauthDir(apiAppData), filename: "provider.ex", content }, "add_auth_oauth_provider_behaviour");
+};
+
+export { add_auth_oauth_adapter, add_auth_oauth_provider_behaviour };

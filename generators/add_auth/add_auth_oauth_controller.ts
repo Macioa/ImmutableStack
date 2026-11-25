@@ -21,11 +21,26 @@ const add_auth_oauth_controller = async ({
   require Logger
 
   @doc """
+  Lists the providers whose keys are configured, so the UI only shows those buttons.
+  """
+  def providers(conn, _params), do: json(conn, %{data: Adapter.public_providers()})
+
+  @doc """
   Initiates OAuth flow by redirecting to provider's authorization URL.
   Accepts optional \`redirect_to\` query parameter to redirect back after successful auth.
+  Providers without keys are refused, as if they did not exist.
   """
-  def initiate(conn, %{"provider" => provider}) when provider in ["google", "microsoft"] do
-    provider_atom = String.to_atom(provider)
+  def initiate(conn, %{"provider" => provider}) do
+    case Adapter.fetch_provider(provider) do
+      {:ok, spec} -> initiate_flow(conn, spec)
+      {:error, :provider_not_configured} -> provider_unavailable(conn)
+    end
+  end
+
+  def initiate(conn, _params), do: provider_unavailable(conn)
+
+  defp initiate_flow(conn, spec) do
+    provider = to_string(spec.name)
     redirect_uri = oauth_callback_url(provider)
     redirect_to = conn.params["redirect_to"] || conn.query_params["redirect_to"]
     is_popup = conn.params["popup"] == "true" || conn.query_params["popup"] == "true"
@@ -35,7 +50,7 @@ const add_auth_oauth_controller = async ({
       |> maybe_put_session(:oauth_redirect_to, redirect_to)
       |> maybe_put_session(:oauth_popup, is_popup && true)
 
-    case Adapter.authorization_url(provider_atom, redirect_uri) do
+    case Adapter.authorization_url(spec, redirect_uri) do
       {:ok, url} ->
         if is_popup do
           conn
@@ -61,7 +76,7 @@ const add_auth_oauth_controller = async ({
             </script>
           </head>
           <body>
-            <p>Redirecting to #{provider}...</p>
+            <p>Redirecting to #{spec.label}...</p>
             <noscript>
               <meta http-equiv="refresh" content="0;url=#{url}">
             </noscript>
@@ -79,9 +94,9 @@ const add_auth_oauth_controller = async ({
     end
   end
 
-  def initiate(conn, _params) do
+  defp provider_unavailable(conn) do
     conn
-    |> put_flash(:error, "Invalid OAuth provider")
+    |> put_flash(:error, "This sign in provider is not available")
     |> redirect(to: ~p"/users/log_in")
   end
 
@@ -89,9 +104,27 @@ const add_auth_oauth_controller = async ({
   Handles OAuth callback from provider.
   Validates state, exchanges code for token, and creates/updates user.
   """
-  def callback(conn, %{"provider" => provider, "code" => code, "state" => state})
-      when provider in ["google", "microsoft"] do
-    provider_atom = String.to_atom(provider)
+  def callback(conn, %{"provider" => provider, "code" => code, "state" => state}) do
+    case Adapter.fetch_provider(provider) do
+      {:ok, spec} -> complete_flow(conn, spec, code, state)
+      {:error, :provider_not_configured} -> provider_unavailable(conn)
+    end
+  end
+
+  def callback(conn, %{"error" => error}) do
+    conn
+    |> put_flash(:error, "OAuth error: #{error}")
+    |> redirect(to: ~p"/users/log_in")
+  end
+
+  def callback(conn, _params) do
+    conn
+    |> put_flash(:error, "Missing OAuth parameters")
+    |> redirect(to: ~p"/users/log_in")
+  end
+
+  defp complete_flow(conn, spec, code, state) do
+    provider = to_string(spec.name)
     redirect_uri = oauth_callback_url(provider)
 
     is_popup =
@@ -100,11 +133,11 @@ const add_auth_oauth_controller = async ({
       conn.query_params["popup"] == "true"
 
     result =
-      with :ok <- Adapter.validate_state(state, provider_atom) |> log_step("validate_state"),
-           {:ok, token_data} <- Adapter.exchange_code(provider_atom, code, redirect_uri) |> log_step("exchange_code"),
-           {:ok, user_info} <- Adapter.get_user_info(provider_atom, token_data["access_token"]) |> log_step("get_user_info"),
-           {:ok, user} <- get_or_create_user(provider_atom, user_info) |> log_step("get_or_create_user"),
-           {:ok, _oauth_token} <- store_oauth_token(user, provider_atom, token_data, user_info) |> log_step("store_oauth_token") do
+      with :ok <- Adapter.validate_state(spec, state) |> log_step("validate_state"),
+           {:ok, token_data} <- Adapter.exchange_code(spec, code, state, redirect_uri) |> log_step("exchange_code"),
+           {:ok, user_info} <- Adapter.get_user_info(spec, token_data["access_token"]) |> log_step("get_user_info"),
+           {:ok, user} <- get_or_create_user(spec.name, user_info) |> log_step("get_or_create_user"),
+           {:ok, _oauth_token} <- store_oauth_token(user, spec.name, token_data, user_info) |> log_step("store_oauth_token") do
         {:ok, user}
       else
         :error ->
@@ -122,7 +155,7 @@ const add_auth_oauth_controller = async ({
 
         conn =
           conn
-          |> put_flash(:info, "Successfully authenticated with #{provider}")
+          |> put_flash(:info, "Successfully authenticated with #{spec.label}")
           |> assign(:oauth_redirect_to, redirect_to)
           |> assign(:oauth_is_popup, is_popup)
           |> maybe_put_session(:user_return_to, redirect_to)
@@ -424,18 +457,6 @@ const add_auth_oauth_controller = async ({
     end
   end
 
-  def callback(conn, %{"error" => error}) do
-    conn
-    |> put_flash(:error, "OAuth error: #{error}")
-    |> redirect(to: ~p"/users/log_in")
-  end
-
-  def callback(conn, _params) do
-    conn
-    |> put_flash(:error, "Missing OAuth parameters")
-    |> redirect(to: ~p"/users/log_in")
-  end
-
   defp maybe_put_session(conn, _key, nil), do: conn
   defp maybe_put_session(conn, _key, false), do: conn
   defp maybe_put_session(conn, key, value) when is_binary(value), do: put_session(conn, key, value)
@@ -506,7 +527,7 @@ const add_auth_oauth_controller = async ({
   end
 
   defp make_provider_unique_email(email, provider) do
-    provider_string = Atom.to_string(provider)
+    provider_string = to_string(provider)
     case String.split(email, "@") do
       [local_part, domain] -> "#{local_part}+#{provider_string}@#{domain}"
       _ -> "#{email}+#{provider_string}"

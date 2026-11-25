@@ -1,4 +1,4 @@
-import { join } from "@/utils/path";
+import { envConfigDir } from "@/utils/config_paths";
 import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { generateFile } from "@/generators/index";
 import { AppData } from "@/readers/get_app_data";
@@ -9,9 +9,8 @@ const gen_dev_config_env = async ({
   AppNameCamel,
   AppNameSnake,
 }: AppData) => {
-  const filename = "dev.exs";
-  let dir = UmbrellaDir || "";
-  dir = join(dir, "config");
+  const filename = "config.exs";
+  const dir = envConfigDir(UmbrellaDir, "dev");
   const content = `import Config
 
 # Set UI variables

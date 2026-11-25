@@ -1,4 +1,4 @@
-import { join } from "@/utils/path";
+import { envConfigDir } from "@/utils/config_paths";
 import { generateFile } from "@/generators/index";
 import { AppData } from "@/readers/get_app_data";
 import { devCorsConfig } from "@/utils/cors";
@@ -8,9 +8,8 @@ const gen_docker_config_env = async ({
   AppNameCamel,
   AppNameSnake,
 }: AppData) => {
-  const filename = "docker.exs";
-  let dir = UmbrellaDir || "";
-  dir = join(dir, "config");
+  const filename = "config.exs";
+  const dir = envConfigDir(UmbrellaDir, "docker");
   const content = `import Config
 
 # Set UI variables
