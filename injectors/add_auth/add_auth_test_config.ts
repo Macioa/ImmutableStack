@@ -1,4 +1,4 @@
-import { join } from "@/utils/path";
+import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType } from "..";
 import { ApiAppData } from "@/generators/add_api";
 
@@ -7,7 +7,7 @@ const add_auth_test_config = async ({
   AppNameSnake,
   AppNameCamel,
 }: ApiAppData) => {
-  const file = join(UmbrellaDir, "config/test.exs");
+  const file = envConfigFile(UmbrellaDir, "test");
   const marker = "config :pbkdf2_elixir, :rounds, 1";
 
   const injections: Injection[] = [

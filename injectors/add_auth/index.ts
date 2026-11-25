@@ -9,3 +9,5 @@ export { add_auth_docker_compose } from "./add_auth_docker_compose";
 export { add_auth_custom_compiler } from "./add_auth_custom_compiler";
 
 export { add_auth_web_api_auth } from "./add_auth_web_api_auth";
+export { add_auth_keys } from "./add_auth_keys";
+export { add_auth_ui_dependencies, add_auth_ui_wiring } from "./add_auth_ui_wiring";

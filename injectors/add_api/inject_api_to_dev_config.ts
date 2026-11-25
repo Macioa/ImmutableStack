@@ -1,4 +1,4 @@
-import path from "path";
+import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType } from "../index";
 import { ApiAppData } from "../../generators/add_api";
 import crypto from "crypto";
@@ -25,7 +25,7 @@ const get_dev_port = (content: string, ApiNameSnake: string, ApiPort?: number) =
 };
 
 const inject_api_to_dev_config = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake, ApiNameCamel, ApiPort }: ApiAppData) => {
-  const file = path.join(UmbrellaDir, "config/dev.exs");
+  const file = envConfigFile(UmbrellaDir, "dev");
   const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const secretKey = crypto.randomBytes(32).toString("hex");
 

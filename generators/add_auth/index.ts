@@ -34,7 +34,8 @@ export { add_auth_plug } from "./add_auth_plug";
 export { add_auth_api_auth_plug } from "./add_auth_api_auth_plug";
 export { add_auth_migration, add_auth_oauth_tokens_migration, add_auth_oauth_states_migration, add_auth_accounts_migration, add_auth_access_control_migration } from "./add_auth_migration";
 export { add_auth_oauth_controller } from "./add_auth_oauth_controller";
-export { add_auth_oauth_adapter } from "./add_auth_oauth_adapter";
+export { add_auth_oauth_adapter, add_auth_oauth_provider_behaviour } from "./add_auth_oauth_adapter";
+export { add_auth_oauth_providers } from "./add_auth_oauth_providers";
 export {
   add_auth_user_menu,
   add_auth_login_modal,
@@ -50,3 +51,5 @@ export {
 
 
 
+export { add_auth_oauth_buttons } from "./add_auth_oauth_buttons";
+export { add_auth_modal, add_auth_styles } from "./add_auth_modal";

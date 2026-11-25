@@ -30,22 +30,6 @@ const add_auth_config_root = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }:
           );
       },
     ],
-    [
-      InjectType.AFTER,
-      new RegExp(`config :${apiAppName}, AuthWeb\\.Endpoint,[\\s\\S]*?live_view: \\[signing_salt: "[^"]+"\\]`),
-      `\n# OAuth configuration
-# Google OAuth: https://console.cloud.google.com/apis/credentials
-config :${apiAppName}, :oauth,
-  google: [
-    client_id: System.get_env("GOOGLE_CLIENT_ID") || "",
-    client_secret: System.get_env("GOOGLE_CLIENT_SECRET") || ""
-  ],
-  # Microsoft OAuth: https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
-  microsoft: [
-    client_id: System.get_env("MICROSOFT_CLIENT_ID") || "",
-    client_secret: System.get_env("MICROSOFT_CLIENT_SECRET") || ""
-  ]\n`
-    ],
   ];
 
   return inject_file({ file, injections }, "add_auth_config_root");
