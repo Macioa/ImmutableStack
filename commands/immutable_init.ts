@@ -20,16 +20,17 @@ import { initGitRepository, addGitSubmodules } from "@/utils/git";
 import { join } from "@/utils/path";
 import { applyPinnedVersions } from "@/utils/versions";
 import { parseFlags } from "@/utils/flags";
+import { link_dep_cache } from "@/utils/dep_cache";
 
 setLogLevel(5);
 
 const args = process.argv.slice(2);
-const { db } = parseFlags(args);
+const { db, cache } = parseFlags(args);
 
 async function main() {
   if (args.length < 1) {
     console.error(
-      "Usage: node init_proj.js <project_name> [-sqlite]\n   Or: immutable -init <project_name> [-sqlite]"
+      "Usage: node init_proj.js <project_name> [-sqlite] [-cache]\n   Or: immutable -init <project_name> [-sqlite] [-cache]"
     );
     process.exit(1);
   }
@@ -65,6 +66,8 @@ async function main() {
   const _build_tools = await build_tool_agnostic_init_tasks(AppData, 'ui');
   const _configs = await gen_all_configs(AppData);
   const _release = await inject_sample_release_mix(AppData);
+
+  if (cache) link_dep_cache(AppData);
 
   writeLog(UmbrellaDir, `init_project_${projectName}`);
   log(
