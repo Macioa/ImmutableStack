@@ -6,7 +6,7 @@ const gen_docker_prod = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
   dir += "/docker/prod";
   const filename = `${AppNameSnake}_web.dockerfile`;
   const content = `# Stage 1: Build Elixir/Phoenix
-FROM elixir:1.18-alpine AS builder
+FROM elixir:1.20-alpine AS builder
 
 # Install OS dependencies
 RUN apk add --no-cache build-base git npm nodejs postgresql-dev

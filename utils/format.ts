@@ -2,7 +2,7 @@ import { execFileSync, execSync } from "child_process";
 import { basename, dirname, resolve as resolvePath } from "path";
 import { getSetting } from "./settings";
 
-const FORMAT_IMAGE = "elixir:1.18-alpine";
+const FORMAT_IMAGE = "elixir:1.20-alpine";
 const FORMAT_SCRIPT = 'f = hd(System.argv()); File.write!(f, [Code.format_file!(f), "\\n"])';
 
 // Injectors expect formatted Elixir, so nomix formats each file without host Elixir
