@@ -40,8 +40,24 @@ const quote = (files: string[]) => files.map((f) => `"${f}"`).join(" ");
 
 const run = promisify(exec);
 
+// cmd.exe rejects command lines over 8191 characters, so long file lists run in batches
+const MAX_ARGS_LENGTH = 6000;
+
+const batchByLength = (files: string[]) =>
+  files.reduce<string[][]>((batches, file) => {
+    const last = batches[batches.length - 1];
+    const fits = last && quote([...last, file]).length <= MAX_ARGS_LENGTH;
+    return fits ? [...batches.slice(0, -1), [...last, file]] : [...batches, [file]];
+  }, []);
+
+const runBatches = (command: string, files: string[], options: { cwd?: string } = {}) =>
+  batchByLength(files).reduce<Promise<unknown>>(
+    (previous, batch) => previous.then(() => run(`${command} ${quote(batch)}`, options)),
+    Promise.resolve()
+  );
+
 const formatElixirFiles = async (files: string[], nomix: boolean) =>
-  nomix ? files.forEach(formatElixirInDocker) : run(`mix format ${quote(files)}`);
+  nomix ? files.forEach(formatElixirInDocker) : runBatches("mix format", files);
 
 // The project's own oxfmt, found by searching up from the file, skips npx resolution
 const localOxfmt = (dir: string): string | null => {
@@ -55,7 +71,7 @@ const localOxfmt = (dir: string): string | null => {
 const formatTypescriptFiles = (files: string[]) => {
   const cwd = dirname(files[0]);
   const bin = localOxfmt(cwd);
-  return run(`${bin ? `"${bin}"` : `npx --yes --prefer-offline ${OXFMT}`} ${quote(files)}`, { cwd });
+  return runBatches(bin ? `"${bin}"` : `npx --yes --prefer-offline ${OXFMT}`, files, { cwd });
 };
 
 // Missing deps during generation is fine, the file is formatted later
