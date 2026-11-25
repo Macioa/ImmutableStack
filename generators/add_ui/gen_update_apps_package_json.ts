@@ -19,7 +19,7 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
     const newScripts = {
       [`dev:${uiName}`]: `cd ${AppNameSnake}_${uiName} && vite`,
       [`build:${uiName}`]: `cd ${AppNameSnake}_${uiName} && tsc -b && vite build`,
-      [`test:${uiName}`]: `cd ${AppNameSnake}_${uiName} && jest`,
+      [`test:${uiName}`]: `cd ${AppNameSnake}_${uiName} && vitest run`,
     };
     
     const updatedScripts = {
@@ -66,7 +66,7 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
         "dev": `npm run dev:${uiName}`,
         [`build:${uiName}`]: `cd ${AppNameSnake}_${uiName} && tsc -b && vite build`,
         "build": `npm run build:${uiName}`,
-        [`test:${uiName}`]: `cd ${AppNameSnake}_${uiName} && jest`,
+        [`test:${uiName}`]: `cd ${AppNameSnake}_${uiName} && vitest run`,
         "test": `npm run test:${uiName}`
       },
       dependencies: {
@@ -80,28 +80,21 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
         "react-dom": "^19.3.1"
       },
       devDependencies: {
-        "@babel/plugin-transform-private-property-in-object": "^8.1.3",
         "@originjs/vite-plugin-federation": "^1.4.1",
         "@types/node": "^24.10.0",
         "lorem-ipsum": "^3.0.0",
         "@types/phoenix": "^1.6.8",
+        "@testing-library/dom": "^10.4.2",
         "@testing-library/jest-dom": "^8.0.0",
         "@testing-library/react": "^16.3.3",
         "@testing-library/user-event": "^14.6.13",
-        "@types/jest": "^30.0.0",
-        "jest": "^30.5.2",
-        "jest-environment-jsdom": "^30.5.2",
-        "ts-jest": "^29.4.15",
-        "@eslint/js": "^10.0.1",
         "@types/react": "^19.3.3",
         "@types/react-dom": "^19.3.0",
         "@vitejs/plugin-react": "^6.3.0",
-        "eslint": "^10.15.0",
-        "eslint-plugin-react-hooks": "^7.1.1",
-        "eslint-plugin-react-refresh": "^0.5.8",
-        "globals": "^17.14.0",
-        "typescript": "~6.0.3",
-        "typescript-eslint": "^8.74.0",
+        "jsdom": "^31.0.1",
+        "oxlint": "^1.95.0",
+        "typescript": "~7.0.2",
+        "vitest": "^5.1.2",
         "vite": "^8.3.8"
       }
     };

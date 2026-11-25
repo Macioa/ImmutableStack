@@ -42,7 +42,7 @@ React/TypeScript frontend application with Vite build tool.
 - Extract custom hooks for reusable logic
 
 ## Testing
-- Use Jest for unit testing
+- Use Vitest for unit testing
 - Use React Testing Library for component testing
 - Test user interactions, not implementation details
 - Mock external dependencies and API calls

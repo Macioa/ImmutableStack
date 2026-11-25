@@ -12,6 +12,7 @@ const inject_web_app_deps = async ({ AppDir, AppNameSnake }: AppData, webName: s
       /defp\sdeps\sdo\s*\n{0,5}\s*\[/,
       `\n      {:cors_plug, "~> 3.0"},\n`,
     ],
+    [T.REPLACE, /\{:phoenix_live_dashboard, "[^"]*"\}/, `{:phoenix_live_dashboard, "~> 0.9.1"}`],
   ];
 
   return inject_file({ file, injections }, "inject_web_app_deps");
@@ -42,6 +43,7 @@ const inject_app_deps = async ({ LibDir, Database }: AppData) => {
       {:req, "~> 0.7"},
 `,
     ],
+    [T.REPLACE, /\{:dns_cluster, "[^"]*"\}/, `{:dns_cluster, "~> 0.3.1"}`],
   ];
 
   return inject_file({ file, injections }, "inject_app_deps");

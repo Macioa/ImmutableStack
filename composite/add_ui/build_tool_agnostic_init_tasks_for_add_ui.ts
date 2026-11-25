@@ -1,9 +1,10 @@
 import { gen_demo_component_styles } from "../../generators/gen_react/demo_components/gen_demo_component_styles";
 import { gen_index_html } from "../../generators/init_react/gen_index.html";
 import {
-  gen_jest_config,
-  gen_jest_setup,
-} from "../../generators/init_react/gen_jest_configs";
+  gen_vitest_config,
+  gen_vitest_setup,
+  gen_smoke_test,
+} from "../../generators/init_react/gen_vitest_configs";
 import { gen_lorem_utils } from "../../generators/init_react/gen_lorem_utils";
 import { gen_request_lib } from "../../generators/init_react/gen_request_lib";
 import { gen_socket_context } from "../../generators/init_react/gen_socket_context";
@@ -41,8 +42,9 @@ const build_tool_agnostic_init_tasks_for_add_ui = async (appdata: AppData, uiNam
     gen_request_lib(appdata),
     inject_package_scripts(appdata, uiName),
     inject_react_deps(appdata, uiName),
-    gen_jest_config(appdata, uiName),
-    gen_jest_setup(appdata, uiName),
+    gen_vitest_config(appdata, uiName),
+    gen_vitest_setup(appdata, uiName),
+    gen_smoke_test(appdata, uiName),
     gen_socket_context(appdata),
     gen_index_html(appdata, uiName),
     gen_demo_component_styles(appdata),
