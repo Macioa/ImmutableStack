@@ -9,8 +9,12 @@ import { join } from "@/utils/path";
 import { getNamesFromSingularSnakeCase as getNames } from "@/utils/string";
 import { log } from "@/utils/logger";
 import { getAppData } from "@/readers/get_app_data";
+import { parseFlags, positionalArgs } from "@/utils/flags";
+import { start_quick_mode } from "@/utils/quick";
 
-const [, , genName] = process.argv;
+const argv = process.argv.slice(2);
+const { quick } = parseFlags(argv);
+const [genName] = positionalArgs(argv);
 const file = join(process.cwd(), `.genfile_${genName}.ts`);
 
 if (!genName) {
@@ -18,7 +22,10 @@ if (!genName) {
   process.exit(1);
 }
 
-const main = async () => (fs.existsSync(file) ? update_genfile() : await new_genfile());
+const main = async () => {
+  start_quick_mode((await getAppData())?.AppNameSnake || "app", "genfile", { quick });
+  return fs.existsSync(file) ? update_genfile() : await new_genfile();
+};
 
 const new_genfile = async () => {
   const {

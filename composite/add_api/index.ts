@@ -26,6 +26,7 @@ import {
 } from "../../injectors/add_api";
 import { gen_gitignore_api } from "../../generators/init_configs/gen_gitignore_phoenix";
 import { log } from "../../utils/logger";
+import { timed } from "../../utils/profile";
 import { execute as exec } from "../../runners";
 
 const add_api = async (apiAppData: ApiAppData) => {
@@ -33,7 +34,7 @@ const add_api = async (apiAppData: ApiAppData) => {
 
   log({ level: 2, color: "BLUE" }, `\nGenerating Web API: ${AppNameSnake}_${ApiNameSnake}...`);
 
-  const generators = await Promise.all([
+  const generators = await timed("api generators", () => Promise.all([
     add_api_mix_exs(apiAppData),
     add_api_web_module(apiAppData),
     add_api_endpoint(apiAppData),
@@ -52,16 +53,16 @@ const add_api = async (apiAppData: ApiAppData) => {
     add_api_readme(apiAppData),
     add_api_docker_prod(apiAppData),
     gen_gitignore_api(apiAppData),
-  ]);
+  ]));
 
   log({ level: 2, color: "BLUE" }, "\nInjecting API into umbrella configuration...");
 
-  const injectors = await Promise.all([
+  const injectors = await timed("api injectors", () => Promise.all([
     inject_api_to_umbrella_mix(apiAppData),
     inject_api_to_config(apiAppData),
     inject_api_to_dev_config(apiAppData),
     inject_api_release_to_mix(apiAppData),
-  ]);
+  ]));
 
   log({ level: 2, color: "GREEN" }, `\nWeb API ${AppNameSnake}_${ApiNameSnake} generated successfully!`);
 

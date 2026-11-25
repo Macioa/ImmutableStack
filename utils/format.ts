@@ -5,8 +5,10 @@
       - deferred mode (init) queues files and formats them in one pass with flushFormat;
         injectors that need formatted input pass formatFirst to inject_file
 */
-import { execFileSync, execSync } from "child_process";
-import { basename, dirname, resolve as resolvePath } from "path";
+import { exec, execFileSync } from "child_process";
+import { existsSync } from "fs";
+import { basename, dirname, join, resolve as resolvePath } from "path";
+import { promisify } from "util";
 import { getSetting } from "./settings";
 
 const FORMAT_IMAGE = "elixir:1.20-alpine";
@@ -36,29 +38,45 @@ const formatElixirInDocker = (file: string) =>
 
 const quote = (files: string[]) => files.map((f) => `"${f}"`).join(" ");
 
-const formatElixirFiles = (files: string[], nomix: boolean) =>
-  nomix ? files.forEach(formatElixirInDocker) : execSync(`mix format ${quote(files)}`, { stdio: "ignore" });
+const run = promisify(exec);
+
+const formatElixirFiles = async (files: string[], nomix: boolean) =>
+  nomix ? files.forEach(formatElixirInDocker) : run(`mix format ${quote(files)}`);
+
+// The project's own oxfmt, found by searching up from the file, skips npx resolution
+const localOxfmt = (dir: string): string | null => {
+  const bin = join(dir, "node_modules", ".bin", process.platform === "win32" ? "oxfmt.cmd" : "oxfmt");
+  if (existsSync(bin)) return bin;
+  const parent = dirname(dir);
+  return parent === dir ? null : localOxfmt(parent);
+};
 
 // oxfmt finds apps/.oxfmtrc.json by searching up from cwd
-const formatTypescriptFiles = (files: string[]) =>
-  execSync(`npx --yes --prefer-offline ${OXFMT} ${quote(files)}`, { stdio: "pipe", cwd: dirname(files[0]) });
+const formatTypescriptFiles = (files: string[]) => {
+  const cwd = dirname(files[0]);
+  const bin = localOxfmt(cwd);
+  return run(`${bin ? `"${bin}"` : `npx --yes --prefer-offline ${OXFMT}`} ${quote(files)}`, { cwd });
+};
 
 // Missing deps during generation is fine, the file is formatted later
 const isMissingDependency = (error: unknown) =>
   error instanceof Error && error.message.includes("Unknown dependency");
 
+const skipMissingDependency = (error: unknown) => {
+  if (!isMissingDependency(error)) throw error;
+  console.log(`Skipping format - dependencies not yet installed`);
+};
+
+// Elixir and TypeScript format in parallel
 const formatNow = async (files: string[]) => {
   const nomix = (await getSetting("nomix")) == "true";
   const elixir = files.filter(isElixir);
   const typescript = files.filter(isTypescript);
   files.forEach((file) => pending.delete(file));
-  try {
-    if (typescript.length) formatTypescriptFiles(typescript);
-    if (elixir.length) formatElixirFiles(elixir, nomix);
-  } catch (error) {
-    if (!isMissingDependency(error)) throw error;
-    console.log(`Skipping format - dependencies not yet installed`);
-  }
+  await Promise.all([
+    typescript.length ? formatTypescriptFiles(typescript) : null,
+    elixir.length ? formatElixirFiles(elixir, nomix) : null,
+  ]).catch(skipMissingDependency);
   return true;
 };
 

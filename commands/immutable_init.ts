@@ -28,12 +28,12 @@ import { DEFAULT_CACHE_DIR, link_dep_cache } from "@/utils/dep_cache";
 setLogLevel(5);
 
 const args = process.argv.slice(2);
-const { db, cache } = parseFlags(args);
+const { db, cache, quick } = parseFlags(args);
 
 async function main() {
   if (args.length < 1) {
     console.error(
-      "Usage: node init_proj.js <project_name> [-sqlite] [-cache]\n   Or: immutable -init <project_name> [-sqlite] [-cache]"
+      "Usage: node init_proj.js <project_name> [-sqlite] [-cache] [-quick]\n   Or: immutable -init <project_name> [-sqlite] [-cache] [-quick]"
     );
     process.exit(1);
   }
@@ -49,8 +49,8 @@ async function main() {
   const { AppNameSnake, UmbrellaDir } = AppData;
   const initStart = Date.now();
 
-  // -cache streams logs to a file, skipping the terminal reading delay
-  const logFile = cache ? setLogFile(join(DEFAULT_CACHE_DIR, "logs", `${AppNameSnake}_init.log`)) : null;
+  // -cache and -quick stream logs to a file, skipping the terminal reading delay
+  const logFile = cache || quick ? setLogFile(join(DEFAULT_CACHE_DIR, "logs", `${AppNameSnake}_init.log`)) : null;
   if (logFile) process.stdout.write(`Logging to ${logFile}\n`);
 
   // Files are formatted in one pass at the end; injectors needing formatted input use formatFirst
