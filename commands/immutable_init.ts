@@ -81,7 +81,7 @@ async function main() {
   const _init = await timed("configure phoenix + assets", () =>
     Promise.all([
       init_phoenix_umbrella_app(AppData, 'ui', 'web', { scaffold: false }),
-      fetch_assets(AppData, 'ui'),
+      fetch_assets(AppData, 'ui', { cacheDir: cache ? DEFAULT_CACHE_DIR : undefined }),
     ])
   );
   const _react = await timed("configure react", () =>
