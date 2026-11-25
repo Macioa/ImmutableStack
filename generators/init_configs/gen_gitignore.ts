@@ -14,6 +14,9 @@ erl_crash.dump
 *.ez
 /tmp/
 
+# Graphify knowledge graph
+graphify-out/
+
 # Node.js/React (for UI apps)
 node_modules
 dist/
