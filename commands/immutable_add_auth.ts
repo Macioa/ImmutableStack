@@ -5,6 +5,7 @@ import { log, setLogLevel } from "@/utils/logger";
 import { applyPinnedVersions } from "@/utils/versions";
 import { parseFlags, positionalArgs } from "@/utils/flags";
 import { run_command, start_quick_mode } from "@/utils/quick";
+import { resolve_api_port } from "@/injectors/add_api/inject_api_to_dev_config";
 
 setLogLevel(3);
 applyPinnedVersions(__dirname);
@@ -48,12 +49,12 @@ const main = async () => {
   const apiNameCamel =
     apiName.replace(/_([a-z])/g, g => g[1].toUpperCase()).replace(/^./, g => g.toUpperCase()) + "Web";
 
-  const apiAppData = {
+  const apiAppData = resolve_api_port({
     ...appData,
     ApiNameSnake: apiName,
     ApiNameCamel: apiNameCamel,
     ApiPort: port,
-  };
+  });
 
   setUmbrellaDirCache(UmbrellaDir);
 

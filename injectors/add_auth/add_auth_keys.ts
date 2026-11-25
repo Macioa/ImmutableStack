@@ -5,8 +5,19 @@ import { CONFIG_ENVS, ConfigEnv, envKeysFile } from "@/utils/config_paths";
 
 const SECTION_MARKER = "# OAuth sign in";
 
-const redirectBase = (env: ConfigEnv, port: number) =>
-  env == "prod" ? "https://<your auth host>" : `http://localhost:${port}`;
+// Docker's auth endpoint always listens on 4001 (add_auth_docker_config); dev uses the resolved ApiPort
+const DOCKER_AUTH_PORT = 4001;
+
+const redirectBase = (env: ConfigEnv, port: number) => {
+  switch (env) {
+    case "prod":
+      return "https://<your auth host>";
+    case "docker":
+      return `http://localhost:${DOCKER_AUTH_PORT}`;
+    default:
+      return `http://localhost:${port}`;
+  }
+};
 
 const redirectUri = (base: string, key: string) => `${base}/oauth/${key}/callback`;
 

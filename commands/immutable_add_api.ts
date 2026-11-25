@@ -5,6 +5,7 @@ import { log, setLogLevel } from "@/utils/logger";
 import { applyPinnedVersions } from "@/utils/versions";
 import { parseFlags, positionalArgs } from "@/utils/flags";
 import { run_command, start_quick_mode } from "@/utils/quick";
+import { resolve_api_port } from "@/injectors/add_api/inject_api_to_dev_config";
 import { execute as exec } from "@/runners";
 
 setLogLevel(3);
@@ -43,12 +44,12 @@ const main = async () => {
   log({ level: 1, color: "GREEN" }, `\n\n Generating Web API: ${apiAppName}${port ? ` on port ${port}` : ''}\n\n`);
   
   const apiNameCamel = apiName.replace(/_([a-z])/g, (g) => g[1].toUpperCase()).replace(/^./, (g) => g.toUpperCase());
-  const apiAppData = {
+  const apiAppData = resolve_api_port({
     ...appData,
     ApiNameSnake: apiName,
     ApiNameCamel: `${apiNameCamel}Web`,
     ApiPort: port,
-  };
+  });
 
   setUmbrellaDirCache(UmbrellaDir);
 
