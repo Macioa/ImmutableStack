@@ -13,7 +13,7 @@ const add_auth_mix_dependency = async ({
   const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const file = join(AppDir || "", `${apiAppName}/mix.exs`);
 
-  const corsPlugRegex = /{:cors_plug,\s*"~> 2\.0"},/;
+  const corsPlugRegex = /{:cors_plug,\s*"[^"]*"},/;
   let content = readFileSync(file, "utf8");
 
   if (content.includes("{:pbkdf2_elixir")) {
