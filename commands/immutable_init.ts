@@ -17,6 +17,7 @@ import { execute as exec } from "@/runners";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogFile, setLogLevel } from "@/utils/logger";
 import { formatSeconds, timed } from "@/utils/profile";
+import { flushFormat, setDeferredFormat } from "@/utils/format";
 import { promptGitDomain } from "@/prompts/git";
 import { initGitRepository, addGitSubmodules } from "@/utils/git";
 import { join } from "@/utils/path";
@@ -51,6 +52,9 @@ async function main() {
   // -cache streams logs to a file, skipping the terminal reading delay
   const logFile = cache ? setLogFile(join(DEFAULT_CACHE_DIR, "logs", `${AppNameSnake}_init.log`)) : null;
   if (logFile) process.stdout.write(`Logging to ${logFile}\n`);
+
+  // Files are formatted in one pass at the end; injectors needing formatted input use formatFirst
+  setDeferredFormat(true);
 
   // Prompt for git domain
   const gitDomain = await promptGitDomain();
@@ -88,6 +92,11 @@ async function main() {
     await gen_all_configs(AppData),
     await inject_sample_release_mix(AppData),
   ]);
+
+  const _format = await timed("format (one pass)", async () => {
+    setDeferredFormat(false);
+    return flushFormat();
+  });
 
   if (cache) link_dep_cache(AppData);
 

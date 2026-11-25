@@ -1,5 +1,5 @@
 import fs from "fs";
-import { format } from "../utils/format";
+import { format, isPendingFormat } from "../utils/format";
 import { cacheLogByPath as cacheLog } from "../utils/history_cache";
 import { log } from "@/utils/logger";
 
@@ -11,16 +11,20 @@ enum InjectType {
   REPLACE = "REPLACE",
 }
 
+// formatFirst: format a file still queued by deferred formatting before matching,
+// for injections whose regex expects formatted code
 type FileInjection = {
   file: string;
   injections: Injection[];
+  formatFirst?: boolean;
 };
 
 const inject_file = async (
-  { file, injections }: FileInjection,
+  { file, injections, formatFirst = false }: FileInjection,
   caller: string | null = null
 ) => {
   try {
+    if (formatFirst && isPendingFormat(file)) await format(file, { force: true });
     if (!!caller) log({ level: 5, color: "TAN" }, caller);
     log({ level: 5 }, `Injecting into ${file} ...`);
 

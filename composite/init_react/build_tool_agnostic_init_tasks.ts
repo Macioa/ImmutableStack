@@ -1,3 +1,4 @@
+import { gen_apps_oxfmt_config } from "../../generators/init_react/gen_apps_oxfmt_config";
 import { gen_apps_pnpm_workspace } from "../../generators/init_react/gen_apps_pnpm_workspace";
 import { gen_demo_component_styles } from "../../generators/gen_react/demo_components/gen_demo_component_styles";
 import { gen_index_html } from "../../generators/init_react/gen_index.html";
@@ -19,6 +20,8 @@ import { inject_ui_package_minimal } from "../../injectors/init_react/inject_ui_
 import { AppData } from "../../readers/get_app_data";
 
 const build_tool_agnostic_init_tasks = async (appdata: AppData, uiName: string = 'ui') => {
+  // Formatter config first, so formatting during the tasks below can read it
+  const config = await gen_apps_oxfmt_config(appdata);
   const tasks = await Promise.all([
     gen_apps_package_json(appdata),
     gen_apps_pnpm_workspace(appdata),
@@ -38,7 +41,7 @@ const build_tool_agnostic_init_tasks = async (appdata: AppData, uiName: string =
     gen_demo_component_styles(appdata),
   ]).catch(console.error);
 
-  return [tasks].flat();
+  return [config, tasks].flat();
 };
 
 export { build_tool_agnostic_init_tasks };

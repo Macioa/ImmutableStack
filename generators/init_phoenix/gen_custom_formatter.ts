@@ -34,9 +34,9 @@ defmodule Mix.Tasks.CustomFormatter do
     format_dirs = ["${AppNameSnake}_${uiName}", "${AppNameSnake}/lib/typescript"] |> Enum.uniq()
     
     Enum.each(format_dirs, fn dir ->
-      # Use pnpm run format for UI dirs with package.json, pnpm exec prettier for typescript symlink
+      # Use pnpm run format for UI dirs with package.json, oxfmt directly for the typescript symlink
       format_cmd = if dir == "${AppNameSnake}/lib/typescript" do
-        ["--dir", dir, "exec", "prettier", "--write", "."]
+        ["exec", "oxfmt", dir]
       else
         ["--dir", dir, "run", "format"]
       end
