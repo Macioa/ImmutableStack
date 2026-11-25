@@ -10,11 +10,11 @@ const gen_docker_base = async ({ UmbrellaDir }: AppData) => {
 #   deps:      project dependencies, cached until a manifest or config changes
 #   compiled:  full umbrella and UI, ready to run or release
 
-FROM elixir:1.18-alpine AS toolchain
+FROM elixir:1.20-alpine AS toolchain
 RUN apk add --no-cache build-base git npm nodejs inotify-tools bash postgresql-dev
 RUN mix local.hex --force && \
     mix local.rebar --force && \
-    mix archive.install hex phx_new 1.7.14 --force
+    mix archive.install hex phx_new 1.8.17 --force
 WORKDIR /app
 
 # Keeps only dependency manifests so source edits do not invalidate the deps layer

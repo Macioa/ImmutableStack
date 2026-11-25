@@ -15,7 +15,7 @@ const init_react_app_for_add_ui = async (appdata: AppData, uiName: string = 'ui'
   );
   const init = await exec(
     {
-      command: `y | npx create-vite@6.5.0 ${AppNameSnake}_${uiName} --template react-ts --no-install`,
+      command: `y | npx create-vite@9.3.4 ${AppNameSnake}_${uiName} --template react-ts --no-install`,
       dir: AppDir,
       // options: {
       //   timeoutResolve: 1000 * 30,
