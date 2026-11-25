@@ -13,11 +13,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY apps/package.json apps/package-lock.json ./
+COPY apps/package.json apps/pnpm-lock.yaml apps/pnpm-workspace.yaml ./
 COPY apps/${AppNameSnake}_${uiName}/package.json ./${AppNameSnake}_${uiName}/
 
 # Install dependencies
-RUN npm ci
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 # Copy the entire apps directory for building
 COPY apps/${AppNameSnake} ./${AppNameSnake}

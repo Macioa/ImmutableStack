@@ -34,14 +34,14 @@ defmodule Mix.Tasks.CustomFormatter do
     format_dirs = ["${AppNameSnake}_${uiName}", "${AppNameSnake}/lib/typescript"] |> Enum.uniq()
     
     Enum.each(format_dirs, fn dir ->
-      # Use npm run format for UI dirs with package.json, npx prettier for typescript symlink
+      # Use pnpm run format for UI dirs with package.json, pnpm exec prettier for typescript symlink
       format_cmd = if dir == "${AppNameSnake}/lib/typescript" do
-        ["exec", "npx", "--prefix", dir, "prettier", "--write", "."]
+        ["--dir", dir, "exec", "prettier", "--write", "."]
       else
-        ["run", "format", "--prefix", dir]
+        ["--dir", dir, "run", "format"]
       end
       
-      case run_cmd("npm", format_cmd, cd: "./apps") do
+      case run_cmd("pnpm", format_cmd, cd: "./apps") do
         {result, 0} ->
           IO.puts("Formatted #{dir}: #{result}")
 

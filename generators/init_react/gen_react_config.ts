@@ -6,7 +6,7 @@ ${AppName.toUpperCase()}_WEB_API_URL=http://localhost:4000/api
 ${AppName.toUpperCase()}_FEATURE_FLAG_EXAMPLE=true
 
 # ENV setting can be programmatically detected with process.env.NODE_ENV
-# ENV setting can be forced with command line: NODE_ENV=staging npm run build
+# ENV setting can be forced with command line: NODE_ENV=staging pnpm run build
 
 # ENV variables can be accessed with process.env.VAR_NAME
 #           Ex: process.env.${AppName.toUpperCase()}_WEB_API_URL
