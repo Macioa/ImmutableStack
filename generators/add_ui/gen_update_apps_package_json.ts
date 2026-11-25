@@ -100,7 +100,7 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
         "eslint-plugin-react-hooks": "^7.1.1",
         "eslint-plugin-react-refresh": "^0.5.8",
         "globals": "^17.14.0",
-        "typescript": "~7.0.2",
+        "typescript": "~6.0.3",
         "typescript-eslint": "^8.74.0",
         "vite": "^8.3.8"
       }
