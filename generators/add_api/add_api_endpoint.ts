@@ -3,7 +3,8 @@ import { generateFile } from "..";
 import { AppData } from "../../readers/get_app_data";
 import crypto from "crypto";
 
-type ApiAppData = AppData & { ApiNameSnake: string; ApiNameCamel: string; ApiPort?: number };
+// ApiPortEnv: the env var that overrides ApiPort in dev, set with ApiPort by resolve_api_port
+type ApiAppData = AppData & { ApiNameSnake: string; ApiNameCamel: string; ApiPort?: number; ApiPortEnv?: string };
 
 const add_api_endpoint = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) => {
   const filename = "endpoint.ex";
