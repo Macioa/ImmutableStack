@@ -63,7 +63,7 @@ import {
   add_auth_web_api_auth,
   add_auth_keys,
   add_auth_ui_dependencies,
-  add_auth_ui_wiring,
+  add_auth_to_all_uis,
 } from "../../injectors/add_auth";
 import { log } from "../../utils/logger";
 
@@ -156,11 +156,11 @@ const add_auth = async (apiAppData: ApiAppData) => {
 
   log({ level: 2, color: "GREEN" }, "\nAuth enhancements applied successfully.");
 
-  log({ level: 2, color: "BLUE" }, "\nAdding sign in to the UI...");
+  log({ level: 2, color: "BLUE" }, "\nAdding sign in to every UI...");
 
-  const uiWiring = await add_auth_ui_wiring(apiAppData);
+  const uiWiring = await add_auth_to_all_uis(apiAppData);
 
-  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug, ...webApiAuth, ...uiWiring.flat()];
+  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug, ...webApiAuth, ...uiWiring];
 };
 
 export { add_auth };
