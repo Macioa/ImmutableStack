@@ -21,7 +21,8 @@ const inject_static_output_to_endpoint = async ({
     ],
   ];
 
-  return inject_file({ file, injections }, "inject_static_output_to_endpoint");
+  // Matches plug(Plug.Static, ...), parens the formatter adds
+  return inject_file({ file, injections, formatFirst: true }, "inject_static_output_to_endpoint");
 };
 
 export { inject_static_output_to_endpoint };

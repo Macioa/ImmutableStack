@@ -51,7 +51,7 @@ const gen_apps_package_json = async (appdata: AppData) => {
       "typescript": "~7.0.2",
       "vitest": "^5.1.2",
       "vite": "^8.3.8",
-      "prettier": "^3.10.1"
+      "oxfmt": "^0.80.0"
     }
   };
 
