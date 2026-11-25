@@ -1,11 +1,12 @@
 import { Database } from "./database";
 
-type Flags = { db: Database };
+type Flags = { db: Database; cache: boolean };
 
-const DEFAULT_FLAGS: Flags = { db: "postgres" };
+const DEFAULT_FLAGS: Flags = { db: "postgres", cache: false };
 
 const FLAGS: Record<string, Partial<Flags>> = {
   "-sqlite": { db: "sqlite" },
+  "-cache": { cache: true },
 };
 
 const parseFlags = (args: string[]): Flags =>
