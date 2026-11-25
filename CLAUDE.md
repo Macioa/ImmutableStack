@@ -3,7 +3,7 @@
 ## CRITICAL CLAUDE RULE: Sample Projects
 
 - ALWAYS initialize a local git repository when creating a sample project.
-- Create sample projects in `~/Documents/GitHub`. ALWAYS init with `-sqlite` (unless Postgres is requested) and `-cache`, so every sample project shares the one dependency cache at `~/.immutable/dep_cache`:
+- Create sample projects in `~/Documents/GitHub`. ALWAYS init with `-sqlite` (unless Postgres is requested) and `-cache`, so every sample project shares the one dependency cache at `~/.immutable_dep_cache`:
   ```bash
   cd ~/Documents/GitHub
   immutable -init sample_proj -sqlite -cache
