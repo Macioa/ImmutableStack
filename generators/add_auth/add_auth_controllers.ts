@@ -436,6 +436,97 @@ end
     "add_auth_user_confirmation_json_controller"
   );
 
+
+// Changes the signed-in user's email
+const add_auth_account_email_json_controller = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: buildControllersDir(AppDir, AppNameSnake, ApiNameSnake), filename: "account_email_json_controller.ex", content: `defmodule ${ApiNameCamel}.AccountEmailJSONController do
+  @moduledoc "Changes the signed-in user's email, verifying it first while require_2fa is on."
+  use ${ApiNameCamel}, :controller
+
+  alias ${ApiNameCamel}.Accounts.EmailChange
+
+  # POST: saves the email, or answers "verify" after emailing a code to it
+  def create(conn, %{"email" => email}) do
+    case EmailChange.request(conn.assigns.current_user, email) do
+      {:ok, :verify} -> json(conn, %{status: "verify", email: email})
+      {:ok, user} -> json(conn, %{status: "changed", email: user.email})
+      {:error, changeset} -> errors(conn, changeset)
+    end
+  end
+
+  # PUT: finishes a verified change with the emailed code
+  def update(conn, %{"email" => email, "code" => code}) do
+    case EmailChange.confirm(conn.assigns.current_user, email, code) do
+      {:ok, user} -> json(conn, %{status: "changed", email: user.email})
+      {:error, :invalid_code} -> conn |> put_status(:unprocessable_entity) |> json(%{error: "invalid_code"})
+      {:error, changeset} -> errors(conn, changeset)
+    end
+  end
+
+  defp errors(conn, changeset),
+    do:
+      conn
+      |> put_status(:unprocessable_entity)
+      |> json(%{errors: Ecto.Changeset.traverse_errors(changeset, fn {message, _opts} -> message end)})
+end
+` }, "add_auth_account_email_json_controller");
+
+// Lists, links and removes OAuth accounts; finishes OAuth sign-up
+const add_auth_oauth_account_json_controller = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: buildControllersDir(AppDir, AppNameSnake, ApiNameSnake), filename: "oauth_account_json_controller.ex", content: `defmodule ${ApiNameCamel}.OAuthAccountJSONController do
+  @moduledoc """
+  OAuth accounts: listing, linking and removing them on the account page, and finishing
+  an OAuth sign-up once the person has chosen the account's email.
+  """
+  use ${ApiNameCamel}, :controller
+
+  alias ${ApiNameCamel}.Accounts.OAuthAccounts
+  alias Ithibati.Identity.RecoveryCodes
+
+  def index(conn, _params),
+    do: json(conn, %{data: conn.assigns.current_user |> OAuthAccounts.list() |> Enum.map(&show/1)})
+
+  def delete(conn, %{"id" => id}) do
+    case OAuthAccounts.unlink(conn.assigns.current_user, id) do
+      {:ok, _token} -> json(conn, %{status: "removed"})
+      {:error, _reason} -> conn |> put_status(:not_found) |> json(%{error: "not_found"})
+    end
+  end
+
+  # The popup carries this token so the provider account links to the signed-in user
+  def link(conn, _params), do: json(conn, %{token: OAuthAccounts.link_token(conn.assigns.current_user)})
+
+  def signup_code(conn, %{"pending" => pending, "email" => email}) do
+    case OAuthAccounts.send_signup_code(pending, email) do
+      :ok -> json(conn, %{status: "sent"})
+      {:error, reason} -> conn |> put_status(:unprocessable_entity) |> json(%{error: to_string(reason)})
+    end
+  end
+
+  def signup(conn, %{"pending" => pending, "email" => email} = params) do
+    case OAuthAccounts.complete_signup(pending, email, params["code"]) do
+      {:ok, user} ->
+        conn
+        |> put_status(:created)
+        |> ${ApiNameCamel}.UserSessionJSONController.signed_in(user, %{}, %{
+          recovery_codes: RecoveryCodes.regenerate(user)
+        })
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{errors: Ecto.Changeset.traverse_errors(changeset, fn {message, _opts} -> message end)})
+
+      {:error, reason} ->
+        conn |> put_status(:unprocessable_entity) |> json(%{error: to_string(reason)})
+    end
+  end
+
+  defp show(token),
+    do: Map.take(token, [:id, :provider, :provider_email, :inserted_at])
+end
+` }, "add_auth_oauth_account_json_controller");
+
 const add_auth_user_registration_json_controller = async ({
   AppDir,
   AppNameSnake,
@@ -613,6 +704,8 @@ export {
   add_auth_user_registration_json_controller,
   add_auth_user_confirmation_json_controller,
   add_auth_ui_url,
+  add_auth_account_email_json_controller,
+  add_auth_oauth_account_json_controller,
   add_auth_user_session_json_controller,
   add_auth_user_settings_json_controller,
   add_auth_changeset_json,

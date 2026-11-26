@@ -177,15 +177,18 @@ const requestOAuthProviders = (): Promise<OAuthProvider[]> =>
     .then(({ data }) => data || [])
     .catch(() => []);
 
+// With a link token from the account page the provider account is linked, not signed in to
 const initiateOAuth = (
   provider: string,
   redirectTo?: string,
+  link?: string,
 ) => {
   const redirectUrl =
     redirectTo || window.location.origin + window.location.pathname;
   const params = new URLSearchParams({
     redirect_to: redirectUrl,
     popup: "true",
+    ...(link ? { link } : {}),
   });
   const oauthUrl = \`\${AUTH_API_URL}/oauth/\${provider}?\${params.toString()}\`;
 
