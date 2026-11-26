@@ -19,7 +19,7 @@ import { pipe } from "mincurrypipe";
 import { Avatar, ConfigProvider, Dropdown, type MenuProps } from "antd";
 import { selectUserdata, setUserdata, setToken } from "../state/User";
 import { logoutUser, requestCurrentUser } from "../requests/User";
-import { LoginModal, RegisterModal } from "./auth";
+import { LoginModal, RegisterModal, PasskeysModal, InvitationsModal } from "./auth";
 import { authTheme } from "./auth/AuthModal";
 import "./styles.css";
 
@@ -80,6 +80,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
   const userdata = useSelector(selectUserdata);
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [registerModalVisible, setRegisterModalVisible] = useState(false);
+  const [passkeysModalVisible, setPasskeysModalVisible] = useState(false);
+  const [invitationsModalVisible, setInvitationsModalVisible] = useState(false);
+
+  // An invitation link opens registration straight away.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("invite")) setRegisterModalVisible(true);
+  }, []);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSignedIn = !!userdata;
 
@@ -268,6 +275,16 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     ...(isSignedIn
       ? [
           {
+            key: "passkeys",
+            label: "Passkeys",
+            onClick: () => setPasskeysModalVisible(true),
+          },
+          {
+            key: "invitations",
+            label: "Invitations",
+            onClick: () => setInvitationsModalVisible(true),
+          },
+          {
             key: "sign-out",
             label: "Sign Out",
             onClick: handleSignOut,
@@ -342,6 +359,14 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
         visible={loginModalVisible}
         onCancel={() => setLoginModalVisible(false)}
       />
+      <InvitationsModal
+        visible={invitationsModalVisible}
+        onCancel={() => setInvitationsModalVisible(false)}
+      />
+      <PasskeysModal
+        visible={passkeysModalVisible}
+        onCancel={() => setPasskeysModalVisible(false)}
+      />
       <RegisterModal
         visible={registerModalVisible}
         onCancel={() => setRegisterModalVisible(false)}
@@ -367,6 +392,9 @@ import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import "antd/dist/reset.css";
 import { loginUser, initiateOAuth } from "../../requests/User";
 import { requestCurrentUser } from "../../requests/User";
+import { signInWithPasskey, recoverWithCode } from "../../requests/Passkeys";
+import { showRecoveryCodes } from "./RecoveryCodes";
+import { message } from "antd";
 import { selectUserdata } from "../../state/User";
 import type { User } from "../../state/User";
 import { OAuthButtons } from "./OAuthButtons";
@@ -433,6 +461,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
+  const handlePasskeyLogin = () =>
+    signInWithPasskey(dispatch)
+      .then(() => onCancel())
+      .catch((error) => message.error(error.message));
+
+  const handleRecovery = (code: string) =>
+    code &&
+    recoverWithCode(code.trim(), dispatch)
+      .then((res) => {
+        showRecoveryCodes(res.recovery_codes);
+        onCancel();
+      })
+      .catch((error) => message.error(error.message));
+
   const handleOAuthLogin = (provider: string) => {
     setOauthInProgress(true);
     initiateOAuth(provider, window.location.origin + window.location.pathname);
@@ -479,6 +521,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             Sign In
           </Button>
         </Form.Item>
+
+        <Form.Item>
+          <Button block size="large" onClick={handlePasskeyLogin}>
+            Sign in with a passkey
+          </Button>
+        </Form.Item>
+
+        <Form.Item>
+          <Input.Search
+            placeholder="Recovery code"
+            enterButton="Use code"
+            onSearch={handleRecovery}
+          />
+        </Form.Item>
       </Form>
 
       <OAuthButtons onSelect={handleOAuthLogin} />
@@ -503,6 +559,8 @@ import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import "antd/dist/reset.css";
 import { registerUser, initiateOAuth } from "../../requests/User";
 import { requestCurrentUser } from "../../requests/User";
+import { registerPasskey, authorizeSetup } from "../../requests/Passkeys";
+import { showRecoveryCodes } from "./RecoveryCodes";
 import { selectUserdata } from "../../state/User";
 import { OAuthButtons } from "./OAuthButtons";
 import { AuthModal } from "./AuthModal";
@@ -525,6 +583,28 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   useEffect(() => {
     if (visible && userdata?.id) onCancel();
   }, [visible, userdata?.id, onCancel]);
+
+  // Passkey sign-up needs only the email field, no password.
+  const passkeySignup = (email: string) =>
+    registerPasskey(email, dispatch, new URLSearchParams(window.location.search).get("invite"));
+
+  // The first account on a fresh instance needs the operator's setup code.
+  const withSetupCode = (email: string) => (error: Error) => {
+    const code = error.message === "setup_authorization_required" && window.prompt("Operator setup code");
+    return code ? authorizeSetup(code).then(() => passkeySignup(email)) : Promise.reject(error);
+  };
+
+  const handlePasskeyRegister = () =>
+    form
+      .validateFields(["email"])
+      .then(({ email }) => passkeySignup(email).catch(withSetupCode(email)))
+      .then((res) => {
+        showRecoveryCodes(res.recovery_codes);
+        form.resetFields();
+        message.success("Registration successful!");
+        onCancel();
+      })
+      .catch((error) => error?.message && message.error(error.message));
 
   const handleEmailRegister = async (values: {
     email: string;
@@ -671,6 +751,12 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
             Register
           </Button>
         </Form.Item>
+
+        <Form.Item>
+          <Button block size="large" onClick={handlePasskeyRegister}>
+            Register with a passkey
+          </Button>
+        </Form.Item>
       </Form>
 
       <OAuthButtons onSelect={handleOAuthLogin} />
@@ -688,6 +774,9 @@ const add_auth_index = async ({
   const dir = join(LibDir || "", "lib/typescript/components/auth");
   const filename = "index.tsx";
   const content = `export { UserMenu } from "../UserMenu";
+export { InvitationsModal } from "./InvitationsModal";
+export { showRecoveryCodes } from "./RecoveryCodes";
+export { PasskeysModal } from "./PasskeysModal";
 export { LoginModal } from "./LoginModal";
 export { RegisterModal } from "./RegisterModal";
 export { OAuthButtons } from "./OAuthButtons";

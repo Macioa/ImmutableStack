@@ -10,6 +10,9 @@ const MIGRATION_ORDER = [
   "create_oauth_states.exs",
   "create_oauth_tokens.exs",
   "create_access_control_tables.exs",
+  // Ithibati checks the configured invitation table, so it must exist first
+  "create_invitations.exs",
+  "add_ithibati.exs",
 ];
 
 // Ecto requires unique versions, and users must migrate before tables that reference it
@@ -62,7 +65,8 @@ const add_auth_migration = async ({
     create table(:users, primary_key: false) do
       add :id, :uuid, primary_key: true, null: false, default: fragment("${uuid}")
       add :email, :citext, null: false
-      add :hashed_password, :string, null: false
+      # Passkey-only accounts have no password
+      add :hashed_password, :string
       add :confirmed_at, :utc_datetime
 
       timestamps(type: :utc_datetime)
@@ -279,5 +283,59 @@ end`;
   return generateFile({ dir, filename, content }, "add_auth_access_control_migration");
 };
 
-export { add_auth_migration, add_auth_oauth_tokens_migration, add_auth_oauth_states_migration, add_auth_accounts_migration, add_auth_access_control_migration };
+// Reuses an existing migration's version so regenerating does not add a duplicate
+const migrationFilename = (dir: string, baseName: string) =>
+  (existsSync(dir) && readdirSync(dir).find((name) => name.endsWith(baseName))) ||
+  `${migrationVersion(baseName)}_${baseName}`;
+
+// Ithibati's passkey, recovery-code, session, bootstrap, challenge and setup-code tables
+const add_auth_ithibati_migration = async ({ AppDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.AddIthibati do
+  use Ecto.Migration
+
+  def up, do: Ithibati.Migration.up(version: 5)
+  def down, do: Ithibati.Migration.down(version: 5)
+end
+`;
+
+  return generateFile({ dir, filename: migrationFilename(dir, "add_ithibati.exs"), content }, "add_auth_ithibati_migration");
+};
+
+// Invitations plus the access tag that lets a user issue them
+const add_auth_invitations_migration = async ({ AppDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateInvitations do
+  use Ecto.Migration
+
+  def change do
+    create table(:invitations, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+      Ithibati.Migration.invitation_columns(version: 5)
+      timestamps(type: :utc_datetime_usec)
+    end
+
+    Ithibati.Migration.invitation_index(version: 5)
+
+    # Holders of this access tag may invite others.
+    execute(
+      "INSERT INTO access_tags (name, \\"desc\\", inserted_at, updated_at) VALUES ('invitations', 'Invite new users', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      "DELETE FROM access_tags WHERE name = 'invitations'"
+    )
+  end
+end
+`;
+
+  return generateFile({ dir, filename: migrationFilename(dir, "create_invitations.exs"), content }, "add_auth_invitations_migration");
+};
+
+export {
+  add_auth_migration,
+  add_auth_oauth_tokens_migration,
+  add_auth_oauth_states_migration,
+  add_auth_accounts_migration,
+  add_auth_access_control_migration,
+  add_auth_ithibati_migration,
+  add_auth_invitations_migration,
+};
 

@@ -465,6 +465,11 @@ const add_auth_user_session_json_controller = async ({
     end
   end
 
+  def delete_all(conn, _params) do
+    Accounts.revoke_all_user_sessions(conn.assigns.current_user)
+    json(conn, %{status: "revoked"})
+  end
+
   def delete(conn, _params) do
     conn
     |> UserAuth.log_out_user_json()
