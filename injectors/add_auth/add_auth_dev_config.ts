@@ -4,7 +4,8 @@ import { ApiAppData } from "@/generators/add_api";
 import { db } from "@/utils/database";
 
 const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel, Database }: ApiAppData) => {
-  const connection = db(Database).connection(`${AppNameSnake}_auth_db`);
+  const { connection: dbConnection, authRepoTuning } = db(Database);
+  const connection = authRepoTuning + dbConnection(`${AppNameSnake}_auth_db`);
   const file = envConfigFile(UmbrellaDir, "dev");
   const apiAppName = `${AppNameSnake}_auth`;
 

@@ -3,7 +3,19 @@ import { join } from "@/utils/path";
 import { inject_file, Injection, InjectType } from "..";
 import { AppData } from "@/readers/get_app_data";
 
-const AUTH_UI_DEPENDENCIES = { antd: "^5.29.3", "@ant-design/icons": "^5.6.1" };
+const AUTH_UI_DEPENDENCIES = {
+  antd: "^5.29.3",
+  "@ant-design/icons": "^5.6.1",
+  // antd 5 static Modal/message render nothing under React 19 without it
+  "@ant-design/v5-patch-for-react-19": "^1.0.3",
+  // Browser half of passkeys, shipped inside the hex package
+  ithibati: "file:../deps/ithibati",
+};
+// Browser tests drive passkeys through Chromium's virtual authenticator
+const AUTH_UI_DEV_DEPENDENCIES = { playwright: "1.64.1" };
+
+const sorted = (deps: Record<string, string>) =>
+  Object.fromEntries(Object.entries(deps).sort(([a], [b]) => a.localeCompare(b)));
 
 // add_auth generates the UserMenu into the shared TypeScript lib; its presence means auth exists
 const has_auth_ui = ({ LibDir }: AppData) => existsSync(join(LibDir, "lib/typescript/components/UserMenu.tsx"));
@@ -12,10 +24,9 @@ const has_auth_ui = ({ LibDir }: AppData) => existsSync(join(LibDir, "lib/typesc
 const add_auth_ui_dependencies = async ({ AppDir }: AppData) => {
   const file = join(AppDir, "package.json");
   const pkg = JSON.parse(readFileSync(file, "utf8"));
-  const dependencies = Object.fromEntries(
-    Object.entries({ ...pkg.dependencies, ...AUTH_UI_DEPENDENCIES }).sort(([a], [b]) => a.localeCompare(b))
-  );
-  writeFileSync(file, `${JSON.stringify({ ...pkg, dependencies }, null, 2)}\n`, "utf8");
+  const dependencies = sorted({ ...pkg.dependencies, ...AUTH_UI_DEPENDENCIES });
+  const devDependencies = sorted({ ...pkg.devDependencies, ...AUTH_UI_DEV_DEPENDENCIES });
+  writeFileSync(file, `${JSON.stringify({ ...pkg, dependencies, devDependencies }, null, 2)}\n`, "utf8");
   return [file];
 };
 
@@ -56,8 +67,24 @@ const add_auth_ui_app = (uiDir: string) =>
     "add_auth_ui_app"
   );
 
+// The recovery-code dialog and toasts are antd statics, which React 19 needs patched
+const add_auth_ui_main = (uiDir: string) =>
+  inject_once(
+    join(uiDir, "src/main.tsx"),
+    "v5-patch-for-react-19",
+    [
+      [
+        InjectType.AFTER,
+        /import \{ createRoot \} from ['"]react-dom\/client['"];?/,
+        `\n// antd 5 static Modal/message need this to render under React 19.\nimport '@ant-design/v5-patch-for-react-19'`,
+      ],
+    ],
+    "add_auth_ui_main"
+  );
+
 // Adds the auth component to one UI, given its folder (apps/<app>_<ui>)
-const add_auth_to_ui = async (uiDir: string) => [await add_auth_ui_store(uiDir), await add_auth_ui_app(uiDir)].flat();
+const add_auth_to_ui = async (uiDir: string) =>
+  [await add_auth_ui_store(uiDir), await add_auth_ui_app(uiDir), await add_auth_ui_main(uiDir)].flat();
 
 // Adds the auth component to every UI in the project
 const add_auth_to_all_uis = async ({ UiDirs }: AppData) =>

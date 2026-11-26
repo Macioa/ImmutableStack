@@ -15,6 +15,8 @@ const postgres = {
     `username: "postgres",\n  password: "postgres",\n  hostname: ${hostname},\n  database: "${name}",`,
   localize: (content: string) => content,
   adaptRepo: (content: string) => content,
+  // Repo options ithibati needs beyond the connection (none for Postgres)
+  authRepoTuning: "",
 };
 
 // Docker and prod compile with Postgres; dev and test run on SQLite
@@ -26,6 +28,7 @@ const sqlite = {
   connection: (name: string) => sqliteConnection(name),
   localize: (content: string) => content.replace(PG_CONNECTION, (_, name) => sqliteConnection(name)),
   adaptRepo: (content: string) => content.replace(postgres.adapter, sqlite.adapter),
+  authRepoTuning: `journal_mode: :wal,\n  foreign_keys: :on,\n  busy_timeout: 5_000,\n  default_transaction_mode: :immediate,\n  `,
 };
 
 const DATABASES = { postgres, sqlite };

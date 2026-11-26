@@ -86,12 +86,7 @@ const add_auth_user_auth = async ({
   It clears all session data for safety. See renew_session.
   """
   def log_out_user(conn) do
-    user_token = get_session(conn, :user_token)
-    user_token && Accounts.delete_user_session_token(user_token)
-
-    if live_socket_id = get_session(conn, :live_socket_id) do
-      ${ApiNameCamel}.Endpoint.broadcast(live_socket_id, "disconnect", %{})
-    end
+    conn |> get_session(:user_token) |> revoke_token()
 
     conn
     |> renew_session()
@@ -247,7 +242,15 @@ const add_auth_user_auth = async ({
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    |> put_session(:live_socket_id, Ithibati.Web.Gate.live_socket_id(token))
+  end
+
+  # Deletes the session row and disconnects sockets opened with this token.
+  defp revoke_token(nil), do: :ok
+
+  defp revoke_token(token) do
+    Accounts.delete_user_session_token(token)
+    ${ApiNameCamel}.Endpoint.broadcast(Ithibati.Web.Gate.live_socket_id(token), "disconnect", %{})
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do
@@ -281,11 +284,7 @@ const add_auth_user_auth = async ({
         :error -> get_session(conn, :user_token)
       end
 
-    user_token && Accounts.delete_user_session_token(user_token)
-
-    if live_socket_id = get_session(conn, :live_socket_id) do
-      ${ApiNameCamel}.Endpoint.broadcast(live_socket_id, "disconnect", %{})
-    end
+    revoke_token(user_token)
 
     conn
     |> renew_session()
