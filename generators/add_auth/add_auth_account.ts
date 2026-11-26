@@ -156,15 +156,21 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ token, o
 const add_auth_account_modal_test = async ({ AppNameCamel, LibDir }: ApiAppData) =>
   generateFile({ dir: join(LibDir || "", "lib/typescript/components/auth/account"), filename: "AccountModal.test.tsx", content: `import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { fakeAuthServer, renderWithStore, security, stubBrowser } from "@test/fakeAuthServer";
+import {
+  fakeAuthServer,
+  renderWithStore,
+  security,
+  stubBrowser,
+} from "@test/fakeAuthServer";
 import { AccountModal } from "./AccountModal";
 
 beforeEach(stubBrowser);
 
-const open = async (section?: string) => {
+const open = async (section?: string | RegExp) => {
   renderWithStore(<AccountModal visible onCancel={() => null} />);
   await screen.findByTestId("account-panel-overview");
-  if (section) await userEvent.click(screen.getByRole("menuitem", { name: section }));
+  if (section)
+    await userEvent.click(screen.getByRole("menuitem", { name: section }));
 };
 
 const button = (name: RegExp | string) => screen.getByRole("button", { name });
@@ -174,9 +180,16 @@ test("the left navigation groups security and invitations", async () => {
   await open();
 
   const [nav] = screen.getAllByRole("menu");
-  ["Overview", "Password", "Two-factor", "Authenticator app", "Email codes", "Passkeys", "Recovery codes", "Sessions"].forEach(
-    (name) => expect(within(nav).getByText(name)).toBeInTheDocument(),
-  );
+  [
+    "Overview",
+    "Password",
+    "Two-factor",
+    "Authenticator app",
+    "Email codes",
+    "Passkeys",
+    "Recovery codes",
+    "Sessions",
+  ].forEach((name) => expect(within(nav).getByText(name)).toBeInTheDocument());
 
   await userEvent.click(within(nav).getByText("Invitations"));
   expect(within(nav).getByText("Manage invitations")).toBeInTheDocument();
@@ -185,7 +198,9 @@ test("the left navigation groups security and invitations", async () => {
 test("recovery codes show the remaining count and a fresh batch once", async () => {
   const server = fakeAuthServer({
     "GET /users/security": () => security({ recovery_codes_remaining: 3 }),
-    "POST /users/recovery_codes": () => ({ recovery_codes: ["aaaa-bbbb", "cccc-dddd"] }),
+    "POST /users/recovery_codes": () => ({
+      recovery_codes: ["aaaa-bbbb", "cccc-dddd"],
+    }),
   });
   await open("Recovery codes");
 
@@ -193,20 +208,26 @@ test("recovery codes show the remaining count and a fresh batch once", async () 
   await userEvent.click(button("Generate new recovery codes"));
   await userEvent.click(button("OK"));
 
-  expect(await screen.findByTestId("recovery-codes")).toHaveTextContent("aaaa-bbbb");
+  expect(await screen.findByTestId("recovery-codes")).toHaveTextContent(
+    "aaaa-bbbb",
+  );
   expect(server.called("POST /users/recovery_codes")).toHaveLength(1);
 });
 
 test("the two-factor toggle waits for a method, then turns the requirement on", async () => {
   fakeAuthServer({ "GET /users/security": () => security() });
   await open("Two-factor");
-  await waitFor(() => expect(screen.getByTestId("two-factor-toggle")).toBeDisabled());
+  await waitFor(() =>
+    expect(screen.getByTestId("two-factor-toggle")).toBeDisabled(),
+  );
 });
 
 test("toggling two-factor saves the requirement", async () => {
   const server = fakeAuthServer({
-    "GET /users/security": () => security({ methods: ["totp"], totp_enabled: true }),
-    "PUT /users/security": ({ two_factor_enabled }) => security({ methods: ["totp"], totp_enabled: true, two_factor_enabled }),
+    "GET /users/security": () =>
+      security({ methods: ["totp"], totp_enabled: true }),
+    "PUT /users/security": ({ two_factor_enabled }) =>
+      security({ methods: ["totp"], totp_enabled: true, two_factor_enabled }),
   });
   await open("Two-factor");
 
@@ -215,31 +236,45 @@ test("toggling two-factor saves the requirement", async () => {
   await userEvent.click(toggle);
 
   await waitFor(() => expect(toggle).toBeChecked());
-  expect(server.called("PUT /users/security")[0].body).toEqual({ two_factor_enabled: true });
+  expect(server.called("PUT /users/security")[0].body).toEqual({
+    two_factor_enabled: true,
+  });
 });
 
 test("an authenticator app is added with a verified code", async () => {
   const server = fakeAuthServer({
     "GET /users/security": () => security(),
-    "POST /users/security/totp": () => ({ secret: "JBSWY3DPEHPK3PXP", uri: "otpauth://totp/${AppNameCamel}:me" }),
-    "PUT /users/security/totp": () => security({ methods: ["totp"], totp_enabled: true }),
+    "POST /users/security/totp": () => ({
+      secret: "JBSWY3DPEHPK3PXP",
+      uri: "otpauth://totp/${AppNameCamel}:me",
+    }),
+    "PUT /users/security/totp": () =>
+      security({ methods: ["totp"], totp_enabled: true }),
   });
   await open("Authenticator app");
 
   await userEvent.click(button("Set up authenticator app"));
-  expect(await screen.findByTestId("totp-secret")).toHaveTextContent("JBSWY3DPEHPK3PXP");
+  expect(await screen.findByTestId("totp-secret")).toHaveTextContent(
+    "JBSWY3DPEHPK3PXP",
+  );
   await userEvent.type(screen.getByPlaceholderText("123456"), "123456");
   await userEvent.click(button("Verify"));
 
-  expect(await screen.findByText("Remove authenticator app")).toBeInTheDocument();
-  expect(server.called("PUT /users/security/totp")[0].body).toEqual({ secret: "JBSWY3DPEHPK3PXP", code: "123456" });
+  expect(
+    await screen.findByText("Remove authenticator app"),
+  ).toBeInTheDocument();
+  expect(server.called("PUT /users/security/totp")[0].body).toEqual({
+    secret: "JBSWY3DPEHPK3PXP",
+    code: "123456",
+  });
 });
 
 test("email codes are turned on with an emailed code", async () => {
   const server = fakeAuthServer({
     "GET /users/security": () => security(),
     "POST /users/security/email": () => ({ status: "sent" }),
-    "PUT /users/security/email": () => security({ methods: ["email"], email_otp_enabled: true }),
+    "PUT /users/security/email": () =>
+      security({ methods: ["email"], email_otp_enabled: true }),
   });
   await open("Email codes");
 
@@ -249,7 +284,9 @@ test("email codes are turned on with an emailed code", async () => {
 
   expect(await screen.findByText("Turn off email codes")).toBeInTheDocument();
   expect(server.called("POST /users/security/email")).toHaveLength(1);
-  expect(server.called("PUT /users/security/email")[0].body).toEqual({ code: "654321" });
+  expect(server.called("PUT /users/security/email")[0].body).toEqual({
+    code: "654321",
+  });
 });
 
 test("a password is changed with the current one", async () => {
@@ -259,9 +296,18 @@ test("a password is changed with the current one", async () => {
   });
   await open("Password");
 
-  await userEvent.type(await screen.findByLabelText("Current password"), "old long password");
-  await userEvent.type(screen.getByLabelText("New password"), "new long password");
-  await userEvent.type(screen.getByLabelText("Confirm new password"), "new long password");
+  await userEvent.type(
+    await screen.findByLabelText("Current password"),
+    "old long password",
+  );
+  await userEvent.type(
+    screen.getByLabelText("New password"),
+    "new long password",
+  );
+  await userEvent.type(
+    screen.getByLabelText("Confirm new password"),
+    "new long password",
+  );
   await userEvent.click(button("Change password"));
 
   await waitFor(() =>
@@ -272,17 +318,101 @@ test("a password is changed with the current one", async () => {
     }),
   );
 });
+
+test("require_2fa on the server locks two-factor on with email codes", async () => {
+  fakeAuthServer({
+    "GET /users/security": () =>
+      security({
+        required_by_server: true,
+        two_factor_enabled: true,
+        email_otp_enabled: true,
+        methods: ["email"],
+      }),
+  });
+  await open("Two-factor");
+
+  expect(await screen.findByTestId("two-factor-toggle")).toBeDisabled();
+  expect(screen.getByTestId("two-factor-toggle")).toBeChecked();
+  expect(screen.getByText(/requires a second factor for every account/)).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("menuitem", { name: "Email codes" }));
+  expect(await screen.findByText(/Required by this server/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Turn off/ })).toBeNull();
+});
+
+test("the email changes right away when the server does not require verification", async () => {
+  const server = fakeAuthServer({
+    "GET /users/security": () => security(),
+    "POST /users/email": ({ email }) => ({ status: "changed", email }),
+  });
+  await open(/Email$/);
+
+  await userEvent.type(screen.getByPlaceholderText("you@example.com"), "new@example.com");
+  await userEvent.click(button("Change email"));
+
+  await waitFor(() => expect(server.called("POST /users/email")).toHaveLength(1));
+  expect(server.called("POST /users/email")[0].body).toEqual({ email: "new@example.com" });
+});
+
+test("with require_2fa a new email is saved after its code is entered", async () => {
+  const server = fakeAuthServer({
+    "GET /users/security": () => security({ required_by_server: true }),
+    "POST /users/email": ({ email }) => ({ status: "verify", email }),
+    "PUT /users/email": ({ email }) => ({ status: "changed", email }),
+  });
+  await open(/Email$/);
+
+  await userEvent.type(screen.getByPlaceholderText("you@example.com"), "new@example.com");
+  await userEvent.click(button("Send code"));
+  await userEvent.type(await screen.findByTestId("email-change-code"), "123456");
+  await userEvent.click(button("Verify and save"));
+
+  await waitFor(() => expect(server.called("PUT /users/email")).toHaveLength(1));
+  expect(server.called("PUT /users/email")[0].body).toEqual({
+    email: "new@example.com",
+    code: "123456",
+  });
+});
+
+test("connected accounts lists each linked account, two from one provider too", async () => {
+  const server = fakeAuthServer({
+    "GET /users/security": () => security(),
+    "GET /users/oauth": () => ({
+      data: [
+        { id: "a", provider: "github", provider_email: "work@x.com", inserted_at: "2026-11-01T00:00:00Z" },
+        { id: "b", provider: "github", provider_email: "home@x.com", inserted_at: "2026-11-02T00:00:00Z" },
+      ],
+    }),
+    "DELETE /users/oauth/a": () => ({ status: "removed" }),
+  });
+  await open(/Connected accounts$/);
+
+  expect(await screen.findByText(/work@x.com/)).toBeInTheDocument();
+  expect(screen.getByText(/home@x.com/)).toBeInTheDocument();
+
+  await userEvent.click(screen.getAllByRole("button", { name: "Remove" })[0]);
+  await userEvent.click(button("OK"));
+  await waitFor(() => expect(server.called("DELETE /users/oauth/a")).toHaveLength(1));
+});
 ` }, "add_auth_account_modal_test");
 
 const add_auth_account_modal = async ({ LibDir }: ApiAppData) =>
   generateFile({ dir: join(LibDir || "", "lib/typescript/components/auth/account"), filename: "AccountModal.tsx", content: `import React, { useEffect, useState } from "react";
 import { ConfigProvider, Menu, Modal, message, type MenuProps } from "antd";
-import { SafetyOutlined, UserAddOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  ApiOutlined,
+  MailOutlined,
+  SafetyOutlined,
+  UserAddOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { selectUserdata } from "../../../state/User";
 import { getSecurity, type Security } from "../../../requests/Account";
 import { authTheme } from "../AuthModal";
 import { OverviewPanel } from "./OverviewPanel";
+import { EmailPanel } from "./EmailPanel";
+import { ConnectedAccountsPanel } from "./ConnectedAccountsPanel";
 import { PasswordPanel } from "./PasswordPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
 import { AuthenticatorPanel } from "./AuthenticatorPanel";
@@ -296,6 +426,8 @@ import "./account.css";
 
 type Section =
   | "overview"
+  | "email"
+  | "connected-accounts"
   | "password"
   | "two-factor"
   | "authenticator"
@@ -308,6 +440,12 @@ type Section =
 // Groups expand in the left navigation; each leaf key opens one panel.
 const navigation: MenuProps["items"] = [
   { key: "overview", icon: <UserOutlined />, label: "Overview" },
+  { key: "email", icon: <MailOutlined />, label: "Email" },
+  {
+    key: "connected-accounts",
+    icon: <ApiOutlined />,
+    label: "Connected accounts",
+  },
   {
     key: "security",
     icon: <SafetyOutlined />,
@@ -332,6 +470,8 @@ const navigation: MenuProps["items"] = [
 
 const panels: Record<Section, React.FC<PanelProps>> = {
   overview: OverviewPanel,
+  email: EmailPanel,
+  "connected-accounts": ConnectedAccountsPanel,
   password: PasswordPanel,
   "two-factor": TwoFactorPanel,
   authenticator: AuthenticatorPanel,
@@ -347,7 +487,10 @@ interface AccountModalProps {
   onCancel: () => void;
 }
 
-export const AccountModal: React.FC<AccountModalProps> = ({ visible, onCancel }) => {
+export const AccountModal: React.FC<AccountModalProps> = ({
+  visible,
+  onCancel,
+}) => {
   const userdata = useSelector(selectUserdata);
   const [section, setSection] = useState<Section>("overview");
   const [security, setSecurity] = useState<Security | null>(null);
@@ -383,7 +526,10 @@ export const AccountModal: React.FC<AccountModalProps> = ({ visible, onCancel })
             defaultOpenKeys={["security"]}
             onClick={({ key }) => setSection(key as Section)}
           />
-          <section className="account-panel" data-testid={\`account-panel-\${section}\`}>
+          <section
+            className="account-panel"
+            data-testid={\`account-panel-\${section}\`}
+          >
             <Panel
               email={userdata?.email || ""}
               security={security}
@@ -475,10 +621,18 @@ export const AuthenticatorPanel: React.FC<PanelProps> = ({ security, setSecurity
 const add_auth_email_codes_panel = async ({ LibDir }: ApiAppData) =>
   generateFile({ dir: join(LibDir || "", "lib/typescript/components/auth/account"), filename: "EmailCodesPanel.tsx", content: `import React, { useState } from "react";
 import { Button, Input, Popconfirm, Space, Tag, message } from "antd";
-import { disableEmailCodes, enableEmailCodes, sendEmailSetupCode } from "../../../requests/Account";
+import {
+  disableEmailCodes,
+  enableEmailCodes,
+  sendEmailSetupCode,
+} from "../../../requests/Account";
 import { PanelHeader, attempt, type PanelProps } from "./panel";
 
-export const EmailCodesPanel: React.FC<PanelProps> = ({ email, security, setSecurity }) => {
+export const EmailCodesPanel: React.FC<PanelProps> = ({
+  email,
+  security,
+  setSecurity,
+}) => {
   const [sent, setSent] = useState(false);
   const [code, setCode] = useState("");
 
@@ -496,11 +650,22 @@ export const EmailCodesPanel: React.FC<PanelProps> = ({ email, security, setSecu
       message.success("Email codes turned on");
     });
 
+  // require_2fa on the server: email codes are on for every account and cannot be turned off
+  if (security?.required_by_server)
+    return (
+      <PanelHeader title="Email codes">
+        <Tag color="green">On</Tag> Required by this server for every account.
+        A code is sent to {email} when you sign in with a password; you can use
+        an authenticator app instead.
+      </PanelHeader>
+    );
+
   if (security?.email_otp_enabled)
     return (
       <>
         <PanelHeader title="Email codes">
-          <Tag color="green">On</Tag> A code is sent to {email} when you sign in with a password.
+          <Tag color="green">On</Tag> A code is sent to {email} when you sign in
+          with a password.
         </PanelHeader>
         <Popconfirm
           title="Turn off email codes?"
@@ -531,7 +696,11 @@ export const EmailCodesPanel: React.FC<PanelProps> = ({ email, security, setSecu
               onChange={(e) => setCode(e.target.value.trim())}
               onPressEnter={verify}
             />
-            <Button type="primary" onClick={verify} disabled={code.length !== 6}>
+            <Button
+              type="primary"
+              onClick={verify}
+              disabled={code.length !== 6}
+            >
               Turn on
             </Button>
           </Space.Compact>
@@ -619,13 +788,21 @@ import { PanelHeader, type PanelProps } from "./panel";
 
 const methodNames = { totp: "Authenticator app", email: "Email codes" };
 
-export const OverviewPanel: React.FC<PanelProps> = ({ email, security, go }) => (
+export const OverviewPanel: React.FC<PanelProps> = ({
+  email,
+  security,
+  go,
+}) => (
   <>
     <PanelHeader title="Overview" />
     <Descriptions column={1} bordered size="small">
-      <Descriptions.Item label="Email">{email}</Descriptions.Item>
+      <Descriptions.Item label="Email">
+        <a onClick={() => go("email")}>{email}</a>
+      </Descriptions.Item>
       <Descriptions.Item label="Password">
-        <a onClick={() => go("password")}>{security?.has_password ? "Set" : "Not set"}</a>
+        <a onClick={() => go("password")}>
+          {security?.has_password ? "Set" : "Not set"}
+        </a>
       </Descriptions.Item>
       <Descriptions.Item label="Two-factor">
         <a onClick={() => go("two-factor")}>
@@ -635,10 +812,14 @@ export const OverviewPanel: React.FC<PanelProps> = ({ email, security, go }) => 
             <Tag>Off</Tag>
           )}
         </a>
-        {security?.methods.map((method) => <Tag key={method}>{methodNames[method]}</Tag>)}
+        {security?.methods.map((method) => (
+          <Tag key={method}>{methodNames[method]}</Tag>
+        ))}
       </Descriptions.Item>
       <Descriptions.Item label="Recovery codes">
-        <a onClick={() => go("recovery-codes")}>{security?.recovery_codes_remaining ?? "–"} left</a>
+        <a onClick={() => go("recovery-codes")}>
+          {security?.recovery_codes_remaining ?? "–"} left
+        </a>
       </Descriptions.Item>
     </Descriptions>
   </>
@@ -836,40 +1017,66 @@ const methods = [
   {
     key: "authenticator",
     title: "Authenticator app",
-    description: "Six digit codes from an app such as 1Password, Authy or Google Authenticator.",
+    description:
+      "Six digit codes from an app such as 1Password, Authy or Google Authenticator.",
     enabled: (s: PanelProps["security"]) => !!s?.totp_enabled,
   },
   {
     key: "email-codes",
     title: "Email codes",
-    description: "A code sent to your email each time you sign in with a password.",
+    description:
+      "A code sent to your email each time you sign in with a password.",
     enabled: (s: PanelProps["security"]) => !!s?.email_otp_enabled,
     available: (s: PanelProps["security"]) => s?.email_available !== false,
   },
 ];
 
-export const TwoFactorPanel: React.FC<PanelProps> = ({ security, setSecurity, go }) => {
+export const TwoFactorPanel: React.FC<PanelProps> = ({
+  security,
+  setSecurity,
+  go,
+}) => {
   const noMethods = !security?.methods.length;
+  const locked = !!security?.required_by_server;
 
   return (
     <>
       <PanelHeader title="Two-factor authentication">
-        When required, signing in with a password also asks for a code. Passkeys and recovery codes already
-        count as a second factor.
+        When required, signing in with a password also asks for a code. Passkeys
+        and recovery codes already count as a second factor.
       </PanelHeader>
       <div className="account-toggle">
         <Switch
           checked={!!security?.two_factor_enabled}
-          disabled={noMethods}
-          onChange={(enabled) => attempt(setTwoFactorRequired(enabled)).then(setSecurity)}
+          disabled={noMethods || locked}
+          onChange={(enabled) =>
+            attempt(setTwoFactorRequired(enabled)).then(setSecurity)
+          }
           data-testid="two-factor-toggle"
         />
-        <Typography.Text strong>Require a second factor at password sign-in</Typography.Text>
+        <Typography.Text strong>
+          Require a second factor at password sign-in
+        </Typography.Text>
       </div>
-      {noMethods && <Alert type="info" showIcon message="Set up a method below before turning this on." />}
+      {locked && (
+        <Alert
+          type="info"
+          showIcon
+          message="This server requires a second factor for every account. Email codes are on; you can use an authenticator app instead."
+        />
+      )}
+      {noMethods && !locked && (
+        <Alert
+          type="info"
+          showIcon
+          message="Set up a method below before turning this on."
+        />
+      )}
       <List
         header="Methods"
-        dataSource={methods.filter((method) => method.available?.(security) ?? true)}
+        dataSource={methods.filter(
+          (method) => method.available?.(security) ?? true,
+        )}
         renderItem={(method) => (
           <List.Item
             actions={[
@@ -881,7 +1088,12 @@ export const TwoFactorPanel: React.FC<PanelProps> = ({ security, setSecurity, go
             <List.Item.Meta
               title={
                 <>
-                  {method.title} {method.enabled(security) ? <Tag color="green">On</Tag> : <Tag>Off</Tag>}
+                  {method.title}{" "}
+                  {method.enabled(security) ? (
+                    <Tag color="green">On</Tag>
+                  ) : (
+                    <Tag>Off</Tag>
+                  )}
                 </>
               }
               description={method.description}
@@ -926,6 +1138,13 @@ const add_auth_account_styles = async ({ LibDir }: ApiAppData) =>
   gap: 12px;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.account-connect {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .account-codes {
@@ -1163,6 +1382,8 @@ type Security = {
   totp_enabled: boolean;
   email_otp_enabled: boolean;
   email_available: boolean;
+  // The server's require_2fa: email codes count as on and the requirement is locked
+  required_by_server: boolean;
   has_password: boolean;
   recovery_codes_remaining: number;
 };
@@ -1173,22 +1394,29 @@ type TwoFactorChallenge = { challenge: string; methods: TwoFactorMethod[] };
 const security = (res: { data: Security }) => res.data;
 
 // ** Account security (signed in) **
-const getSecurity = (): Promise<Security> => api("users/security").then(security);
+const getSecurity = (): Promise<Security> =>
+  api("users/security").then(security);
 const setTwoFactorRequired = (enabled: boolean): Promise<Security> =>
   api("users/security", "PUT", { two_factor_enabled: enabled }).then(security);
 
-const newTotpSecret = (): Promise<{ secret: string; uri: string }> => api("users/security/totp", "POST");
+const newTotpSecret = (): Promise<{ secret: string; uri: string }> =>
+  api("users/security/totp", "POST");
 const enableTotp = (secret: string, code: string): Promise<Security> =>
   api("users/security/totp", "PUT", { secret, code }).then(security);
-const disableTotp = (): Promise<Security> => api("users/security/totp", "DELETE").then(security);
+const disableTotp = (): Promise<Security> =>
+  api("users/security/totp", "DELETE").then(security);
 
 const sendEmailSetupCode = () => api("users/security/email", "POST");
 const enableEmailCodes = (code: string): Promise<Security> =>
   api("users/security/email", "PUT", { code }).then(security);
-const disableEmailCodes = (): Promise<Security> => api("users/security/email", "DELETE").then(security);
+const disableEmailCodes = (): Promise<Security> =>
+  api("users/security/email", "DELETE").then(security);
 
-const changePassword = (attrs: { current_password?: string; password: string; password_confirmation: string }) =>
-  api("users/password", "PUT", attrs);
+const changePassword = (attrs: {
+  current_password?: string;
+  password: string;
+  password_confirmation: string;
+}) => api("users/password", "PUT", attrs);
 
 const signOutEverywhere = () => api("users/sessions", "DELETE");
 
@@ -1197,20 +1425,76 @@ const passwordSignIn = (
   credentials: { email: string; password: string },
   dispatch: Dispatch,
 ): Promise<{ two_factor?: TwoFactorChallenge }> =>
-  api("users/log_in", "POST", { user: credentials }).then((res) => (res.two_factor ? res : signedIn(dispatch)(res)));
+  api("users/log_in", "POST", { user: credentials }).then((res) =>
+    res.two_factor ? res : signedIn(dispatch)(res),
+  );
 
-const sendSignInEmailCode = (challenge: string) => api("users/log_in/two_factor/email", "POST", { challenge });
-const completeTwoFactor = (challenge: string, method: TwoFactorMethod, code: string, dispatch: Dispatch) =>
-  api("users/log_in/two_factor", "POST", { challenge, method, code }).then(signedIn(dispatch));
+const sendSignInEmailCode = (challenge: string) =>
+  api("users/log_in/two_factor/email", "POST", { challenge });
+const completeTwoFactor = (
+  challenge: string,
+  method: TwoFactorMethod,
+  code: string,
+  dispatch: Dispatch,
+) =>
+  api("users/log_in/two_factor", "POST", { challenge, method, code }).then(
+    signedIn(dispatch),
+  );
 
-const requestPasswordReset = (email: string) => api("users/reset_password", "POST", { email });
-const resetPassword = (token: string, password: string, password_confirmation: string) =>
-  api(\`users/reset_password/\${token}\`, "PUT", { password, password_confirmation });
+const requestPasswordReset = (email: string) =>
+  api("users/reset_password", "POST", { email });
+const resetPassword = (
+  token: string,
+  password: string,
+  password_confirmation: string,
+) =>
+  api(\`users/reset_password/\${token}\`, "PUT", {
+    password,
+    password_confirmation,
+  });
+// ** Email (signed in) **
+// "verify" means a code went to the new email (require_2fa); "changed" means it is saved.
+type EmailChange = { status: "changed" | "verify"; email: string };
+const requestEmailChange = (email: string): Promise<EmailChange> =>
+  api("users/email", "POST", { email });
+const confirmEmailChange = (email: string, code: string): Promise<EmailChange> =>
+  api("users/email", "PUT", { email, code });
+
+// ** OAuth accounts (signed in) **
+type OAuthAccount = {
+  id: string;
+  provider: string;
+  provider_email: string | null;
+  inserted_at: string;
+};
+const listOAuthAccounts = (): Promise<OAuthAccount[]> =>
+  api("users/oauth").then((res) => res.data);
+const unlinkOAuthAccount = (id: string) => api(\`users/oauth/\${id}\`, "DELETE");
+// Passed to the OAuth popup so the provider account links to this user
+const oauthLinkToken = (): Promise<string> =>
+  api("users/oauth/link", "POST").then((res) => res.token);
+
+// ** OAuth sign-up: choose the account's email before it is created **
+const sendOAuthSignupCode = (pending: string, email: string) =>
+  api("oauth/signup/code", "POST", { pending, email });
+const completeOAuthSignup =
+  (pending: string, email: string, code?: string) => (dispatch: Dispatch) =>
+    api("oauth/signup", "POST", { pending, email, code }).then(
+      signedIn(dispatch),
+    );
 
 // From the ?confirm=<token> link in the confirmation email
-const confirmAccount = (token: string) => api(\`users/confirm/\${token}\`, "POST");
+const confirmAccount = (token: string) =>
+  api(\`users/confirm/\${token}\`, "POST");
 
 export {
+  completeOAuthSignup,
+  confirmEmailChange,
+  listOAuthAccounts,
+  oauthLinkToken,
+  requestEmailChange,
+  sendOAuthSignupCode,
+  unlinkOAuthAccount,
   confirmAccount,
   getSecurity,
   setTwoFactorRequired,
@@ -1228,7 +1512,13 @@ export {
   requestPasswordReset,
   resetPassword,
 };
-export type { Security, TwoFactorMethod, TwoFactorChallenge };
+export type {
+  EmailChange,
+  OAuthAccount,
+  Security,
+  TwoFactorMethod,
+  TwoFactorChallenge,
+};
 ` }, "add_auth_account_requests");
 
 const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppNameCamel, AppNameSnake }: ApiAppData) =>
@@ -1256,15 +1546,25 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
   @doc "Whether email is set up (config/<env>/external_service_keys/email.exs), so email codes can be offered."
   def email_available?, do: Application.get_env(:${AppNameSnake}, :email, [])[:enabled] != false
 
+  @doc """
+  The server's \`require_2fa\` setting (config/<env>/config.exs). While on, every account
+  counts as having email codes on and must use a second factor; accounts keep their own
+  settings underneath, so turning it off restores them.
+  """
+  def server_required?, do: Application.get_env(:${AppNameSnake}, :require_2fa, false) == true
+
+  defp email_on?(%User{email_otp_enabled_at: enabled_at}), do: server_required?() or not is_nil(enabled_at)
+
   @doc "The second factors the user has set up and can use right now."
   def methods(%User{} = user),
     do:
-      [totp: user.totp_enabled_at, email: email_available?() && user.email_otp_enabled_at]
+      [totp: user.totp_enabled_at, email: email_available?() && email_on?(user)]
       |> Enum.filter(&elem(&1, 1))
       |> Enum.map(&to_string(elem(&1, 0)))
 
   @doc "Whether password sign-in must be followed by a second factor."
-  def required?(%User{two_factor_enabled: enabled} = user), do: enabled and methods(user) != []
+  def required?(%User{two_factor_enabled: enabled} = user),
+    do: (server_required?() or enabled) and methods(user) != []
 
   @doc "Everything the account security page shows."
   def status(%User{} = user) do
@@ -1272,16 +1572,22 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
       two_factor_enabled: required?(user),
       methods: methods(user),
       totp_enabled: not is_nil(user.totp_enabled_at),
-      email_otp_enabled: not is_nil(user.email_otp_enabled_at),
+      email_otp_enabled: email_on?(user),
       email_available: email_available?(),
+      required_by_server: server_required?(),
       has_password: not is_nil(user.hashed_password)
     }
   end
 
   @doc "Turns the second-factor requirement on or off; on needs at least one method."
-  def set_required(%User{totp_enabled_at: nil, email_otp_enabled_at: nil}, true), do: {:error, :no_methods}
+  def set_required(%User{totp_enabled_at: nil, email_otp_enabled_at: nil}, true),
+    do: {:error, :no_methods}
 
-  def set_required(%User{} = user, enabled), do: save(user, two_factor_enabled: enabled == true)
+  def set_required(%User{} = user, enabled) do
+    if server_required?() and enabled != true,
+      do: {:error, :required_by_server},
+      else: save(user, two_factor_enabled: enabled == true)
+  end
 
   ## Authenticator app
 
@@ -1292,7 +1598,10 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
   end
 
   def totp_uri(%User{email: email}, encoded_secret),
-    do: NimbleTOTP.otpauth_uri("#{@issuer}:#{email}", decode_secret!(encoded_secret), issuer: @issuer)
+    do:
+      NimbleTOTP.otpauth_uri("#{@issuer}:#{email}", decode_secret!(encoded_secret),
+        issuer: @issuer
+      )
 
   @doc "Stores the secret once the user proves their app produces matching codes."
   def enable_totp(%User{} = user, encoded_secret, code) do
@@ -1318,10 +1627,17 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
 
   @doc "Emails a six digit code, replacing any code sent before."
   def deliver_email_code(%User{} = user) do
-    code = 6 |> :crypto.strong_rand_bytes() |> :binary.decode_unsigned() |> rem(1_000_000) |> Integer.to_string() |> String.pad_leading(6, "0")
+    code = new_code()
 
     Repo.delete_all(UserToken.by_user_and_contexts_query(user, [@email_context]))
-    Repo.insert!(%UserToken{token: hash(code), context: @email_context, sent_to: user.email, user_id: user.id})
+
+    Repo.insert!(%UserToken{
+      token: hash(code),
+      context: @email_context,
+      sent_to: user.email,
+      user_id: user.id
+    })
+
     UserNotifier.deliver_two_factor_code(user, code)
   end
 
@@ -1330,11 +1646,17 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
     with {:ok, user} <- verify_email(user, code), do: save(user, email_otp_enabled_at: now())
   end
 
-  def disable_email(%User{} = user), do: update_and_relax(user, email_otp_enabled_at: nil)
+  def disable_email(%User{} = user) do
+    if server_required?(),
+      do: {:error, :required_by_server},
+      else: update_and_relax(user, email_otp_enabled_at: nil)
+  end
 
   defp verify_email(%User{} = user, code) do
     from(t in UserToken,
-      where: t.user_id == ^user.id and t.context == @email_context and t.token == ^hash(to_string(code)),
+      where:
+        t.user_id == ^user.id and t.context == @email_context and
+          t.token == ^hash(to_string(code)),
       where: t.inserted_at > ago(@email_code_minutes, "minute")
     )
     |> Repo.delete_all()
@@ -1350,7 +1672,10 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
   def challenge(%User{id: id}), do: Phoenix.Token.sign(${ApiNameCamel}.Endpoint, @challenge_salt, id)
 
   def challenged_user(challenge) do
-    with {:ok, id} <- Phoenix.Token.verify(${ApiNameCamel}.Endpoint, @challenge_salt, challenge, max_age: @challenge_seconds),
+    with {:ok, id} <-
+           Phoenix.Token.verify(${ApiNameCamel}.Endpoint, @challenge_salt, challenge,
+             max_age: @challenge_seconds
+           ),
          %User{} = user <- Repo.get(User, id) do
       {:ok, user}
     else
@@ -1389,7 +1714,18 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
 
   defp decode_secret!(encoded), do: encoded |> decode_secret() |> elem(1)
 
-  defp hash(code), do: :crypto.hash(:sha256, code)
+  @doc "A random six digit code."
+  def new_code,
+    do:
+      6
+      |> :crypto.strong_rand_bytes()
+      |> :binary.decode_unsigned()
+      |> rem(1_000_000)
+      |> Integer.to_string()
+      |> String.pad_leading(6, "0")
+
+  @doc "How codes are stored: only their hash is kept."
+  def hash(code), do: :crypto.hash(:sha256, to_string(code))
 
   defp now, do: DateTime.utc_now() |> DateTime.truncate(:second)
 end
@@ -1741,6 +2077,7 @@ export const security = (overrides = {}) => ({
     totp_enabled: false,
     email_otp_enabled: false,
     email_available: true,
+    required_by_server: false,
     has_password: true,
     recovery_codes_remaining: 12,
     ...overrides,
@@ -1755,7 +2092,539 @@ const add_auth_fake_auth_server = async (uiDir: string, { AppNameCamel }: Pick<A
     "add_auth_fake_auth_server"
   );
 
+// Account page: change email, verified first while require_2fa is on
+const add_auth_email_panel = async ({ LibDir, AppNameCamel, AppNameSnake }: ApiAppData) =>
+  generateFile({ dir: join(LibDir || "", "lib/typescript/components/auth/account"), filename: "EmailPanel.tsx", content: `import React, { useState } from "react";
+import { Button, Form, Input, Space, message } from "antd";
+import { MailOutlined } from "@ant-design/icons";
+import { useDispatch } from "react-redux";
+import type { Dispatch } from "redux";
+import { requestCurrentUser } from "../../../requests/User";
+import {
+  confirmEmailChange,
+  requestEmailChange,
+} from "../../../requests/Account";
+import { PanelHeader, attempt, type PanelProps } from "./panel";
+
+// Every account has an email. With require_2fa on the server, a new one is verified first.
+export const EmailPanel: React.FC<PanelProps> = ({ email, security }) => {
+  const dispatch = useDispatch<Dispatch>();
+  const [form] = Form.useForm();
+  const [pending, setPending] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+
+  const changed = (next: string) => {
+    message.success(\`Your email is now \${next}\`);
+    setPending(null);
+    setCode("");
+    form.resetFields();
+    return requestCurrentUser(dispatch);
+  };
+
+  const request = ({ email: next }: { email: string }) =>
+    attempt(requestEmailChange(next)).then((res): unknown => {
+      if (res.status !== "verify") return changed(res.email);
+      setPending(res.email);
+      return message.success(\`Code sent to \${res.email}\`);
+    });
+
+  const confirm = () =>
+    pending &&
+    attempt(confirmEmailChange(pending, code)).then((res) =>
+      changed(res.email),
+    );
+
+  return (
+    <>
+      <PanelHeader title="Email">
+        Your account email is <strong>{email}</strong>. It is where sign-in
+        codes and password resets go.
+        {security?.required_by_server &&
+          " A new email is verified with a code before it is saved."}
+      </PanelHeader>
+      {pending ? (
+        <Space direction="vertical">
+          <span>Enter the code we sent to {pending}.</span>
+          <Space.Compact>
+            <Input
+              placeholder="123456"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.trim())}
+              onPressEnter={confirm}
+              data-testid="email-change-code"
+            />
+            <Button
+              type="primary"
+              onClick={confirm}
+              disabled={code.length !== 6}
+            >
+              Verify and save
+            </Button>
+          </Space.Compact>
+          <Button type="link" onClick={() => setPending(null)}>
+            Use a different email
+          </Button>
+        </Space>
+      ) : (
+        <Form form={form} layout="vertical" onFinish={request}>
+          <Form.Item
+            name="email"
+            label="New email"
+            rules={[
+              { required: true, message: "Enter an email" },
+              { type: "email", message: "Enter a valid email" },
+            ]}
+          >
+            <Input prefix={<MailOutlined />} placeholder="you@example.com" />
+          </Form.Item>
+          <Button type="primary" htmlType="submit">
+            {security?.required_by_server ? "Send code" : "Change email"}
+          </Button>
+        </Form>
+      )}
+    </>
+  );
+};
+` }, "add_auth_email_panel");
+
+// Account page: linked OAuth accounts, several per provider
+const add_auth_connected_accounts_panel = async ({ LibDir, AppNameCamel, AppNameSnake }: ApiAppData) =>
+  generateFile({ dir: join(LibDir || "", "lib/typescript/components/auth/account"), filename: "ConnectedAccountsPanel.tsx", content: `import React, { useCallback, useEffect, useState } from "react";
+import { Button, List, Popconfirm, Typography, message } from "antd";
+import {
+  listOAuthAccounts,
+  oauthLinkToken,
+  unlinkOAuthAccount,
+  type OAuthAccount,
+} from "../../../requests/Account";
+import {
+  initiateOAuth,
+  requestOAuthProviders,
+  type OAuthProvider,
+} from "../../../requests/User";
+import { OAuthButtons } from "../OAuthButtons";
+import { PanelHeader, attempt, type PanelProps } from "./panel";
+
+const AUTH_ORIGIN = new URL(
+  (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:4001",
+).origin;
+
+// OAuth accounts linked to this user: several are allowed, even from one provider.
+export const ConnectedAccountsPanel: React.FC<PanelProps> = () => {
+  const [accounts, setAccounts] = useState<OAuthAccount[]>([]);
+  const [providers, setProviders] = useState<OAuthProvider[]>([]);
+
+  const load = useCallback(
+    () => attempt(listOAuthAccounts()).then(setAccounts),
+    [],
+  );
+
+  useEffect(() => {
+    load();
+    requestOAuthProviders().then(setProviders);
+  }, [load]);
+
+  // The OAuth popup reports back once the provider account is linked
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== AUTH_ORIGIN) return;
+      if (event.data?.type === "oauth_linked") {
+        message.success(\`\${event.data.provider} account connected\`);
+        load();
+      }
+      if (event.data?.type === "oauth_error") message.error(event.data.error);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [load]);
+
+  const connect = (provider: string) =>
+    attempt(oauthLinkToken()).then((token) =>
+      initiateOAuth(provider, undefined, token),
+    );
+
+  const remove = (id: string) =>
+    attempt(unlinkOAuthAccount(id)).then(() => {
+      message.success("Account removed");
+      return load();
+    });
+
+  const label = (name: string) =>
+    providers.find((p) => p.name === name)?.label || name;
+
+  return (
+    <>
+      <PanelHeader title="Connected accounts">
+        Sign in with any of these. You can connect more than one, even from the
+        same provider.
+      </PanelHeader>
+      <List
+        className="account-list"
+        locale={{ emptyText: "No connected accounts yet" }}
+        dataSource={accounts}
+        renderItem={(account) => (
+          <List.Item
+            actions={[
+              <Popconfirm
+                key="remove"
+                title={\`Remove this \${label(account.provider)} account?\`}
+                description="You can no longer sign in with it."
+                onConfirm={() => remove(account.id)}
+              >
+                <Button size="small" danger>
+                  Remove
+                </Button>
+              </Popconfirm>,
+            ]}
+          >
+            <List.Item.Meta
+              title={label(account.provider)}
+              description={
+                <Typography.Text type="secondary">
+                  {account.provider_email || "No email shared"} · connected{" "}
+                  {new Date(account.inserted_at).toLocaleDateString()}
+                </Typography.Text>
+              }
+            />
+          </List.Item>
+        )}
+      />
+      {providers.length > 0 ? (
+        <section className="account-connect">
+          <Typography.Text strong>Connect another account</Typography.Text>
+          <OAuthButtons onSelect={connect} />
+        </section>
+      ) : (
+        <Typography.Paragraph type="secondary">
+          No sign-in providers are set up on this server yet
+          (config/&lt;env&gt;/external_service_keys/oauth.exs).
+        </Typography.Paragraph>
+      )}
+    </>
+  );
+};
+` }, "add_auth_connected_accounts_panel");
+
+// OAuth sign-up chooses the account email before it is created
+const add_auth_oauth_signup_modal = async ({ LibDir, AppNameCamel, AppNameSnake }: ApiAppData) =>
+  generateFile({ dir: join(LibDir || "", "lib/typescript/components/auth"), filename: "OAuthSignupModal.tsx", content: `import React, { useEffect, useState } from "react";
+import { Button, Form, Input, Space, Typography, message } from "antd";
+import { MailOutlined, SafetyOutlined } from "@ant-design/icons";
+import { useDispatch } from "react-redux";
+import type { Dispatch } from "redux";
+import {
+  completeOAuthSignup,
+  sendOAuthSignupCode,
+} from "../../requests/Account";
+import { AuthModal } from "./AuthModal";
+import { showRecoveryCodes } from "./RecoveryCodes";
+
+// What the OAuth popup hands over when the provider account is new
+export type OAuthSignup = {
+  pending: string;
+  email: string | null;
+  provider: string;
+  verify: boolean;
+};
+
+interface OAuthSignupModalProps {
+  signup: OAuthSignup | null;
+  onCancel: () => void;
+}
+
+// A new OAuth sign-up chooses the account's email before the account is created. It can
+// differ from the provider's. With require_2fa on the server, it is verified with a code.
+export const OAuthSignupModal: React.FC<OAuthSignupModalProps> = ({
+  signup,
+  onCancel,
+}) => {
+  const dispatch = useDispatch<Dispatch>();
+  const [form] = Form.useForm();
+  const [sentTo, setSentTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    form.setFieldsValue({ email: signup?.email || "", code: "" });
+    setSentTo(null);
+  }, [signup, form]);
+
+  if (!signup) return null;
+
+  const fail = (e: Error) => message.error(e.message);
+
+  const sendCode = (email: string) =>
+    sendOAuthSignupCode(signup.pending, email)
+      .then(() => {
+        setSentTo(email);
+        message.success(\`Code sent to \${email}\`);
+      })
+      .catch(fail);
+
+  const create = ({ email, code }: { email: string; code?: string }) =>
+    signup.verify && sentTo !== email
+      ? sendCode(email)
+      : completeOAuthSignup(signup.pending, email, code)(dispatch)
+          .then((res) => {
+            message.success("Account created");
+            onCancel();
+            showRecoveryCodes(res.recovery_codes);
+          })
+          .catch(fail);
+
+  return (
+    <AuthModal title="Choose your email" visible onCancel={onCancel}>
+      <Typography.Paragraph type="secondary">
+        You're signing up with {signup.provider}. Choose the email for your
+        account; it doesn't have to match your {signup.provider} email.
+      </Typography.Paragraph>
+      <Form form={form} onFinish={create} layout="vertical" requiredMark={false}>
+        <Form.Item
+          name="email"
+          rules={[
+            { required: true, message: "Enter an email" },
+            { type: "email", message: "Enter a valid email" },
+          ]}
+        >
+          <Input
+            prefix={<MailOutlined />}
+            placeholder="Email"
+            autoComplete="email"
+          />
+        </Form.Item>
+        {signup.verify && sentTo && (
+          <Form.Item
+            name="code"
+            extra={\`Enter the code we sent to \${sentTo}.\`}
+            rules={[{ required: true, len: 6, message: "Enter the 6 digit code" }]}
+          >
+            <Input
+              prefix={<SafetyOutlined />}
+              placeholder="123456"
+              inputMode="numeric"
+              maxLength={6}
+            />
+          </Form.Item>
+        )}
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <Button type="primary" htmlType="submit" block>
+            {signup.verify && !sentTo ? "Send code" : "Create account"}
+          </Button>
+        </Space>
+      </Form>
+    </AuthModal>
+  );
+};
+` }, "add_auth_oauth_signup_modal");
+
+// Tests for require_2fa, email change and OAuth accounts
+const add_auth_account_identity_test = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/test/${AppNameSnake}_${ApiNameSnake}`), filename: "account_identity_test.exs", content: `defmodule ${ApiNameCamel}.AccountIdentityTest do
+  @moduledoc "require_2fa, changing email, and OAuth accounts (sign-up, linking, removing)."
+  use ${ApiNameCamel}.ConnCase, async: false
+
+  alias Ithibati.Identity.Sessions
+  alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.Accounts.{OAuthAccounts, User}
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  @password "correct horse battery"
+
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    ${ApiNameCamel}.IthibatiHelpers.claim_instance!()
+    on_exit(fn -> Application.put_env(:${AppNameSnake}, :require_2fa, false) end)
+    {:ok, user} = Accounts.register_user(%{email: unique_email(), password: @password})
+    {:ok, user: user}
+  end
+
+  defp unique_email, do: "user#{System.unique_integer([:positive])}@example.com"
+  defp require_2fa(on), do: Application.put_env(:${AppNameSnake}, :require_2fa, on)
+
+  defp api(user) do
+    token = user |> Sessions.generate_session_token() |> Base.url_encode64()
+    put_req_header(build_conn(), "authorization", "Bearer " <> token)
+  end
+
+  defp log_in(user),
+    do: build_conn() |> post("/api/users/log_in", %{email: user.email, password: @password})
+
+  defp emailed_code(subject) do
+    assert_received {:email, %{subject: ^subject, text_body: body}}
+    [code] = Regex.run(~r/\\b\\d{6}\\b/, body)
+    code
+  end
+
+  # What a provider's callback hands over: profile and token response
+  defp provider_account(id, email \\\\ nil),
+    do: {%{"id" => id, "email" => email}, %{"access_token" => "token-#{id}", "expires_in" => 3600}}
+
+  describe "require_2fa" do
+    test "off: an account without methods signs in with just a password", %{user: user} do
+      assert %{"token" => _} = user |> log_in() |> json_response(200)
+    end
+
+    test "on: every account has email codes on and the requirement locked", %{user: user} do
+      require_2fa(true)
+
+      assert %{"data" => status} = user |> api() |> get("/api/users/security") |> json_response(200)
+      assert %{"email_otp_enabled" => true, "two_factor_enabled" => true, "required_by_server" => true} = status
+      assert status["methods"] == ["email"]
+
+      assert %{"error" => "required_by_server"} =
+               user |> api() |> put("/api/users/security", %{two_factor_enabled: false}) |> json_response(422)
+
+      assert %{"error" => "required_by_server"} =
+               user |> api() |> delete("/api/users/security/email") |> json_response(422)
+    end
+
+    test "on: password sign-in asks for a code even if the user never set one up", %{user: user} do
+      require_2fa(true)
+
+      assert %{"two_factor" => %{"challenge" => challenge, "methods" => ["email"]}} =
+               user |> log_in() |> json_response(200)
+
+      build_conn() |> post("/api/users/log_in/two_factor/email", %{challenge: challenge}) |> json_response(200)
+      code = emailed_code("Your sign-in code")
+
+      assert %{"token" => _} =
+               build_conn()
+               |> post("/api/users/log_in/two_factor", %{challenge: challenge, method: "email", code: code})
+               |> json_response(200)
+    end
+
+    test "turning it off restores the account's own settings", %{user: user} do
+      require_2fa(true)
+      assert %{"two_factor" => _} = user |> log_in() |> json_response(200)
+
+      require_2fa(false)
+      assert %{"token" => _} = user |> log_in() |> json_response(200)
+      assert %{"data" => %{"email_otp_enabled" => false}} = user |> api() |> get("/api/users/security") |> json_response(200)
+    end
+  end
+
+  describe "changing email" do
+    test "off: the new email is saved right away", %{user: user} do
+      new = unique_email()
+      assert %{"status" => "changed", "email" => ^new} = user |> api() |> post("/api/users/email", %{email: new}) |> json_response(200)
+      assert Repo.get!(User, user.id).email == new
+    end
+
+    test "on: the new email is saved only after its code comes back", %{user: user} do
+      require_2fa(true)
+      new = unique_email()
+
+      assert %{"status" => "verify"} = user |> api() |> post("/api/users/email", %{email: new}) |> json_response(200)
+      assert Repo.get!(User, user.id).email == user.email
+      code = emailed_code("Verify your email")
+
+      assert %{"error" => "invalid_code"} =
+               user |> api() |> put("/api/users/email", %{email: new, code: "000000"}) |> json_response(422)
+
+      assert %{"status" => "changed"} = user |> api() |> put("/api/users/email", %{email: new, code: code}) |> json_response(200)
+      assert %User{email: ^new, confirmed_at: %DateTime{}} = Repo.get!(User, user.id)
+    end
+
+    test "an email is always required and must be free", %{user: user} do
+      {:ok, other} = Accounts.register_user(%{email: unique_email(), password: @password})
+
+      assert %{"errors" => %{"email" => _}} = user |> api() |> post("/api/users/email", %{email: ""}) |> json_response(422)
+      assert %{"errors" => %{"email" => _}} = user |> api() |> post("/api/users/email", %{email: other.email}) |> json_response(422)
+    end
+  end
+
+  describe "OAuth sign-up" do
+    test "the account uses the email the person chose, not the provider's" do
+      {profile, tokens} = provider_account("gh-1", "someone@provider.example")
+      pending = OAuthAccounts.pending(:github, profile, tokens)
+      email = unique_email()
+
+      assert %{"token" => _, "data" => %{"email" => ^email}} =
+               build_conn() |> post("/api/oauth/signup", %{pending: pending, email: email}) |> json_response(201)
+
+      assert %User{email: ^email} = OAuthAccounts.user_for(:github, "gh-1")
+    end
+
+    test "an email is required" do
+      {profile, tokens} = provider_account("gh-2")
+      pending = OAuthAccounts.pending(:github, profile, tokens)
+
+      assert %{"errors" => %{"email" => _}} =
+               build_conn() |> post("/api/oauth/signup", %{pending: pending, email: ""}) |> json_response(422)
+    end
+
+    test "with require_2fa the email is verified before the account exists" do
+      require_2fa(true)
+      {profile, tokens} = provider_account("gh-3")
+      pending = OAuthAccounts.pending(:github, profile, tokens)
+      email = unique_email()
+
+      assert %{"error" => "invalid_code"} =
+               build_conn() |> post("/api/oauth/signup", %{pending: pending, email: email}) |> json_response(422)
+
+      assert OAuthAccounts.user_for(:github, "gh-3") == nil
+      build_conn() |> post("/api/oauth/signup/code", %{pending: pending, email: email}) |> json_response(200)
+      code = emailed_code("Verify your email")
+
+      assert %{"token" => _} =
+               build_conn() |> post("/api/oauth/signup", %{pending: pending, email: email, code: code}) |> json_response(201)
+    end
+
+    test "a tampered pending token is refused" do
+      assert %{"error" => "expired"} =
+               build_conn() |> post("/api/oauth/signup", %{pending: "nope", email: unique_email()}) |> json_response(422)
+    end
+  end
+
+  describe "linked OAuth accounts" do
+    test "a user can link several, including two from one provider, and remove them", %{user: user} do
+      for id <- ["gh-a", "gh-b"] do
+        {profile, tokens} = provider_account(id, "#{id}@provider.example")
+        assert {:ok, _} = OAuthAccounts.link(user, :github, profile, tokens)
+      end
+
+      {profile, tokens} = provider_account("g-1")
+      assert {:ok, _} = OAuthAccounts.link(user, :google, profile, tokens)
+
+      assert %{"data" => accounts} = user |> api() |> get("/api/users/oauth") |> json_response(200)
+      assert Enum.map(accounts, & &1["provider"]) == ["github", "github", "google"]
+      assert Enum.find(accounts, &(&1["provider_email"] == "gh-a@provider.example"))
+
+      [first | _] = accounts
+      assert %{"status" => "removed"} = user |> api() |> delete("/api/users/oauth/#{first["id"]}") |> json_response(200)
+      assert %{"data" => [_, _]} = user |> api() |> get("/api/users/oauth") |> json_response(200)
+    end
+
+    test "a provider account linked to one user cannot be linked to another", %{user: user} do
+      {:ok, other} = Accounts.register_user(%{email: unique_email(), password: @password})
+      {profile, tokens} = provider_account("gh-shared")
+
+      assert {:ok, _} = OAuthAccounts.link(user, :github, profile, tokens)
+      assert {:error, :linked_to_another_user} = OAuthAccounts.link(other, :github, profile, tokens)
+    end
+
+    test "a user cannot remove someone else's linked account", %{user: user} do
+      {:ok, other} = Accounts.register_user(%{email: unique_email(), password: @password})
+      {profile, tokens} = provider_account("gh-theirs")
+      {:ok, token} = OAuthAccounts.link(other, :github, profile, tokens)
+
+      assert user |> api() |> delete("/api/users/oauth/#{token.id}") |> json_response(404)
+    end
+
+    test "the link token identifies the signed-in user", %{user: user} do
+      assert %{"token" => token} = user |> api() |> post("/api/users/oauth/link") |> json_response(200)
+      assert {:ok, %User{id: id}} = OAuthAccounts.link_user(token)
+      assert id == user.id
+    end
+  end
+end
+` }, "add_auth_account_identity_test");
+
 export {
+  add_auth_email_panel,
+  add_auth_connected_accounts_panel,
+  add_auth_oauth_signup_modal,
+  add_auth_account_identity_test,
   add_auth_login_modal_test,
   add_auth_reset_password_modal,
   add_auth_account_modal_test,

@@ -1070,6 +1070,237 @@ end
     "add_auth_email_template"
   );
 
+
+// Changing email, verified with a code while require_2fa is on
+const add_auth_email_change = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "email_change.ex", content: `defmodule ${ApiNameCamel}.Accounts.EmailChange do
+  @moduledoc """
+  Changing a signed-in user's email. Every account has one. While the server requires
+  two-factor (\`require_2fa\`), a new email is only saved once the code sent to it comes
+  back; otherwise it changes right away.
+  """
+  import Ecto.Query, warn: false
+
+  alias ${ApiNameCamel}.Accounts.{TwoFactor, User, UserNotifier, UserToken}
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  @context "change_email"
+  @code_minutes 10
+
+  def verification_required?, do: TwoFactor.server_required?()
+
+  @doc "Saves the new email, or emails a code to it first. Returns {:ok, user} or {:ok, :verify}."
+  def request(%User{} = user, email) do
+    changeset = User.email_changeset(user, %{email: email})
+
+    cond do
+      not changeset.valid? -> {:error, changeset}
+      verification_required?() -> send_code(user, changeset.changes.email)
+      true -> Repo.update(changeset)
+    end
+  end
+
+  defp send_code(user, email) do
+    code = TwoFactor.new_code()
+    Repo.delete_all(UserToken.by_user_and_contexts_query(user, [@context]))
+
+    Repo.insert!(%UserToken{
+      token: TwoFactor.hash(code),
+      context: @context,
+      sent_to: email,
+      user_id: user.id
+    })
+
+    UserNotifier.deliver_email_verification_code(email, code)
+    {:ok, :verify}
+  end
+
+  @doc "Saves a new email once the code sent to it is entered. The email counts as confirmed."
+  def confirm(%User{} = user, email, code) do
+    from(t in UserToken,
+      where:
+        t.user_id == ^user.id and t.context == @context and t.sent_to == ^email and
+          t.token == ^TwoFactor.hash(code) and t.inserted_at > ago(@code_minutes, "minute")
+    )
+    |> Repo.delete_all()
+    |> case do
+      {1, _} ->
+        user
+        |> User.email_changeset(%{email: email})
+        |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
+        |> Repo.update()
+
+      _ ->
+        {:error, :invalid_code}
+    end
+  end
+end
+` }, "add_auth_email_change");
+
+// OAuth accounts: link many, sign up with a chosen email
+const add_auth_oauth_accounts = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "oauth_accounts.ex", content: `defmodule ${ApiNameCamel}.Accounts.OAuthAccounts do
+  @moduledoc """
+  OAuth accounts linked to users. A user can link any number of them, several from the
+  same provider too; each provider account belongs to one user.
+
+  Signing up with OAuth does not create the user straight away. The provider's details
+  wait in an encrypted \`pending\` token while the person picks the account's email, which
+  does not have to match the provider's. While \`require_2fa\` is on, that email is
+  verified with a code first. The code is derived from the token and the email, so
+  nothing is stored before the account exists.
+  """
+  import Ecto.Query, warn: false
+
+  alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.Accounts.{OAuthToken, TwoFactor, User, UserNotifier}
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  @pending_salt "oauth_signup"
+  @pending_seconds 900
+  @link_salt "oauth_link"
+  @link_seconds 300
+
+  ## Linked accounts
+
+  def list(%User{id: id}),
+    do: Repo.all(from(t in OAuthToken, where: t.user_id == ^id, order_by: t.inserted_at))
+
+  @doc "The user a provider account is linked to, or nil."
+  def user_for(provider, provider_user_id) do
+    from(t in OAuthToken,
+      where: t.provider == ^to_string(provider) and t.provider_user_id == ^to_string(provider_user_id),
+      preload: :user
+    )
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      token -> token.user
+    end
+  end
+
+  @doc "Links a provider account to the user, or refreshes its tokens when it is already theirs."
+  def link(%User{id: user_id}, provider, profile, token_data) do
+    attrs = attrs(provider, profile, token_data)
+
+    case Repo.get_by(OAuthToken, provider: attrs.provider, provider_user_id: attrs.provider_user_id) do
+      nil -> %OAuthToken{user_id: user_id} |> OAuthToken.changeset(attrs) |> Repo.insert()
+      %OAuthToken{user_id: ^user_id} = token -> token |> OAuthToken.changeset(attrs) |> Repo.update()
+      _theirs -> {:error, :linked_to_another_user}
+    end
+  end
+
+  def unlink(%User{id: user_id}, id) do
+    case Repo.get_by(OAuthToken, id: id, user_id: user_id) do
+      nil -> {:error, :not_found}
+      token -> Repo.delete(token)
+    end
+  end
+
+  @doc "A short-lived token the account page passes to the OAuth popup to link instead of sign in."
+  def link_token(%User{id: id}), do: Phoenix.Token.sign(${ApiNameCamel}.Endpoint, @link_salt, id)
+
+  def link_user(token) when is_binary(token) do
+    with {:ok, id} <- Phoenix.Token.verify(${ApiNameCamel}.Endpoint, @link_salt, token, max_age: @link_seconds),
+         %User{} = user <- Repo.get(User, id) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  def link_user(_token), do: :error
+
+  ## Sign-up
+
+  def pending(provider, profile, token_data),
+    do: Phoenix.Token.encrypt(${ApiNameCamel}.Endpoint, @pending_salt, attrs(provider, profile, token_data))
+
+  def pending_details(pending) do
+    case Phoenix.Token.decrypt(${ApiNameCamel}.Endpoint, @pending_salt, pending, max_age: @pending_seconds) do
+      {:ok, attrs} -> {:ok, attrs}
+      _ -> {:error, :expired}
+    end
+  end
+
+  def email_verification_required?, do: TwoFactor.server_required?()
+
+  @doc "Emails the code that verifies the sign-up email."
+  def send_signup_code(pending, email) do
+    with {:ok, _attrs} <- pending_details(pending) do
+      UserNotifier.deliver_email_verification_code(email, signup_code(pending, email))
+      :ok
+    end
+  end
+
+  @doc "Creates the user with the chosen email and links the provider account."
+  def complete_signup(pending, email, code \\\\ nil) do
+    with {:ok, attrs} <- pending_details(pending),
+         :ok <- check_code(pending, email, code) do
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:account, signup_changeset(email))
+      |> Accounts.claim_first_account()
+      |> Ecto.Multi.insert(:oauth, &OAuthToken.changeset(%OAuthToken{user_id: &1.account.id}, attrs))
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{account: user}} -> {:ok, user}
+        {:error, _step, %Ecto.Changeset{} = changeset, _changes} -> {:error, changeset}
+        {:error, _step, reason, _changes} -> {:error, reason}
+      end
+    end
+  end
+
+  # OAuth accounts have no password until the user sets one
+  defp signup_changeset(email) do
+    changeset = User.email_changeset(%User{}, %{email: email})
+
+    if email_verification_required?(),
+      do: Ecto.Changeset.put_change(changeset, :confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second)),
+      else: changeset
+  end
+
+  defp check_code(pending, email, code) do
+    cond do
+      not email_verification_required?() -> :ok
+      Plug.Crypto.secure_compare(to_string(code), signup_code(pending, email)) -> :ok
+      true -> {:error, :invalid_code}
+    end
+  end
+
+  defp signup_code(pending, email) do
+    <<n::unsigned-32, _rest::binary>> =
+      :crypto.mac(:hmac, :sha256, ${ApiNameCamel}.Endpoint.config(:secret_key_base), pending <> "|" <> String.downcase(email))
+
+    n |> rem(1_000_000) |> Integer.to_string() |> String.pad_leading(6, "0")
+  end
+
+  ## Helpers
+
+  def provider_user_id(profile), do: to_string(profile["id"] || profile["sub"] || "")
+
+  # Providers that never share an email get an undeliverable placeholder; it is not worth showing
+  def provider_email(%{"email" => email}) when is_binary(email),
+    do: if(String.ends_with?(email, ".oauth.invalid"), do: nil, else: email)
+
+  def provider_email(_profile), do: nil
+
+  defp attrs(provider, profile, token_data),
+    do: %{
+      provider: to_string(provider),
+      provider_user_id: provider_user_id(profile),
+      provider_email: provider_email(profile),
+      access_token: token_data["access_token"],
+      refresh_token: token_data["refresh_token"],
+      expires_at: expires_at(token_data["expires_in"])
+    }
+
+  defp expires_at(nil), do: nil
+
+  defp expires_at(seconds),
+    do: DateTime.utc_now() |> DateTime.add(seconds, :second) |> DateTime.truncate(:second)
+end
+` }, "add_auth_oauth_accounts");
+
 const add_auth_user_notifier = async ({
   AppDir,
   AppNameSnake,
@@ -1144,6 +1375,16 @@ const add_auth_user_notifier = async ({
         lines: ["Confirm this address to make it the email on your account."],
         action: {"Confirm new email", url},
         footer: "If you didn't ask for this change, you can ignore this email."
+      })
+
+  @doc "Deliver a code that verifies an email address before it is used."
+  def deliver_email_verification_code(email, code),
+    do:
+      deliver(email, "Verify your email", %{
+        heading: "Verify your email",
+        lines: ["Enter this code to confirm this address for your account. It expires in 10 minutes."],
+        code: code,
+        footer: "If you didn't ask for this, you can ignore this email."
       })
 
   @doc "Deliver an invitation to create an account."
@@ -1231,6 +1472,7 @@ const add_auth_oauth_token = async ({
           refresh_token: String.t() | nil,
           expires_at: DateTime.t() | nil,
           provider_user_id: String.t() | nil,
+          provider_email: String.t() | nil,
           user: User.t() | Ecto.Association.NotLoaded.t() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -1242,6 +1484,7 @@ const add_auth_oauth_token = async ({
     field(:refresh_token, :string)
     field(:expires_at, :utc_datetime)
     field(:provider_user_id, :string)
+    field(:provider_email, :string)
     belongs_to(:user, User)
 
     timestamps(type: :utc_datetime)
@@ -1250,12 +1493,22 @@ const add_auth_oauth_token = async ({
   @doc false
   def changeset(oauth_token, attrs) do
     oauth_token
-    |> cast(attrs, [:provider, :access_token, :refresh_token, :expires_at, :provider_user_id, :user_id])
-    |> validate_required([:provider, :access_token, :user_id])
+    |> cast(attrs, [
+      :provider,
+      :access_token,
+      :refresh_token,
+      :expires_at,
+      :provider_user_id,
+      :provider_email,
+      :user_id
+    ])
+    |> validate_required([:provider, :provider_user_id, :access_token, :user_id])
     |> validate_length(:provider, max: 50)
-    |> unique_constraint([:user_id, :provider])
+    # One provider account belongs to one user; a user may link many, even from one provider
+    |> unique_constraint([:provider, :provider_user_id])
   end
-end`;
+end
+`;
 
   return generateFile({ dir, filename, content }, "add_auth_oauth_token");
 };
@@ -1658,6 +1911,8 @@ export {
   add_auth_user_token,
   add_auth_user_notifier,
   add_auth_email_template,
+  add_auth_email_change,
+  add_auth_oauth_accounts,
   add_auth_oauth_state,
   add_auth_oauth_token,
   add_auth_account_schema,

@@ -18,6 +18,7 @@ import type { Dispatch } from "redux";
 import { pipe } from "mincurrypipe";
 import { Avatar, ConfigProvider, Dropdown, message, type MenuProps } from "antd";
 import { confirmAccount } from "../requests/Account";
+import { OAuthSignupModal, type OAuthSignup } from "./auth/OAuthSignupModal";
 import { selectUserdata, setUserdata, setToken } from "../state/User";
 import { logoutUser, requestCurrentUser } from "../requests/User";
 import {
@@ -95,6 +96,24 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     setResetToken(null);
     window.history.replaceState({}, document.title, window.location.pathname);
   };
+
+  // A new OAuth account picks its email before it is created (see OAuthSignupModal).
+  const [oauthSignup, setOAuthSignup] = useState<OAuthSignup | null>(null);
+  useEffect(() => {
+    const authOrigin = new URL(
+      (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:4001",
+    ).origin;
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== authOrigin) return;
+      if (event.data?.type === "oauth_signup") {
+        setLoginModalVisible(false);
+        setRegisterModalVisible(false);
+        setOAuthSignup(event.data);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   // A confirmation link from the welcome email carries ?confirm=<token>.
   useEffect(() => {
@@ -381,6 +400,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
       <AccountModal
         visible={accountModalVisible}
         onCancel={() => setAccountModalVisible(false)}
+      />
+      <OAuthSignupModal
+        signup={oauthSignup}
+        onCancel={() => setOAuthSignup(null)}
       />
       <ResetPasswordModal
         token={resetToken}

@@ -74,6 +74,8 @@ defmodule ${ApiNameCamel}.Router do
     post("/users/reset_password", PasswordJSONController, :request_reset)
     put("/users/reset_password/:token", PasswordJSONController, :reset)
     post("/users/confirm/:token", UserConfirmationJSONController, :update)
+    post("/oauth/signup/code", OAuthAccountJSONController, :signup_code)
+    post("/oauth/signup", OAuthAccountJSONController, :signup)
     get("/oauth/providers", OAuthController, :providers)
     delete("/users/log_out", UserSessionJSONController, :delete)
   end
@@ -98,6 +100,11 @@ defmodule ${ApiNameCamel}.Router do
     post("/users/security/email", SecurityJSONController, :send_email_code)
     put("/users/security/email", SecurityJSONController, :enable_email)
     delete("/users/security/email", SecurityJSONController, :disable_email)
+    post("/users/email", AccountEmailJSONController, :create)
+    put("/users/email", AccountEmailJSONController, :update)
+    get("/users/oauth", OAuthAccountJSONController, :index)
+    post("/users/oauth/link", OAuthAccountJSONController, :link)
+    delete("/users/oauth/:id", OAuthAccountJSONController, :delete)
   end
 
   pipeline :invitations do
