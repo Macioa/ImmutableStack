@@ -16,7 +16,19 @@ const add_web_test_deps = (webMix: string) => {
   return [webMix];
 };
 
+// Email: Swoosh plus Req (its API client) on the core app, which owns the Mailer
+const EMAIL_DEPS = `{:swoosh, "~> 1.30"},
+      {:req, "~> 0.7"},`;
+
+const add_core_email_deps = (coreMix: string) => {
+  const content = readFileSync(coreMix, "utf8");
+  if (content.includes("{:swoosh")) return [];
+  writeFileSync(coreMix, content.replace(/(defp deps do\s*\[\s*\n)/, `$1      ${EMAIL_DEPS}\n`), "utf8");
+  return [coreMix];
+};
+
 const add_auth_mix_dependency = async ({
+  LibDir,
   AppDir,
   WebDir,
   AppNameSnake,
@@ -49,12 +61,13 @@ const add_auth_mix_dependency = async ({
 
   writeFileSync(file, content, "utf8");
   const webFiles = add_web_test_deps(join(WebDir || "", "mix.exs"));
+  const coreFiles = add_core_email_deps(join(LibDir, "mix.exs"));
 
   await execute({ command: "mix deps.get", dir: UmbrellaDir }, "add_auth_mix_dependency");
 
   await format(file);
 
-  return [file, ...webFiles];
+  return [file, ...webFiles, ...coreFiles];
 };
 
 export { add_auth_mix_dependency };

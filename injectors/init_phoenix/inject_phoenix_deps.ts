@@ -39,8 +39,6 @@ const inject_app_deps = async ({ LibDir, Database }: AppData) => {
       {:phoenix_pubsub, "~> 2.4"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, ">= 0.0.0"},${deps}
-      {:swoosh, "~> 1.30"},
-      {:req, "~> 0.7"},
 `,
     ],
     [T.REPLACE, /\{:dns_cluster, "[^"]*"\}/, `{:dns_cluster, "~> 0.3.1"}`],

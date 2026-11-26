@@ -13,7 +13,7 @@ const add_auth_oauth_adapter = async (apiAppData: ApiAppData) => {
   @moduledoc """
   Runs the OAuth2 authorization code flow for any \`${ApiNameCamel}.OAuth.Provider\`.
 
-  Credentials come from \`config :${apiAppName}, :oauth\` (see \`config/<env>/keys.exs\`).
+  Credentials come from \`config :${apiAppName}, :oauth\` (see \`config/<env>/external_service_keys/oauth.exs\`).
   A provider without both a client ID and secret is treated as switched off:
   it is left out of \`enabled_providers/0\` and \`fetch_provider/1\` refuses it.
   """

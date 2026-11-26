@@ -844,6 +844,7 @@ const methods = [
     title: "Email codes",
     description: "A code sent to your email each time you sign in with a password.",
     enabled: (s: PanelProps["security"]) => !!s?.email_otp_enabled,
+    available: (s: PanelProps["security"]) => s?.email_available !== false,
   },
 ];
 
@@ -868,7 +869,7 @@ export const TwoFactorPanel: React.FC<PanelProps> = ({ security, setSecurity, go
       {noMethods && <Alert type="info" showIcon message="Set up a method below before turning this on." />}
       <List
         header="Methods"
-        dataSource={methods}
+        dataSource={methods.filter((method) => method.available?.(security) ?? true)}
         renderItem={(method) => (
           <List.Item
             actions={[
@@ -1161,6 +1162,7 @@ type Security = {
   methods: TwoFactorMethod[];
   totp_enabled: boolean;
   email_otp_enabled: boolean;
+  email_available: boolean;
   has_password: boolean;
   recovery_codes_remaining: number;
 };
@@ -1205,7 +1207,11 @@ const requestPasswordReset = (email: string) => api("users/reset_password", "POS
 const resetPassword = (token: string, password: string, password_confirmation: string) =>
   api(\`users/reset_password/\${token}\`, "PUT", { password, password_confirmation });
 
+// From the ?confirm=<token> link in the confirmation email
+const confirmAccount = (token: string) => api(\`users/confirm/\${token}\`, "POST");
+
 export {
+  confirmAccount,
   getSecurity,
   setTwoFactorRequired,
   newTotpSecret,
@@ -1247,9 +1253,15 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
 
   ## Status
 
-  @doc "The second factors the user has set up."
+  @doc "Whether email is set up (config/<env>/external_service_keys/email.exs), so email codes can be offered."
+  def email_available?, do: Application.get_env(:${AppNameSnake}, :email, [])[:enabled] != false
+
+  @doc "The second factors the user has set up and can use right now."
   def methods(%User{} = user),
-    do: [totp: user.totp_enabled_at, email: user.email_otp_enabled_at] |> Enum.filter(&elem(&1, 1)) |> Enum.map(&to_string(elem(&1, 0)))
+    do:
+      [totp: user.totp_enabled_at, email: email_available?() && user.email_otp_enabled_at]
+      |> Enum.filter(&elem(&1, 1))
+      |> Enum.map(&to_string(elem(&1, 0)))
 
   @doc "Whether password sign-in must be followed by a second factor."
   def required?(%User{two_factor_enabled: enabled} = user), do: enabled and methods(user) != []
@@ -1261,6 +1273,7 @@ const add_auth_two_factor = async ({ ApiNameCamel, ApiNameSnake, AppDir, AppName
       methods: methods(user),
       totp_enabled: not is_nil(user.totp_enabled_at),
       email_otp_enabled: not is_nil(user.email_otp_enabled_at),
+      email_available: email_available?(),
       has_password: not is_nil(user.hashed_password)
     }
   end
@@ -1392,7 +1405,7 @@ const add_auth_password_json_controller = async ({ ApiNameCamel, ApiNameSnake, A
   # Always answers the same way so the endpoint does not reveal which emails have accounts.
   def request_reset(conn, %{"email" => email}) when is_binary(email) do
     if user = Accounts.get_user_by_email(email),
-      do: Accounts.deliver_user_reset_password_instructions(user, &"#{ui_url(conn)}/?reset=#{&1}")
+      do: Accounts.deliver_user_reset_password_instructions(user, &${ApiNameCamel}.UIUrl.link(conn, "reset", &1))
 
     json(conn, %{status: "sent"})
   end
@@ -1413,13 +1426,6 @@ const add_auth_password_json_controller = async ({ ApiNameCamel, ApiNameSnake, A
       {:ok, _user} -> json(conn, %{status: "updated"})
       {:error, changeset} -> errors(conn, changeset)
     end
-  end
-
-  # Reset links go to the UI, which runs on one of the origins CORS already allows.
-  defp ui_url(conn) do
-    allowed = Application.get_env(:${AppNameSnake}, CORSPlug)[:origin] || []
-    origin = conn |> get_req_header("origin") |> List.first()
-    if origin in allowed, do: origin, else: List.first(allowed) || ${ApiNameCamel}.Endpoint.url()
   end
 
   defp errors(conn, changeset),
@@ -1734,6 +1740,7 @@ export const security = (overrides = {}) => ({
     methods: [],
     totp_enabled: false,
     email_otp_enabled: false,
+    email_available: true,
     has_password: true,
     recovery_codes_remaining: 12,
     ...overrides,

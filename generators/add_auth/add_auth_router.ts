@@ -73,6 +73,7 @@ defmodule ${ApiNameCamel}.Router do
     post("/users/log_in/two_factor/email", TwoFactorJSONController, :send_code)
     post("/users/reset_password", PasswordJSONController, :request_reset)
     put("/users/reset_password/:token", PasswordJSONController, :reset)
+    post("/users/confirm/:token", UserConfirmationJSONController, :update)
     get("/oauth/providers", OAuthController, :providers)
     delete("/users/log_out", UserSessionJSONController, :delete)
   end
@@ -118,7 +119,6 @@ defmodule ${ApiNameCamel}.Router do
       pipe_through(:browser)
 
       live_dashboard("/dashboard", metrics: ${ApiNameCamel}.Telemetry)
-      forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 

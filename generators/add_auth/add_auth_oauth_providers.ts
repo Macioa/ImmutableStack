@@ -8,7 +8,7 @@ const oauthDir = ({ AppDir, AppNameSnake, ApiNameSnake }: ApiAppData) =>
 
 const providerModule = (ApiNameCamel: string, { key, module, label, spec }: OAuthProvider) =>
   `defmodule ${ApiNameCamel}.OAuth.Providers.${module} do
-  @moduledoc "${label} sign in. Keys live in config/<env>/keys.exs."
+  @moduledoc "${label} sign in. Keys live in config/<env>/external_service_keys/oauth.exs."
 
   use ${ApiNameCamel}.OAuth.Provider,
     name: :${key},

@@ -30,7 +30,6 @@ const add_api_router = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel
       pipe_through([:fetch_session, :protect_from_forgery])
 
       live_dashboard("/dashboard", metrics: ${ApiNameCamel}.Telemetry)
-      forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 end`;
