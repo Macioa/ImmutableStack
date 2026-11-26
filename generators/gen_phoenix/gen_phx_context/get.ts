@@ -69,7 +69,9 @@ const get_single = ({ genName, genCamelName }: StringOnlyMap) => {
 const get_single_by_id = ({ genName, genCamelName }: StringOnlyMap) => {
   validate({ genName, genCamelName }, "get_single_by_id");
   return `
-  def get_${genName}!(id) when is_binary(id), do: Repo.get!(${genCamelName}, id)    
+  def get_${genName}!(id) when is_binary(id), do: Repo.get!(${genCamelName}, id)
+
+  def get_${genName}(id) when is_binary(id), do: Repo.get(${genCamelName}, id)
 `;
 };
 
