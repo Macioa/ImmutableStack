@@ -69,6 +69,10 @@ defmodule ${ApiNameCamel}.Router do
 
     post("/users/log_in", UserSessionJSONController, :create)
     post("/users/register", UserRegistrationJSONController, :create)
+    post("/users/log_in/two_factor", TwoFactorJSONController, :create)
+    post("/users/log_in/two_factor/email", TwoFactorJSONController, :send_code)
+    post("/users/reset_password", PasswordJSONController, :request_reset)
+    put("/users/reset_password/:token", PasswordJSONController, :reset)
     get("/oauth/providers", OAuthController, :providers)
     delete("/users/log_out", UserSessionJSONController, :delete)
   end
@@ -84,6 +88,15 @@ defmodule ${ApiNameCamel}.Router do
     post("/users/recovery_codes", RecoveryCodeJSONController, :create)
     put("/users/passkeys/:id", PasskeyJSONController, :update)
     delete("/users/passkeys/:id", PasskeyJSONController, :delete)
+    put("/users/password", PasswordJSONController, :update)
+    get("/users/security", SecurityJSONController, :show)
+    put("/users/security", SecurityJSONController, :update)
+    post("/users/security/totp", SecurityJSONController, :new_totp)
+    put("/users/security/totp", SecurityJSONController, :enable_totp)
+    delete("/users/security/totp", SecurityJSONController, :disable_totp)
+    post("/users/security/email", SecurityJSONController, :send_email_code)
+    put("/users/security/email", SecurityJSONController, :enable_email)
+    delete("/users/security/email", SecurityJSONController, :disable_email)
   end
 
   pipeline :invitations do
