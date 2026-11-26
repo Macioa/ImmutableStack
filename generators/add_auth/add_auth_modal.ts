@@ -82,7 +82,8 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   text-transform: uppercase;
   color: #e6fbff;
   padding-bottom: 8px;
-  background: linear-gradient(90deg, #61dafb, #b300ff) bottom center / 40px 2px no-repeat;
+  background: linear-gradient(90deg, #61dafb, #b300ff) bottom center / 40px 2px
+    no-repeat;
   text-shadow:
     0 0 4px #61dafb,
     0 0 12px #61dafb,
@@ -124,7 +125,13 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   content: "";
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #61dafb, #b300ff, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #61dafb,
+    #b300ff,
+    transparent
+  );
 }
 
 /* Icon-only provider buttons: wraps and centers for any number of providers */
@@ -146,7 +153,10 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   border-radius: 50%;
   border: 1.5px solid rgba(97, 218, 251, 0.35);
   background: rgba(22, 33, 62, 0.85);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .oauth-buttons .oauth-button.ant-btn:hover,
@@ -158,7 +168,6 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
     0 0 20px rgba(179, 0, 255, 0.35);
   outline: none;
 }
-
 
 /* Account menu: same navy surface, gradient border and glow as the panels */
 .user-menu-dropdown .ant-dropdown-menu {
@@ -182,12 +191,17 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: #e6fbff;
-  transition: background 0.2s ease, text-shadow 0.2s ease;
+  transition:
+    background 0.2s ease,
+    text-shadow 0.2s ease;
 }
 
-.user-menu-dropdown .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):hover {
+.user-menu-dropdown
+  .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):hover {
   background: rgba(97, 218, 251, 0.12);
-  text-shadow: 0 0 6px #61dafb, 0 0 14px rgba(179, 0, 255, 0.6);
+  text-shadow:
+    0 0 6px #61dafb,
+    0 0 14px rgba(179, 0, 255, 0.6);
 }
 
 /* Signed-in email: muted, normal case */
@@ -199,7 +213,13 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
 }
 
 .user-menu-dropdown .ant-dropdown-menu-item-divider {
-  background: linear-gradient(90deg, transparent, #61dafb, #b300ff, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #61dafb,
+    #b300ff,
+    transparent
+  );
 }
 
 /* Partial gradient bar between adjacent menu items */
@@ -215,13 +235,67 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   left: 25%;
   width: 50%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #61dafb, #b300ff, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #61dafb,
+    #b300ff,
+    transparent
+  );
 }
 
 .auth-links {
   display: flex;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+/* Recovery codes: two columns of monospace tiles in the theme cyan */
+.recovery-codes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 12px 0 16px;
+}
+
+.recovery-codes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recovery-codes-grid li {
+  padding: 8px 6px;
+  border: 1px solid rgba(97, 218, 251, 0.35);
+  border-radius: 8px;
+  background: rgba(13, 13, 26, 0.6);
+  font-family: Consolas, Menlo, monospace;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  text-align: center;
+  color: #61dafb;
+  user-select: all;
+}
+
+.recovery-codes-done {
+  margin-top: 4px;
+}
+
+.recovery-codes-grid li {
+  cursor: copy;
+}
+
+.recovery-codes-grid li:hover {
+  border-color: #61dafb;
+  box-shadow: 0 0 8px rgba(97, 218, 251, 0.35);
+}
+
+.recovery-code-input input {
+  font-family: Consolas, Menlo, monospace;
+  letter-spacing: 0.05em;
 }
 `;
 
