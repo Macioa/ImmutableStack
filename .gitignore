@@ -141,3 +141,6 @@ package.json.backup
 
 graphify-out/
 .claude/worktrees/
+
+# Claude Code hook scripts
+!.claude/hooks/*.js
