@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "@/utils/path";
 import { inject_file, Injection, InjectType } from "..";
 import { AppData } from "@/readers/get_app_data";
+import { add_auth_fake_auth_server } from "@/generators/add_auth/add_auth_account";
 
 const AUTH_UI_DEPENDENCIES = {
   antd: "^5.29.3",
@@ -83,11 +84,16 @@ const add_auth_ui_main = (uiDir: string) =>
   );
 
 // Adds the auth component to one UI, given its folder (apps/<app>_<ui>)
-const add_auth_to_ui = async (uiDir: string) =>
-  [await add_auth_ui_store(uiDir), await add_auth_ui_app(uiDir), await add_auth_ui_main(uiDir)].flat();
+const add_auth_to_ui = async (uiDir: string, { AppNameCamel }: Pick<AppData, "AppNameCamel">) =>
+  [
+    await add_auth_ui_store(uiDir),
+    await add_auth_ui_app(uiDir),
+    await add_auth_ui_main(uiDir),
+    await add_auth_fake_auth_server(uiDir, { AppNameCamel }),
+  ].flat();
 
 // Adds the auth component to every UI in the project
-const add_auth_to_all_uis = async ({ UiDirs }: AppData) =>
-  (await Promise.all(UiDirs.map(add_auth_to_ui))).flat();
+const add_auth_to_all_uis = async ({ UiDirs, AppNameCamel }: AppData) =>
+  (await Promise.all(UiDirs.map((uiDir) => add_auth_to_ui(uiDir, { AppNameCamel })))).flat();
 
 export { add_auth_ui_dependencies, add_auth_to_ui, add_auth_to_all_uis, has_auth_ui };

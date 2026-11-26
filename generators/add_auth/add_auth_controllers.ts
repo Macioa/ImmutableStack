@@ -391,7 +391,7 @@ const add_auth_user_registration_json_controller = async ({
   use ${ApiNameCamel}, :controller
 
   alias ${ApiNameCamel}.Accounts
-  alias ${ApiNameCamel}.UserAuth
+  alias Ithibati.Identity.RecoveryCodes
 
   action_fallback ${ApiNameCamel}.FallbackController
 
@@ -405,14 +405,10 @@ const add_auth_user_registration_json_controller = async ({
           &url(~p"/users/confirm/#{&1}")
         )
 
-        conn = UserAuth.log_in_user_json(conn, user)
-        user_token = get_session(conn, :user_token)
-        token = if user_token, do: Base.url_encode64(user_token), else: nil
-
+        # Every new account gets recovery codes, shown once in the registration response.
         conn
         |> put_status(:created)
-        |> put_view(json: ${ApiNameCamel}.UserJSON)
-        |> render(:show, user: user, token: token)
+        |> ${ApiNameCamel}.UserSessionJSONController.signed_in(user, %{}, %{recovery_codes: RecoveryCodes.regenerate(user)})
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
@@ -435,6 +431,7 @@ const add_auth_user_session_json_controller = async ({
   use ${ApiNameCamel}, :controller
 
   alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.Accounts.TwoFactor
   alias ${ApiNameCamel}.UserAuth
 
   action_fallback ${ApiNameCamel}.FallbackController
@@ -446,13 +443,9 @@ const add_auth_user_session_json_controller = async ({
 
     if email && password do
       if user = Accounts.get_user_by_email_and_password(email, password) do
-        conn = UserAuth.log_in_user_json(conn, user, user_params)
-        user_token = get_session(conn, :user_token)
-        token = if user_token, do: Base.url_encode64(user_token), else: nil
-
-        conn
-        |> put_view(json: ${ApiNameCamel}.UserJSON)
-        |> render(:show, user: user, token: token)
+        if TwoFactor.required?(user),
+          do: json(conn, %{two_factor: %{challenge: TwoFactor.challenge(user), methods: TwoFactor.methods(user)}}),
+          else: signed_in(conn, user, user_params)
       else
         conn
         |> put_status(:unauthorized)
@@ -463,6 +456,13 @@ const add_auth_user_session_json_controller = async ({
       |> put_status(:unprocessable_entity)
       |> json(%{error: "Email and password are required"})
     end
+  end
+
+  @doc "Renders the signed-in user with a bearer token, as every sign-in path answers."
+  def signed_in(conn, user, params \\\\ %{}, extra \\\\ %{}) do
+    conn = UserAuth.log_in_user_json(conn, user, params)
+    token = conn |> get_session(:user_token) |> Base.url_encode64()
+    json(conn, Map.merge(${ApiNameCamel}.UserJSON.show(%{user: user, token: token}), extra))
   end
 
   def delete_all(conn, _params) do

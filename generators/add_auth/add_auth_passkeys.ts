@@ -768,7 +768,15 @@ const add_auth_browser_test = async ({ WebDir, AppNameCamel, ApiNameCamel }: Api
     Ecto.Adapters.SQL.Sandbox.mode(AuthRepo, {:shared, self()})
   end
 
-  defp menu(conn, item), do: conn |> click(".ant-avatar") |> click(".ant-dropdown-menu-item", item)
+  defp menu(conn, item),
+    do: conn |> click(".ant-avatar") |> click(".ant-dropdown-menu-item", item)
+
+  # Account sections live in the account modal's left navigation; groups expand first.
+  defp account(conn, section, group \\\\ nil) do
+    conn = menu(conn, "Account")
+    conn = if group, do: click(conn, ".account-nav .ant-menu-submenu-title", group), else: conn
+    click(conn, ".account-nav .ant-menu-item", section)
+  end
 
   defp register(conn, email) do
     conn
@@ -778,7 +786,8 @@ const add_auth_browser_test = async ({ WebDir, AppNameCamel, ApiNameCamel }: Api
     |> assert_has("[data-testid=recovery-codes]")
   end
 
-  defp close_codes(conn), do: conn |> click_button("OK") |> refute_has("[data-testid=recovery-codes]")
+  defp close_codes(conn),
+    do: conn |> click_button("OK") |> refute_has("[data-testid=recovery-codes]")
 
   # evaluate/3 hands the page's value to a callback in this process.
   defp value(conn, js) do
@@ -787,20 +796,35 @@ const add_auth_browser_test = async ({ WebDir, AppNameCamel, ApiNameCamel }: Api
     value
   end
 
-  defp codes(conn), do: conn |> value("document.querySelector('[data-testid=recovery-codes]').innerText") |> String.split()
+  defp codes(conn),
+    do:
+      conn
+      |> value("document.querySelector('[data-testid=recovery-codes]').innerText")
+      |> String.split()
 
-  defp signed_in_as(conn, email), do: conn |> click(".ant-avatar") |> assert_has(".ant-dropdown-menu-item", text: email)
+  defp signed_in_as(conn, email),
+    do: conn |> click(".ant-avatar") |> assert_has(".ant-dropdown-menu-item", text: email)
 
-  defp sign_out(conn), do: conn |> click(".ant-dropdown-menu-item", "Sign Out") |> refute_has(".ant-dropdown-menu-item", text: "Sign Out")
+  defp sign_out(conn),
+    do:
+      conn
+      |> click(".ant-dropdown-menu-item", "Sign Out")
+      |> refute_has(".ant-dropdown-menu-item", text: "Sign Out")
 
   defp user(email), do: AuthRepo.get_by!(User, email: email)
 
-  test "the first account claims the instance with a passkey, signs out and back in", %{conn: conn} do
+  test "the first account claims the instance with a passkey, signs out and back in", %{
+    conn: conn
+  } do
     conn = conn |> virtual_authenticator() |> visit("/") |> register("admin@example.com")
 
     assert length(codes(conn)) == 12
     assert length(credentials(conn)) == 1
-    assert AuthRepo.get_by(UserAccess, user_id: user("admin@example.com").id, tag_id: "invitations")
+
+    assert AuthRepo.get_by(UserAccess,
+             user_id: user("admin@example.com").id,
+             tag_id: "invitations"
+           )
 
     conn
     |> close_codes()
@@ -821,6 +845,7 @@ const add_auth_browser_test = async ({ WebDir, AppNameCamel, ApiNameCamel }: Api
     |> sign_out()
     |> forget_credentials()
     |> menu("Sign In")
+    |> click("a", "Recover account")
     |> type("input[placeholder='Recovery code']", code)
     |> click_button("Use code")
     |> signed_in_as("lost@example.com")
@@ -832,7 +857,7 @@ const add_auth_browser_test = async ({ WebDir, AppNameCamel, ApiNameCamel }: Api
     # The page's authenticator forgets the first key: a second device enrolls the next.
     conn
     |> close_codes()
-    |> menu("Passkeys")
+    |> account("Passkeys")
     |> assert_has(".ant-list-item", count: 1)
     |> forget_credentials()
     |> click_button("Add a passkey")
@@ -853,7 +878,7 @@ const add_auth_browser_test = async ({ WebDir, AppNameCamel, ApiNameCamel }: Api
     link =
       conn
       |> close_codes()
-      |> menu("Invitations")
+      |> account("Manage invitations", "Invitations")
       |> type("input#email", "guest@example.com")
       |> click_button("Create invitation")
       |> assert_has("[data-testid=invite-link]")
@@ -870,6 +895,50 @@ const add_auth_browser_test = async ({ WebDir, AppNameCamel, ApiNameCamel }: Api
 
     assert user("guest@example.com")
     refute AuthRepo.get_by(User, email: "someone-else@example.com")
+  end
+
+  test "password sign-up shows recovery codes, then an authenticator app guards sign in", %{conn: conn} do
+    conn =
+      conn
+      |> visit("/")
+      |> menu("Register")
+      |> type("#register_email", "totp@example.com")
+      |> type("#register_password", "a long enough password")
+      |> type("#register_password_confirmation", "a long enough password")
+      |> click_button("button[type=submit]", "Register")
+      |> assert_has("[data-testid=recovery-codes]")
+
+    assert length(codes(conn)) == 12
+
+    conn =
+      conn
+      |> close_codes()
+      |> account("Authenticator app")
+      |> click_button("Set up authenticator app")
+      |> assert_has("[data-testid=totp-secret] code")
+
+    secret = conn |> value("document.querySelector('[data-testid=totp-secret] code').innerText") |> Base.decode32!(padding: false)
+
+    conn
+    |> type("input[placeholder='123456']", NimbleTOTP.verification_code(secret))
+    |> click_button("Verify")
+    |> assert_has("button", text: "Remove authenticator app")
+    |> click(".account-nav .ant-menu-item", "Two-factor")
+    |> click("[data-testid=two-factor-toggle]")
+    |> assert_has("[data-testid=two-factor-toggle].ant-switch-checked")
+
+    # The enable step's period is spent only for sign-in, so the current code still works.
+    conn
+    |> visit("/")
+    |> menu("Sign Out")
+    |> menu("Sign In")
+    |> type("#login_email", "totp@example.com")
+    |> type("#login_password", "a long enough password")
+    |> click_button("button[type=submit]", "Sign In")
+    |> assert_has(".auth-modal-title", text: "Two-factor verification")
+    |> type("input[placeholder='123456']", NimbleTOTP.verification_code(secret))
+    |> click_button("Verify")
+    |> signed_in_as("totp@example.com")
   end
 end
 `,
@@ -945,9 +1014,16 @@ const headers = (): Record<string, string> => {
   };
 };
 
+// Validation errors arrive as { field: [messages] }; show the first as "field message".
+const fieldError = (errors?: Record<string, string[]>) =>
+  errors &&
+  Object.entries(errors)
+    .map(([field, [first]]) => \`\${field.replace(/_/g, " ")} \${first}\`)
+    .shift();
+
 const parse = async (res: Response) => {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || \`\${res.status}\`);
+  if (!res.ok) throw new Error(data.error || fieldError(data.errors) || \`\${res.status}\`);
   return data;
 };
 
@@ -965,14 +1041,20 @@ const signedIn = (dispatch: Dispatch) => (res: any) => {
     storeToken(res.token);
     dispatch(setToken(res.token));
   }
-  return res as { recovery_codes?: string[] };
+  return res as { recovery_codes?: string[]; [key: string]: any };
 };
 
 // An invitation token, when present, binds or approves the email server-side.
-const registerPasskey = (email: string, dispatch: Dispatch, token?: string | null) =>
+const registerPasskey = (
+  email: string,
+  dispatch: Dispatch,
+  token?: string | null,
+) =>
   post("registration/challenge", { email, ...(token ? { token } : {}) })
     .then(register)
-    .then((credential) => post("registration", { email, credential, ...(token ? { token } : {}) }))
+    .then((credential) =>
+      post("registration", { email, credential, ...(token ? { token } : {}) }),
+    )
     .then(signedIn(dispatch));
 
 const signInWithPasskey = (dispatch: Dispatch) =>
@@ -981,7 +1063,12 @@ const signInWithPasskey = (dispatch: Dispatch) =>
     .then((credential) => post("authentication", { credential }))
     .then(signedIn(dispatch));
 
-type Passkey = { id: string; label: string; last_used_at: string | null; inserted_at: string };
+type Passkey = {
+  id: string;
+  label: string;
+  last_used_at: string | null;
+  inserted_at: string;
+};
 
 // Signed in: the bearer token makes the server enroll on the current account.
 const addPasskey = (label: string) =>
@@ -989,8 +1076,10 @@ const addPasskey = (label: string) =>
     .then(register)
     .then((credential) => post("registration", { label, credential }));
 
-const listPasskeys = (): Promise<Passkey[]> => api("users/passkeys").then((res) => res.data);
-const renamePasskey = (id: string, label: string) => api(\`users/passkeys/\${id}\`, "PUT", { label });
+const listPasskeys = (): Promise<Passkey[]> =>
+  api("users/passkeys").then((res) => res.data);
+const renamePasskey = (id: string, label: string) =>
+  api(\`users/passkeys/\${id}\`, "PUT", { label });
 const deletePasskey = (id: string) => api(\`users/passkeys/\${id}\`, "DELETE");
 
 // Signs in with a single-use code; the last code returns a fresh batch.
@@ -1002,18 +1091,31 @@ const remainingRecoveryCodes = (): Promise<number> =>
 const regenerateRecoveryCodes = (): Promise<string[]> =>
   api("users/recovery_codes", "POST").then((res) => res.recovery_codes);
 
-type Invitation = { id: string; email: string | null; note: string | null; expires_at: string; token?: string };
+type Invitation = {
+  id: string;
+  email: string | null;
+  note: string | null;
+  expires_at: string;
+  token?: string;
+};
 
-const listInvitations = (): Promise<Invitation[]> => api("invitations").then((res) => res.data);
-const createInvitation = (attrs: { email?: string; note?: string }): Promise<Invitation> =>
+const listInvitations = (): Promise<Invitation[]> =>
+  api("invitations").then((res) => res.data);
+const createInvitation = (attrs: {
+  email?: string;
+  note?: string;
+}): Promise<Invitation> =>
   api("invitations", "POST", attrs).then((res) => res.data);
 const withdrawInvitation = (id: string) => api(\`invitations/\${id}\`, "DELETE");
-const inviteLink = (token: string) => \`\${window.location.origin}/?invite=\${token}\`;
+const inviteLink = (token: string) =>
+  \`\${window.location.origin}/?invite=\${token}\`;
 
 // The operator code from \`mix ${AppNameSnake}_${ApiNameSnake}.setup_code\` unlocks the first sign-up.
 const authorizeSetup = (code: string) => post("setup", { code });
 
 export {
+  api,
+  signedIn,
   authorizeSetup,
   listInvitations,
   createInvitation,
@@ -1022,7 +1124,13 @@ export {
   recoverWithCode,
   remainingRecoveryCodes,
   regenerateRecoveryCodes,
-  registerPasskey, signInWithPasskey, addPasskey, listPasskeys, renamePasskey, deletePasskey };
+  registerPasskey,
+  signInWithPasskey,
+  addPasskey,
+  listPasskeys,
+  renamePasskey,
+  deletePasskey,
+};
 export type { Passkey, Invitation };
 `,
     },
@@ -1043,167 +1151,19 @@ const add_auth_ithibati_types = async ({ LibDir }: ApiAppData) =>
     "add_auth_ithibati_types"
   );
 
-const add_auth_passkeys_modal = async ({ LibDir }: ApiAppData) =>
-  generateFile(
-    {
-      dir: join(LibDir || "", `lib/typescript/components/auth`),
-      filename: "PasskeysModal.tsx",
-      content: `import React, { useEffect, useState } from "react";
-import { Button, List, Modal, Typography, message } from "antd";
-import {
-  addPasskey,
-  listPasskeys,
-  renamePasskey,
-  deletePasskey,
-  remainingRecoveryCodes,
-  regenerateRecoveryCodes,
-  type Passkey,
-} from "../../requests/Passkeys";
-import { showRecoveryCodes } from "./RecoveryCodes";
-
-interface PasskeysModalProps {
-  visible: boolean;
-  onCancel: () => void;
-}
-
-// Lists the signed-in user's passkeys; add, rename and revoke them.
-export const PasskeysModal: React.FC<PasskeysModalProps> = ({ visible, onCancel }) => {
-  const [keys, setKeys] = useState<Passkey[]>([]);
-  const [remaining, setRemaining] = useState<number>(0);
-  const refresh = () =>
-    Promise.all([listPasskeys().then(setKeys), remainingRecoveryCodes().then(setRemaining)]).catch(
-      (e) => message.error(e.message),
-    );
-  const run = (action: Promise<unknown>) => action.then(refresh).catch((e) => message.error(e.message));
-
-  useEffect(() => {
-    if (visible) refresh();
-  }, [visible]);
-
-  return (
-    <Modal title="Passkeys" open={visible} onCancel={onCancel} footer={null}>
-      <List
-        dataSource={keys}
-        locale={{ emptyText: "No passkeys yet" }}
-        renderItem={(key) => (
-          <List.Item
-            actions={[
-              <Button danger size="small" onClick={() => run(deletePasskey(key.id))}>
-                Remove
-              </Button>,
-            ]}
-          >
-            <Typography.Text editable={{ onChange: (label) => run(renamePasskey(key.id, label)) }}>
-              {key.label}
-            </Typography.Text>
-          </List.Item>
-        )}
-      />
-      <Button block type="primary" onClick={() => run(addPasskey(navigator.platform || "Passkey"))}>
-        Add a passkey
-      </Button>
-      <Typography.Paragraph style={{ marginTop: 16 }}>
-        {remaining} recovery codes left.
-      </Typography.Paragraph>
-      <Button block onClick={() => run(regenerateRecoveryCodes().then(showRecoveryCodes))}>
-        Generate new recovery codes
-      </Button>
-    </Modal>
-  );
-};
-`,
-    },
-    "add_auth_passkeys_modal"
-  );
-
-const add_auth_invitations_modal = async ({ LibDir }: ApiAppData) =>
-  generateFile(
-    {
-      dir: join(LibDir || "", `lib/typescript/components/auth`),
-      filename: "InvitationsModal.tsx",
-      content: `import React, { useEffect, useState } from "react";
-import { Button, Form, Input, List, Modal, Typography, message } from "antd";
-import {
-  listInvitations,
-  createInvitation,
-  withdrawInvitation,
-  inviteLink,
-  type Invitation,
-} from "../../requests/Passkeys";
-
-interface InvitationsModalProps {
-  visible: boolean;
-  onCancel: () => void;
-}
-
-// Requires the "invitations" access tag; the server answers 403 otherwise.
-export const InvitationsModal: React.FC<InvitationsModalProps> = ({ visible, onCancel }) => {
-  const [form] = Form.useForm();
-  const [pending, setPending] = useState<Invitation[]>([]);
-  const [link, setLink] = useState<string>("");
-  const refresh = () => listInvitations().then(setPending).catch((e) => message.error(e.message));
-
-  useEffect(() => {
-    if (visible) refresh();
-  }, [visible]);
-
-  // Leave email empty for an open invitation: the invitee picks their own.
-  const invite = ({ email, note }: { email?: string; note?: string }) =>
-    createInvitation({ ...(email ? { email } : {}), ...(note ? { note } : {}) })
-      .then((invitation) => {
-        setLink(inviteLink(invitation.token!));
-        form.resetFields();
-        return refresh();
-      })
-      .catch((e) => message.error(e.message));
-
-  return (
-    <Modal title="Invitations" open={visible} onCancel={onCancel} footer={null}>
-      <Form form={form} layout="vertical" onFinish={invite}>
-        <Form.Item name="email" label="Email (optional)">
-          <Input placeholder="Leave empty to let the invitee choose" />
-        </Form.Item>
-        <Form.Item name="note" label="Note">
-          <Input />
-        </Form.Item>
-        <Button block type="primary" htmlType="submit">
-          Create invitation
-        </Button>
-      </Form>
-      {link && (
-        <Typography.Paragraph copyable style={{ marginTop: 16 }} data-testid="invite-link">
-          {link}
-        </Typography.Paragraph>
-      )}
-      <List
-        header="Pending"
-        dataSource={pending}
-        renderItem={(invitation) => (
-          <List.Item
-            actions={[
-              <Button size="small" onClick={() => withdrawInvitation(invitation.id).then(refresh)}>
-                Withdraw
-              </Button>,
-            ]}
-          >
-            {invitation.email || invitation.note || "Open invitation"}
-          </List.Item>
-        )}
-      />
-    </Modal>
-  );
-};
-`,
-    },
-    "add_auth_invitations_modal"
-  );
-
 const add_auth_recovery_codes = async ({ LibDir }: ApiAppData) =>
   generateFile(
     {
       dir: join(LibDir || "", `lib/typescript/components/auth`),
       filename: "RecoveryCodes.tsx",
-      content: `import { Modal } from "antd";
+      content: `import { Modal, Typography } from "antd";
+
+export const RecoveryCodeList = ({ codes }: { codes: string[] }) => (
+  <>
+    <pre data-testid="recovery-codes">{codes.join("\\n")}</pre>
+    <Typography.Text copyable={{ text: codes.join("\\n") }}>Copy codes</Typography.Text>
+  </>
+);
 
 // Codes are only ever shown once, right after they are issued.
 export const showRecoveryCodes = (codes?: string[]) =>
@@ -1213,8 +1173,11 @@ export const showRecoveryCodes = (codes?: string[]) =>
     width: 480,
     content: (
       <div>
-        <p>Each code signs you in once if you lose your passkeys. They will not be shown again.</p>
-        <pre data-testid="recovery-codes">{codes.join("\\n")}</pre>
+        <p>
+          Each code signs you in once if you lose your passkeys or password. They will not be shown again. You can
+          generate new ones under Account → Security → Recovery codes.
+        </p>
+        <RecoveryCodeList codes={codes} />
       </div>
     ),
   });
@@ -1243,7 +1206,5 @@ export {
   add_auth_web_test_helper,
   add_auth_passkey_requests,
   add_auth_ithibati_types,
-  add_auth_passkeys_modal,
-  add_auth_invitations_modal,
   add_auth_recovery_codes,
 };
