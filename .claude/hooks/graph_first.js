@@ -9,7 +9,7 @@ const path = require("path");
 
 const GRAPH_CMD = /\bgraphify(\.exe)?\s+(query|explain|path|section)\b/i;
 const SEARCH_CMD = /(^|[|;&(\s])(grep|egrep|fgrep|rg|findstr|Select-String|sls)(\s|$)/i;
-const EXEMPT = /\.log\b|tool-results|[\\/]tasks[\\/]|AppData[\\/]Local[\\/]Temp|scratchpad|graphify-out/i;
+const EXEMPT = /\.log\b|tool-results|[\\/]tasks[\\/]|AppData[\\/]Local[\\/]Temp|scratchpad|graphify-out|GENERATOR_INDEX/i;
 
 const marker = (session) => path.join(os.tmpdir(), "claude-graph-first", `${session || "default"}.ok`);
 
