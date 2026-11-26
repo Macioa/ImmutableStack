@@ -16,8 +16,10 @@ const show = ({ genName, context }: StringOnlyMap) => {
   validate({ genName, context }, "show");
   return `
     def show(conn, %{"id" => id}) do
-        ${genName} = ${context}.get_${genName}!(id)
-        render(conn, :show, ${genName}: ${genName})
+        case ${context}.get_${genName}(id) do
+          nil -> {:error, :not_found}
+          ${genName} -> render(conn, :show, ${genName}: ${genName})
+        end
     end
 `;
 };
