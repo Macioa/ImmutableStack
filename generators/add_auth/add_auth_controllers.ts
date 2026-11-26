@@ -481,10 +481,11 @@ const add_auth_oauth_account_json_controller = async ({ AppDir, AppNameCamel, Ap
   use ${ApiNameCamel}, :controller
 
   alias ${ApiNameCamel}.Accounts.OAuthAccounts
-  alias Ithibati.Identity.RecoveryCodes
+  alias ${ApiNameCamel}.Accounts.Recovery
 
   def index(conn, _params),
-    do: json(conn, %{data: conn.assigns.current_user |> OAuthAccounts.list() |> Enum.map(&show/1)})
+    do:
+      json(conn, %{data: conn.assigns.current_user |> OAuthAccounts.list() |> Enum.map(&show/1)})
 
   def delete(conn, %{"id" => id}) do
     case OAuthAccounts.unlink(conn.assigns.current_user, id) do
@@ -494,12 +495,16 @@ const add_auth_oauth_account_json_controller = async ({ AppDir, AppNameCamel, Ap
   end
 
   # The popup carries this token so the provider account links to the signed-in user
-  def link(conn, _params), do: json(conn, %{token: OAuthAccounts.link_token(conn.assigns.current_user)})
+  def link(conn, _params),
+    do: json(conn, %{token: OAuthAccounts.link_token(conn.assigns.current_user)})
 
   def signup_code(conn, %{"pending" => pending, "email" => email}) do
     case OAuthAccounts.send_signup_code(pending, email) do
-      :ok -> json(conn, %{status: "sent"})
-      {:error, reason} -> conn |> put_status(:unprocessable_entity) |> json(%{error: to_string(reason)})
+      :ok ->
+        json(conn, %{status: "sent"})
+
+      {:error, reason} ->
+        conn |> put_status(:unprocessable_entity) |> json(%{error: to_string(reason)})
     end
   end
 
@@ -509,13 +514,15 @@ const add_auth_oauth_account_json_controller = async ({ AppDir, AppNameCamel, Ap
         conn
         |> put_status(:created)
         |> ${ApiNameCamel}.UserSessionJSONController.signed_in(user, %{}, %{
-          recovery_codes: RecoveryCodes.regenerate(user)
+          recovery_codes: Recovery.issue(user)
         })
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{errors: Ecto.Changeset.traverse_errors(changeset, fn {message, _opts} -> message end)})
+        |> json(%{
+          errors: Ecto.Changeset.traverse_errors(changeset, fn {message, _opts} -> message end)
+        })
 
       {:error, reason} ->
         conn |> put_status(:unprocessable_entity) |> json(%{error: to_string(reason)})
@@ -539,27 +546,44 @@ const add_auth_user_registration_json_controller = async ({
   use ${ApiNameCamel}, :controller
 
   alias ${ApiNameCamel}.Accounts
-  alias Ithibati.Identity.RecoveryCodes
+  alias ${ApiNameCamel}.Accounts.{Recovery, TwoFactor}
 
-  action_fallback ${ApiNameCamel}.FallbackController
+  action_fallback(${ApiNameCamel}.FallbackController)
 
   def create(conn, params) do
     user_params = params["user"] || params
 
     case Accounts.register_user(user_params) do
       {:ok, user} ->
-        Accounts.deliver_user_confirmation_instructions(user, &${ApiNameCamel}.UIUrl.link(conn, "confirm", &1))
-
-        # Every new account gets recovery codes, shown once in the registration response.
-        conn
-        |> put_status(:created)
-        |> ${ApiNameCamel}.UserSessionJSONController.signed_in(user, %{}, %{recovery_codes: RecoveryCodes.regenerate(user)})
+        if TwoFactor.email_unverified?(user),
+          do: verify_email_first(conn, user),
+          else: signed_up(conn, user)
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
     end
   end
-end`;
+
+  defp verify_email_first(conn, user) do
+    TwoFactor.deliver_email_code(user)
+    conn |> put_status(:created) |> json(%{two_factor: TwoFactor.challenge_payload(user)})
+  end
+
+  defp signed_up(conn, user) do
+        Accounts.deliver_user_confirmation_instructions(
+          user,
+          &${ApiNameCamel}.UIUrl.link(conn, "confirm", &1)
+        )
+
+        # Every new account gets recovery codes, shown once in the registration response.
+        conn
+        |> put_status(:created)
+        |> ${ApiNameCamel}.UserSessionJSONController.signed_in(user, %{}, %{
+          recovery_codes: Recovery.issue(user)
+        })
+  end
+end
+`;
 
   return generateFile({ dir, filename, content }, "add_auth_user_registration_json_controller");
 };
@@ -579,7 +603,7 @@ const add_auth_user_session_json_controller = async ({
   alias ${ApiNameCamel}.Accounts.TwoFactor
   alias ${ApiNameCamel}.UserAuth
 
-  action_fallback ${ApiNameCamel}.FallbackController
+  action_fallback(${ApiNameCamel}.FallbackController)
 
   def create(conn, params) do
     user_params = params["user"] || params
@@ -589,7 +613,10 @@ const add_auth_user_session_json_controller = async ({
     if email && password do
       if user = Accounts.get_user_by_email_and_password(email, password) do
         if TwoFactor.required?(user),
-          do: json(conn, %{two_factor: %{challenge: TwoFactor.challenge(user), methods: TwoFactor.methods(user)}}),
+          do:
+            json(conn, %{
+              two_factor: TwoFactor.challenge_payload(user)
+            }),
           else: signed_in(conn, user, user_params)
       else
         conn
@@ -621,7 +648,8 @@ const add_auth_user_session_json_controller = async ({
     |> put_view(json: ${ApiNameCamel}.UserJSON)
     |> render(:show, count: 1)
   end
-end`;
+end
+`;
 
   return generateFile({ dir, filename, content }, "add_auth_user_session_json_controller");
 };

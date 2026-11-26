@@ -5,6 +5,7 @@ export {
   add_auth_user_notifier,
   add_auth_email_template,
   add_auth_email_change,
+  add_auth_recovery,
   add_auth_oauth_accounts,
   add_auth_oauth_state,
   add_auth_oauth_token,

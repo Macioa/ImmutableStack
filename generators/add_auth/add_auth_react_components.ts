@@ -439,7 +439,10 @@ import "antd/dist/reset.css";
 import { initiateOAuth } from "../../requests/User";
 import { requestCurrentUser } from "../../requests/User";
 import { signInWithPasskey } from "../../requests/Passkeys";
-import { passwordSignIn, type TwoFactorChallenge } from "../../requests/Account";
+import {
+  passwordSignIn,
+  type TwoFactorChallenge,
+} from "../../requests/Account";
 import { selectUserdata } from "../../state/User";
 import type { User } from "../../state/User";
 import { OAuthButtons } from "./OAuthButtons";
@@ -462,14 +465,18 @@ interface LoginModalProps {
   onCancel: () => void;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ visible, onCancel }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({
+  visible,
+  onCancel,
+}) => {
   const dispatch = useDispatch<Dispatch>();
   const userdata = useSelector(selectUserdata);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<View>("sign-in");
   const [pending, setPending] = useState<TwoFactorChallenge | null>(null);
-  const [userdataWhenModalOpened, setUserdataWhenModalOpened] = useState<User | null>(null);
+  const [userdataWhenModalOpened, setUserdataWhenModalOpened] =
+    useState<User | null>(null);
   const [oauthInProgress, setOauthInProgress] = useState(false);
 
   // Track userdata when modal opens to detect new logins; every opening starts at sign in.
@@ -517,14 +524,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onCancel }) => 
   const handleEmailLogin = (values: { email: string; password: string }) => {
     setLoading(true);
     passwordSignIn(values, dispatch)
-      .then(({ two_factor }) => (two_factor ? askForSecondFactor(two_factor) : finish()))
-      .catch((error) => message.error(error.message === "Invalid email or password" ? error.message : "Sign in failed"))
+      .then(({ two_factor }) =>
+        two_factor ? askForSecondFactor(two_factor) : finish(),
+      )
+      .catch((error) =>
+        message.error(
+          error.message === "Invalid email or password"
+            ? error.message
+            : "Sign in failed",
+        ),
+      )
       .finally(() => setLoading(false));
   };
 
   const handlePasskeyLogin = () =>
     signInWithPasskey(dispatch)
-      .then(() => onCancel())
+      .then((res) =>
+        res?.two_factor ? askForSecondFactor(res.two_factor) : onCancel(),
+      )
       .catch((error) => message.error(error.message));
 
   const handleOAuthLogin = (provider: string) => {
@@ -537,7 +554,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onCancel }) => 
   const body = () => {
     switch (view) {
       case "two-factor":
-        return pending && <TwoFactorForm pending={pending} onSignedIn={finish} onBack={back} />;
+        return (
+          pending && (
+            <TwoFactorForm
+              pending={pending}
+              onSignedIn={finish}
+              onBack={back}
+            />
+          )
+        );
       case "forgot-password":
         return <ForgotPasswordForm onBack={back} />;
       case "recover":
@@ -551,7 +576,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onCancel }) => 
       default:
         return (
           <>
-            <Form form={form} name="login" onFinish={handleEmailLogin} layout="vertical" autoComplete="off">
+            <Form
+              form={form}
+              name="login"
+              onFinish={handleEmailLogin}
+              layout="vertical"
+              autoComplete="off"
+            >
               <Form.Item
                 name="email"
                 rules={[
@@ -559,15 +590,34 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onCancel }) => 
                   { type: "email", message: "Please enter a valid email!" },
                 ]}
               >
-                <Input prefix={<UserOutlined />} placeholder="Email" size="large" />
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Email"
+                  size="large"
+                />
               </Form.Item>
 
-              <Form.Item name="password" rules={[{ required: true, message: "Please input your password!" }]}>
-                <Input.Password prefix={<LockOutlined />} placeholder="Password" size="large" />
+              <Form.Item
+                name="password"
+                rules={[
+                  { required: true, message: "Please input your password!" },
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Password"
+                  size="large"
+                />
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" block size="large" loading={loading}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  size="large"
+                  loading={loading}
+                >
                   Sign In
                 </Button>
               </Form.Item>
@@ -579,7 +629,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onCancel }) => 
               </Form.Item>
 
               <div className="auth-links">
-                <a onClick={() => setView("forgot-password")}>Forgot password?</a>
+                <a onClick={() => setView("forgot-password")}>
+                  Forgot password?
+                </a>
                 <a onClick={() => setView("recover")}>Recover account</a>
               </div>
             </Form>
@@ -619,6 +671,8 @@ import { showRecoveryCodes } from "./RecoveryCodes";
 import { selectUserdata } from "../../state/User";
 import { OAuthButtons } from "./OAuthButtons";
 import { AuthModal } from "./AuthModal";
+import { TwoFactorForm } from "./login/TwoFactorForm";
+import type { TwoFactorChallenge } from "../../requests/Account";
 
 interface RegisterModalProps {
   visible: boolean;
@@ -632,6 +686,8 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   const dispatch = useDispatch<Dispatch>();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  // require_2fa: the new account's email is verified before it is signed in
+  const [pending, setPending] = useState<TwoFactorChallenge | null>(null);
   const userdata = useSelector(selectUserdata);
 
   // Close once a user is signed in, e.g. after OAuth completes in the popup
@@ -662,6 +718,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
       .validateFields(["email"])
       .then(({ email }) => passkeySignup(email).catch(withSetupCode(email)))
       .then((res) => {
+        if (res.two_factor) return setPending(res.two_factor);
         showRecoveryCodes(res.recovery_codes);
         form.resetFields();
         message.success("Registration successful!");
@@ -680,8 +737,10 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
         { email: values.email, password: values.password },
         dispatch,
       );
-      await requestCurrentUser(dispatch);
       setLoading(false);
+      const challenge = (res as { two_factor?: TwoFactorChallenge }).two_factor;
+      if (challenge) return setPending(challenge);
+      await requestCurrentUser(dispatch);
       form.resetFields();
       showRecoveryCodes((res as { recovery_codes?: string[] }).recovery_codes);
       message.success("Registration successful!");
@@ -750,7 +809,23 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     initiateOAuth(provider, window.location.origin + window.location.pathname);
 
   return (
-    <AuthModal title="Register" visible={visible} onCancel={onCancel}>
+    <AuthModal
+      title={pending ? "Verify your email" : "Register"}
+      visible={visible}
+      onCancel={onCancel}
+    >
+      {pending ? (
+        <TwoFactorForm
+          pending={pending}
+          onSignedIn={() => {
+            setPending(null);
+            form.resetFields();
+            message.success("Email verified. Welcome!");
+            onCancel();
+          }}
+          onBack={() => setPending(null)}
+        />
+      ) : (
       <Form
         form={form}
         name="register"
@@ -822,8 +897,9 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
           </Button>
         </Form.Item>
       </Form>
+      )}
 
-      <OAuthButtons onSelect={handleOAuthLogin} />
+      {!pending && <OAuthButtons onSelect={handleOAuthLogin} />}
     </AuthModal>
   );
 };

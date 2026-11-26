@@ -1301,6 +1301,22 @@ const add_auth_oauth_accounts = async ({ AppDir, AppNameCamel, AppNameSnake, Api
 end
 ` }, "add_auth_oauth_accounts");
 
+// Recovery codes in the configured batch size (config :app, recovery_code_count)
+const add_auth_recovery = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "recovery.ex", content: `defmodule ${ApiNameCamel}.Accounts.Recovery do
+  @moduledoc """
+  Issues recovery codes in the configured batch size:
+  \`config :${AppNameSnake}, recovery_code_count: 12\` (config/config.exs).
+  """
+  alias Ithibati.Identity.RecoveryCodes
+
+  def count, do: Application.get_env(:${AppNameSnake}, :recovery_code_count, 12)
+
+  @doc "A fresh batch for the user; earlier codes stop working."
+  def issue(user), do: RecoveryCodes.regenerate(user, count: count())
+end
+` }, "add_auth_recovery");
+
 const add_auth_user_notifier = async ({
   AppDir,
   AppNameSnake,
@@ -1912,6 +1928,7 @@ export {
   add_auth_user_notifier,
   add_auth_email_template,
   add_auth_email_change,
+  add_auth_recovery,
   add_auth_oauth_accounts,
   add_auth_oauth_state,
   add_auth_oauth_token,
