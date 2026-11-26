@@ -15,6 +15,8 @@ export const authTheme = {
   algorithm: theme.darkAlgorithm,
   token: {
     colorPrimary: "#61dafb",
+    colorLink: "#61dafb",
+    colorInfo: "#61dafb",
     colorBgElevated: "#1a1a2e",
     colorBgContainer: "#16213e",
     colorBorder: "rgba(97, 218, 251, 0.35)",

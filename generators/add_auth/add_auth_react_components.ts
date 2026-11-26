@@ -16,7 +16,8 @@ const add_auth_user_menu = async ({
 import { useSelector, useDispatch } from "react-redux";
 import type { Dispatch } from "redux";
 import { pipe } from "mincurrypipe";
-import { Avatar, ConfigProvider, Dropdown, type MenuProps } from "antd";
+import { Avatar, ConfigProvider, Dropdown, message, type MenuProps } from "antd";
+import { confirmAccount } from "../requests/Account";
 import { selectUserdata, setUserdata, setToken } from "../state/User";
 import { logoutUser, requestCurrentUser } from "../requests/User";
 import {
@@ -94,6 +95,16 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     setResetToken(null);
     window.history.replaceState({}, document.title, window.location.pathname);
   };
+
+  // A confirmation link from the welcome email carries ?confirm=<token>.
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get("confirm");
+    if (!token) return;
+    window.history.replaceState({}, document.title, window.location.pathname);
+    confirmAccount(token)
+      .then(() => message.success("Your account is confirmed"))
+      .catch(() => message.error("That confirmation link is invalid or has expired"));
+  }, []);
 
   // An invitation link opens registration straight away.
   useEffect(() => {

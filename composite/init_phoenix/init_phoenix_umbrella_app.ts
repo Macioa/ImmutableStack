@@ -15,6 +15,7 @@ import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix
 import { inject_dev_config } from "../../injectors/init_phoenix/inject_dev_config";
 import { inject_dynamic_port_config } from "../../injectors/init_phoenix/inject_dynamic_port_config";
 import { inject_env_config_folders } from "../../injectors/init_phoenix/inject_env_config_folders";
+import { inject_runtime_keys } from "../../injectors/init_phoenix/inject_runtime_keys";
 import { inject_lib_source_paths } from "../../injectors/init_phoenix/inject_lib_source_paths";
 import { inject_phoenix_deps } from "../../injectors/init_phoenix/inject_phoenix_deps";
 import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_to_repo";
@@ -36,7 +37,7 @@ const scaffold_phoenix_umbrella = async ({ AppNameSnake, UmbrellaDir }: AppData)
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
   return exec(
     {
-      command: autoYes(`mix phx.new ${AppNameSnake} --no-live --no-html --no-assets --binary-id --umbrella --no-install`),
+      command: autoYes(`mix phx.new ${AppNameSnake} --no-live --no-html --no-assets --no-mailer --binary-id --umbrella --no-install`),
       dir: join(UmbrellaDir, ".."),
     },
     "init_phoenix_umbrella_app"
@@ -52,6 +53,7 @@ const init_phoenix_umbrella_app = async (
 ) => {
   const init = scaffold ? await scaffold_phoenix_umbrella(appdata) : null;
   const envConfigs = await inject_env_config_folders(appdata);
+  const runtimeKeys = await inject_runtime_keys(appdata);
   const declarations = await inject_app_declarations(appdata);
   const tasks = await Promise.all([
     inject_phoenix_deps(appdata, webName),
@@ -85,6 +87,7 @@ const init_phoenix_umbrella_app = async (
   return [
     init,
     envConfigs,
+    runtimeKeys,
     declarations,
     tasks,
     configure,

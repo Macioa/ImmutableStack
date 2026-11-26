@@ -379,6 +379,63 @@ end`;
   return generateFile({ dir, filename, content }, "add_auth_user_json");
 };
 
+
+// Email links open the UI (?reset=, ?confirm=, ?invite=) on an origin CORS allows
+const add_auth_ui_url = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile(
+    {
+      dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}`),
+      filename: "ui_url.ex",
+      content: `defmodule ${ApiNameCamel}.UIUrl do
+  @moduledoc """
+  Links in auth emails open the UI, not the auth app: \`?reset=\`, \`?confirm=\` and
+  \`?invite=\`. The UI runs on one of the origins CORS already allows, so the request's
+  origin is used when it is one of them.
+  """
+  import Plug.Conn, only: [get_req_header: 2]
+
+  def link(conn, param, token), do: "#{origin(conn)}/?#{param}=#{token}"
+
+  def origin(conn) do
+    allowed = Application.get_env(:${AppNameSnake}, CORSPlug)[:origin] || []
+    origin = conn |> get_req_header("origin") |> List.first()
+    if origin in allowed, do: origin, else: List.first(allowed) || ${ApiNameCamel}.Endpoint.url()
+  end
+end
+`,
+    },
+    "add_auth_ui_url"
+  );
+
+// Confirms an account from the ?confirm=<token> link
+const add_auth_user_confirmation_json_controller = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile(
+    {
+      dir: buildControllersDir(AppDir, AppNameSnake, ApiNameSnake),
+      filename: "user_confirmation_json_controller.ex",
+      content: `defmodule ${ApiNameCamel}.UserConfirmationJSONController do
+  @moduledoc "Confirms an account from the ?confirm=<token> link in the confirmation email."
+  use ${ApiNameCamel}, :controller
+
+  alias ${ApiNameCamel}.Accounts
+
+  def update(conn, %{"token" => token}) do
+    case Accounts.confirm_user(token) do
+      {:ok, _user} ->
+        json(conn, %{status: "confirmed"})
+
+      :error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Confirmation link is invalid or it has expired."})
+    end
+  end
+end
+`,
+    },
+    "add_auth_user_confirmation_json_controller"
+  );
+
 const add_auth_user_registration_json_controller = async ({
   AppDir,
   AppNameSnake,
@@ -400,10 +457,7 @@ const add_auth_user_registration_json_controller = async ({
 
     case Accounts.register_user(user_params) do
       {:ok, user} ->
-        Accounts.deliver_user_confirmation_instructions(
-          user,
-          &url(~p"/users/confirm/#{&1}")
-        )
+        Accounts.deliver_user_confirmation_instructions(user, &${ApiNameCamel}.UIUrl.link(conn, "confirm", &1))
 
         # Every new account gets recovery codes, shown once in the registration response.
         conn
@@ -557,6 +611,8 @@ export {
   add_auth_user_settings_controller,
   add_auth_user_json,
   add_auth_user_registration_json_controller,
+  add_auth_user_confirmation_json_controller,
+  add_auth_ui_url,
   add_auth_user_session_json_controller,
   add_auth_user_settings_json_controller,
   add_auth_changeset_json,

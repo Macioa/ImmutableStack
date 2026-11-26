@@ -13,7 +13,27 @@ defmodule ${AppNameCamel}.OSAdapter do
   # Umbrella root, since the VM's working directory can change during compile
   @root Path.expand("../../../../..", __DIR__)
 
-  defp family, do: :os.type() |> elem(0)
+  def family, do: :os.type() |> elem(0)
+
+  @doc "The OS as release assets usually name it: :windows, :darwin or :linux."
+  def os_name do
+    case :os.type() do
+      {:win32, _} -> :windows
+      {:unix, :darwin} -> :darwin
+      _ -> :linux
+    end
+  end
+
+  @doc "The CPU as release assets usually name it: :amd64 or :arm64."
+  def arch do
+    arch =
+      case family() do
+        :win32 -> System.get_env("PROCESSOR_ARCHITECTURE", "")
+        _ -> to_string(:erlang.system_info(:system_architecture))
+      end
+
+    if arch |> String.downcase() |> String.contains?(["arm64", "aarch64"]), do: :arm64, else: :amd64
+  end
 
   def open_npm(args) do
     {exe, exe_args} =
@@ -112,6 +132,42 @@ defmodule ${AppNameCamel}.OSAdapter do
     """
 
     System.cmd("bash", ["-c", cmd], [{:stderr_to_stdout, true}])
+  end
+
+  @doc """
+  Stops an OS process once this VM exits, however it exits (CTRL+C, a crash, closing
+  the terminal). The watcher runs outside the VM so it outlives it.
+  """
+  def kill_with_beam(os_pid) do
+    beam_pid = System.pid()
+
+    case family() do
+      :win32 -> kill_with_beam_windows(beam_pid, os_pid)
+      _ -> Task.start(fn -> kill_with_beam_unix(beam_pid, os_pid) end)
+    end
+  end
+
+  defp kill_with_beam_windows(beam_pid, os_pid) do
+    script = """
+    $ProgressPreference = 'SilentlyContinue'
+    while (Get-Process -Id #{beam_pid} -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }
+    Stop-Process -Id #{os_pid} -Force -ErrorAction SilentlyContinue
+    """
+
+    powershell(
+      "Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-NonInteractive','-EncodedCommand','#{encode(script)}'"
+    )
+  end
+
+  defp kill_with_beam_unix(beam_pid, os_pid) do
+    cmd = """
+    while kill -0 #{beam_pid} 2>/dev/null; do
+      sleep 1
+    done
+    kill #{os_pid} 2>/dev/null
+    """
+
+    System.cmd("bash", ["-c", cmd], stderr_to_stdout: true)
   end
 
   defp parse_pids(output) do

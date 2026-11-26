@@ -951,6 +951,125 @@ end`;
   return generateFile({ dir, filename, content }, "add_auth_user_token");
 };
 
+
+// Themed HTML and plain-text bodies for every auth email
+const add_auth_email_template = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile(
+    {
+      dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`),
+      filename: "email_template.ex",
+      content: `defmodule ${ApiNameCamel}.Accounts.EmailTemplate do
+  @moduledoc """
+  The HTML and plain-text bodies for every auth email, in the app's theme: navy
+  surfaces, a cyan-to-purple accent and a glowing title. Email clients ignore
+  stylesheets, so every style is inline and the layout is tables.
+
+  Content is a map:
+    * \`:heading\` - the title
+    * \`:lines\` - paragraphs above the action
+    * \`:action\` - \`{label, url}\` for a button, or nil
+    * \`:code\` - a one-time code shown large, or nil
+    * \`:footer\` - the small print under the card
+  """
+
+  @navy "#0d0d1a"
+  @surface "#1a1a2e"
+  @card "#16213e"
+  @cyan "#61dafb"
+  @purple "#b300ff"
+  @text "#e6fbff"
+  @muted "#9fb3c8"
+  @font "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+
+  def text(app, content) do
+    [
+      content.heading,
+      "",
+      Enum.join(content[:lines] || [], "\\n\\n"),
+      text_action(content[:action]),
+      text_code(content[:code]),
+      "",
+      content[:footer],
+      "",
+      "- #{app}"
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("\\n")
+  end
+
+  defp text_action({label, url}), do: "\\n#{label}:\\n#{url}"
+  defp text_action(_none), do: nil
+  defp text_code(nil), do: nil
+  defp text_code(code), do: "\\n#{code}"
+
+  def html(app, content) do
+    """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="dark">
+      <title>#{escape(content.heading)}</title>
+    </head>
+    <body style="margin:0;padding:0;background:#{@navy};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#{@navy};padding:32px 12px;">
+        <tr><td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+            <tr><td style="height:3px;background:#{@cyan};background-image:linear-gradient(90deg,#{@cyan},#ff4500,#{@purple});border-radius:16px 16px 0 0;"></td></tr>
+            <tr><td style="background:#{@card};background-image:linear-gradient(135deg,#{@surface} 0%,#{@card} 100%);border:1px solid rgba(97,218,251,0.35);border-top:0;border-radius:0 0 16px 16px;padding:36px 36px 32px;font-family:#{@font};color:#{@text};">
+              <p style="margin:0 0 24px;text-align:center;font-size:12px;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:#{@cyan};">#{escape(app)}</p>
+              <h1 style="margin:0 0 20px;text-align:center;font-size:22px;font-weight:600;color:#{@text};text-shadow:0 0 12px rgba(97,218,251,0.6);">#{escape(content.heading)}</h1>
+              #{paragraphs(content[:lines] || [])}
+              #{code_block(content[:code])}
+              #{button(content[:action])}
+            </td></tr>
+            <tr><td style="padding:20px 12px 0;text-align:center;font-family:#{@font};font-size:12px;line-height:18px;color:#{@muted};">
+              #{escape(content[:footer] || "")}
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+    """
+  end
+
+  defp paragraphs(lines),
+    do:
+      Enum.map_join(
+        lines,
+        &~s(<p style="margin:0 0 16px;font-size:15px;line-height:24px;color:#{@text};">#{escape(&1)}</p>)
+      )
+
+  defp code_block(nil), do: ""
+
+  defp code_block(code),
+    do: """
+    <p style="margin:8px 0 24px;text-align:center;">
+      <span style="display:inline-block;padding:14px 28px;border:1px solid #{@cyan};border-radius:10px;background:#{@navy};font-family:Consolas,Menlo,monospace;font-size:30px;font-weight:700;letter-spacing:0.35em;color:#{@cyan};">#{escape(code)}</span>
+    </p>
+    """
+
+  defp button(nil), do: ""
+
+  defp button({label, url}),
+    do: """
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:12px auto 24px;">
+      <tr><td style="border-radius:10px;background:#{@cyan};background-image:linear-gradient(90deg,#{@cyan},#{@purple});">
+        <a href="#{escape(url)}" style="display:inline-block;padding:12px 28px;font-family:#{@font};font-size:15px;font-weight:600;color:#{@navy};text-decoration:none;">#{escape(label)}</a>
+      </td></tr>
+    </table>
+    <p style="margin:0;font-size:12px;line-height:18px;color:#{@muted};word-break:break-all;">Or paste this link into your browser:<br><a href="#{escape(url)}" style="color:#{@cyan};">#{escape(url)}</a></p>
+    """
+
+  defp escape(text), do: text |> to_string() |> Plug.HTML.html_escape()
+end
+`,
+    },
+    "add_auth_email_template"
+  );
+
 const add_auth_user_notifier = async ({
   AppDir,
   AppNameSnake,
@@ -963,102 +1082,83 @@ const add_auth_user_notifier = async ({
   const filename = "user_notifier.ex";
   const displayName = ApiNameCamel.replace(/Web$/, "");
   const content = `defmodule ${ApiNameCamel}.Accounts.UserNotifier do
+  @moduledoc "Every email the auth app sends, as themed HTML with a plain-text part."
   import Swoosh.Email
 
+  alias ${ApiNameCamel}.Accounts.EmailTemplate
   alias ${AppNameCamel}.Mailer
 
-  # Delivers the email using the application mailer.
-  defp deliver(recipient, subject, body) do
+  # From external_service_keys/email.exs (from_name, from_address), via runtime.exs
+  defp sender,
+    do: Application.get_env(:${AppNameSnake}, :email, [])[:from] || {"${AppNameCamel}", "contact@example.com"}
+
+  defp deliver(recipient, subject, content) do
+    {app, _address} = from = sender()
+
     email =
       new()
       |> to(recipient)
-      |> from({"${displayName}", "contact@example.com"})
+      |> from(from)
       |> subject(subject)
-      |> text_body(body)
+      |> text_body(EmailTemplate.text(app, content))
+      |> html_body(EmailTemplate.html(app, content))
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
-    end
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
   end
 
-  @doc """
-  Deliver instructions to confirm account.
-  """
-  def deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
+  @doc "Deliver instructions to confirm account."
+  def deliver_confirmation_instructions(user, url),
+    do:
+      deliver(user.email, "Confirm your account", %{
+        heading: "Confirm your account",
+        lines: ["Welcome! Confirm #{user.email} to finish setting up your account."],
+        action: {"Confirm account", url},
+        footer: "If you didn't create an account, you can ignore this email."
+      })
 
-    ==============================
+  @doc "Deliver instructions to reset a user password."
+  def deliver_reset_password_instructions(user, url),
+    do:
+      deliver(user.email, "Reset your password", %{
+        heading: "Reset your password",
+        lines: ["We got a request to reset the password for #{user.email}."],
+        action: {"Choose a new password", url},
+        footer: "If you didn't ask for this, you can ignore this email. Your password stays the same."
+      })
 
-    Hi #{user.email},
+  @doc "Deliver a two-factor sign-in code."
+  def deliver_two_factor_code(user, code),
+    do:
+      deliver(user.email, "Your sign-in code", %{
+        heading: "Your sign-in code",
+        lines: ["Enter this code to finish signing in. It expires in 10 minutes."],
+        code: code,
+        footer: "If you didn't try to sign in, change your password now."
+      })
 
-    You can confirm your account by visiting the URL below:
+  @doc "Deliver instructions to update a user email."
+  def deliver_update_email_instructions(user, url),
+    do:
+      deliver(user.email, "Confirm your new email", %{
+        heading: "Confirm your new email",
+        lines: ["Confirm this address to make it the email on your account."],
+        action: {"Confirm new email", url},
+        footer: "If you didn't ask for this change, you can ignore this email."
+      })
 
-    #{url}
-
-    If you didn't create an account with us, please ignore this.
-
-    ==============================
-    """)
-  end
-
-  @doc """
-  Deliver instructions to reset a user password.
-  """
-  def deliver_reset_password_instructions(user, url) do
-    deliver(user.email, "Reset password instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can reset your password by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
-  end
-
-  @doc """
-  Deliver a two-factor sign-in code.
-  """
-  def deliver_two_factor_code(user, code) do
-    deliver(user.email, "Your sign-in code", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    Your sign-in code is: #{code}
-
-    It expires in 10 minutes. If you didn't try to sign in, change your password.
-
-    ==============================
-    """)
-  end
-
-  @doc """
-  Deliver instructions to update a user email.
-  """
-  def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can change your email by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
-  end
-end`;
+  @doc "Deliver an invitation to create an account."
+  def deliver_invitation(email, url, inviter_email, note),
+    do:
+      deliver(email, "You're invited", %{
+        heading: "You're invited",
+        lines:
+          ["#{inviter_email} invited you to create an account."] ++
+            if(note in [nil, ""], do: [], else: ["\\"#{note}\\""]),
+        action: {"Create your account", url},
+        footer: "If you weren't expecting this, you can ignore this email."
+      })
+end
+`;
 
   return generateFile({ dir, filename, content }, "add_auth_user_notifier");
 };
@@ -1557,6 +1657,7 @@ export {
   add_auth_user_schema,
   add_auth_user_token,
   add_auth_user_notifier,
+  add_auth_email_template,
   add_auth_oauth_state,
   add_auth_oauth_token,
   add_auth_account_schema,

@@ -201,7 +201,7 @@ const add_auth_invitation_json_controller = async ({ AppDir, AppNameSnake, AppNa
   use ${ApiNameCamel}, :controller
 
   alias Ithibati.Identity.Invitations
-  alias ${ApiNameCamel}.Accounts.Invitation
+  alias ${ApiNameCamel}.Accounts.{Invitation, UserNotifier}
   alias ${AppNameCamel}.AuthRepo, as: Repo
 
   def index(conn, _params), do: json(conn, %{data: Enum.map(Invitations.pending(), &show/1)})
@@ -212,7 +212,10 @@ const add_auth_invitation_json_controller = async ({ AppDir, AppNameSnake, AppNa
     |> Invitation.changeset(params, addressed: Map.has_key?(params, "email"))
     |> Repo.insert()
     |> case do
-      {:ok, invitation} -> json(conn, %{data: Map.put(show(invitation), :token, invitation.token)})
+      {:ok, invitation} ->
+        email_invitation(conn, invitation)
+        json(conn, %{data: Map.put(show(invitation), :token, invitation.token)})
+
       {:error, changeset} -> conn |> put_status(:unprocessable_entity) |> json(%{errors: errors(changeset)})
     end
   end
@@ -221,6 +224,18 @@ const add_auth_invitation_json_controller = async ({ AppDir, AppNameSnake, AppNa
     Invitation |> Repo.get!(id) |> Invitations.withdraw()
     json(conn, %{status: "withdrawn"})
   end
+
+  # An invitation addressed to someone is also emailed to them
+  defp email_invitation(_conn, %Invitation{email: nil}), do: :ok
+
+  defp email_invitation(conn, %Invitation{email: email, note: note, token: token}),
+    do:
+      UserNotifier.deliver_invitation(
+        email,
+        ${ApiNameCamel}.UIUrl.link(conn, "invite", token),
+        conn.assigns.current_user.email,
+        note
+      )
 
   defp show(invitation), do: Map.take(invitation, [:id, :email, :note, :expires_at])
 
