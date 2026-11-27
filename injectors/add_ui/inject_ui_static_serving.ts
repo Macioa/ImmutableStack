@@ -15,7 +15,7 @@ const inject_ui_static_serving = async (appdata: AppData, uiName: string) => {
   const injections: Injection[] = [
     [
       InjectType.AFTER,
-      new RegExp(`plug\\(Plug\\.Static,\\s*\\n\\s*at:\\s*"\\/",\\s*\\n\\s*from:\\s*:${AppNameSnake}_web,\\s*\\n\\s*gzip:\\s*false,\\s*\\n\\s*only:\\s*[^\\n]*\\s*\\n\\s*\\)`, 's'),
+      new RegExp(`plug\\(Plug\\.Static,\\s*\\n\\s*at:\\s*"\\/",\\s*\\n\\s*from:\\s*:${AppNameSnake}_web,.*?\\n\\s*\\)`, 's'),
       `\n\n  # Serve ${uiName} assets from subdirectory\n  plug(Plug.Static,\n    at: "/${uiName}",\n    from: {:${AppNameSnake}_web, "priv/static/${uiName}"},\n    gzip: false\n  )`,
     ],
   ];

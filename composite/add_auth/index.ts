@@ -28,6 +28,11 @@ import {
   add_auth_oauth_token,
   add_auth_oauth_controller,
   add_auth_oauth_adapter,
+  add_auth_oauth_provider_behaviour,
+  add_auth_oauth_providers,
+  add_auth_oauth_buttons,
+  add_auth_modal,
+  add_auth_styles,
   add_auth_account_schema,
   add_auth_access_group,
   add_auth_access_tag,
@@ -56,6 +61,9 @@ import {
   add_auth_docker_compose,
   add_auth_custom_compiler,
   add_auth_web_api_auth,
+  add_auth_keys,
+  add_auth_ui_dependencies,
+  add_auth_to_all_uis,
 } from "../../injectors/add_auth";
 import { log } from "../../utils/logger";
 
@@ -86,6 +94,8 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_changeset_json(apiAppData),
     add_auth_oauth_controller(apiAppData),
     add_auth_oauth_adapter(apiAppData),
+    add_auth_oauth_provider_behaviour(apiAppData),
+    add_auth_oauth_providers(apiAppData),
     add_auth_oauth_state(apiAppData),
     add_auth_oauth_token(apiAppData),
     add_auth_account_schema(apiAppData),
@@ -104,6 +114,9 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_user_menu(apiAppData),
     add_auth_login_modal(apiAppData),
     add_auth_register_modal(apiAppData),
+    add_auth_oauth_buttons(apiAppData),
+    add_auth_modal(apiAppData),
+    add_auth_styles(apiAppData),
     add_auth_index(apiAppData),
     add_auth_user_requests(apiAppData),
     add_auth_user_response(apiAppData),
@@ -113,8 +126,12 @@ const add_auth = async (apiAppData: ApiAppData) => {
 
   log({ level: 2, color: "BLUE" }, "\nApplying authentication configuration updates...");
 
+  // Config injectors format files that load the new deps, so fetch them first
+  const uiDependencies = await add_auth_ui_dependencies(apiAppData);
+  const mixDependency = await add_auth_mix_dependency(apiAppData);
   const authInjectors = await Promise.all([
-    add_auth_mix_dependency(apiAppData),
+    uiDependencies,
+    mixDependency,
     add_auth_test_config(apiAppData),
     add_auth_application_supervisor(apiAppData),
     add_auth_config_root(apiAppData),
@@ -123,6 +140,7 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_runtime_config(apiAppData),
     add_auth_docker_compose(apiAppData),
     add_auth_custom_compiler(apiAppData),
+    add_auth_keys(apiAppData),
   ]);
 
   log({ level: 2, color: "BLUE" }, "\nAdding access control plug...");
@@ -138,7 +156,11 @@ const add_auth = async (apiAppData: ApiAppData) => {
 
   log({ level: 2, color: "GREEN" }, "\nAuth enhancements applied successfully.");
 
-  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug, ...webApiAuth];
+  log({ level: 2, color: "BLUE" }, "\nAdding sign in to every UI...");
+
+  const uiWiring = await add_auth_to_all_uis(apiAppData);
+
+  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug, ...webApiAuth, ...uiWiring];
 };
 
 export { add_auth };

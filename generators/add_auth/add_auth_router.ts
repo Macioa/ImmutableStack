@@ -52,6 +52,7 @@ defmodule ${ApiNameCamel}.Router do
 
     post("/users/log_in", UserSessionJSONController, :create)
     post("/users/register", UserRegistrationJSONController, :create)
+    get("/oauth/providers", OAuthController, :providers)
     delete("/users/log_out", UserSessionJSONController, :delete)
   end
 

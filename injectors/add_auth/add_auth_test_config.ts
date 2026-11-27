@@ -1,13 +1,16 @@
-import { join } from "@/utils/path";
+import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType } from "..";
 import { ApiAppData } from "@/generators/add_api";
+import { db } from "@/utils/database";
 
 const add_auth_test_config = async ({
   UmbrellaDir,
   AppNameSnake,
   AppNameCamel,
+  Database,
 }: ApiAppData) => {
-  const file = join(UmbrellaDir, "config/test.exs");
+  const connection = db(Database).connection(`${AppNameSnake}_auth_test#{System.get_env("MIX_TEST_PARTITION")}`, `System.get_env("DB_HOST", "localhost")`);
+  const file = envConfigFile(UmbrellaDir, "test");
   const marker = "config :pbkdf2_elixir, :rounds, 1";
 
   const injections: Injection[] = [
@@ -36,10 +39,7 @@ const add_auth_test_config = async ({
           ),
           `$1
 config :${AppNameSnake}, ${AppNameCamel}.AuthRepo,
-  username: "postgres",
-  password: "postgres",
-  hostname: System.get_env("DB_HOST", "localhost"),
-  database: "${AppNameSnake}_auth_test#{System.get_env("MIX_TEST_PARTITION")}",
+  ${connection}
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 `

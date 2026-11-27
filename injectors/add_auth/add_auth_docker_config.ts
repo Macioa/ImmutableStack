@@ -1,10 +1,10 @@
+import { envConfigFile } from "@/utils/config_paths";
 import crypto from "crypto";
-import { join } from "@/utils/path";
 import { inject_file, Injection, InjectType } from "..";
 import { ApiAppData } from "@/generators/add_api";
 
 const add_auth_docker_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel, ApiNameCamel }: ApiAppData) => {
-  const file = join(UmbrellaDir, "config/docker.exs");
+  const file = envConfigFile(UmbrellaDir, "docker");
 
   const injections: Injection[] = [
     [

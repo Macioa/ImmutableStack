@@ -9,9 +9,7 @@ const add_auth_user_requests = async ({
 }: ApiAppData) => {
   const dir = join(LibDir || "", "lib/typescript/requests");
   const filename = "User.tsx";
-  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}"`;
   const content = `import type { Dispatch } from "redux";
-import { Request } from "./index";
 import { setUserdata, setToken } from "../state/User";
 import { storeToken } from "./index";
 import type { User } from "../state/User";
@@ -22,13 +20,13 @@ import type {
 } from "./UserResponse";
 
 const AUTH_API_URL =
-  ${authApiUrl};
+  (import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}";
 
 const authRequest = async (
   route: string,
   options: RequestInit = {},
-  dispatch: Dispatch,
-  name: string,
+  _dispatch: Dispatch,
+  _name: string,
   callback?: (data: any) => void,
 ) => {
   const url = \`\${AUTH_API_URL}/api/\${route}\`;
@@ -46,24 +44,26 @@ const authRequest = async (
     let data;
     const contentType = res.headers.get("content-type");
     const isJson = contentType && contentType.includes("application/json");
-    
+
     try {
       data = isJson ? await res.json() : await res.text();
     } catch (parseError) {
-      data = await res.text().catch(() => ({ error: "Failed to parse response" }));
+      data = await res
+        .text()
+        .catch(() => ({ error: "Failed to parse response" }));
     }
-    
+
     if (!res.ok) {
       const error = new Error(\`\${res.status} \${res.statusText}\`) as any;
       error.status = res.status;
       error.data = data;
       throw error;
     }
-    
+
     if (callback) {
       callback(data);
     }
-    
+
     return data;
   } catch (error) {
     throw error;
@@ -105,7 +105,10 @@ const updateUser = (user: User, dispatch: Dispatch) =>
 // ** IMMUTABLE User REQUEST_API d608eb42-1848-4a4c-a9f7-315cb6294541 **
 
 // ** IMMUTABLE User REQUEST_API a1b2c3d4-e5f6-7890-abcd-ef1234567890 **
-const loginUser = (credentials: { email: string; password: string }, dispatch: Dispatch) =>
+const loginUser = (
+  credentials: { email: string; password: string },
+  dispatch: Dispatch,
+) =>
   authRequest(
     "users/log_in",
     {
@@ -125,7 +128,10 @@ const loginUser = (credentials: { email: string; password: string }, dispatch: D
 // ** IMMUTABLE User REQUEST_API a1b2c3d4-e5f6-7890-abcd-ef1234567890 **
 
 // ** IMMUTABLE User REQUEST_API b2c3d4e5-f6a7-8901-bcde-f12345678901 **
-const registerUser = (userData: { email: string; password: string }, dispatch: Dispatch) =>
+const registerUser = (
+  userData: { email: string; password: string },
+  dispatch: Dispatch,
+) =>
   authRequest(
     "users/register",
     {
@@ -162,9 +168,25 @@ const logoutUser = (dispatch: Dispatch) =>
 // ** IMMUTABLE User REQUEST_API c3d4e5f6-g7h8-9012-cdef-012345678901 **
 
 // ** IMMUTABLE User REQUEST_API d4e5f6g7-h8i9-0123-def0-123456789012 **
-const initiateOAuth = (provider: "google" | "microsoft", redirectTo?: string) => {
-  const redirectUrl = redirectTo || window.location.origin + window.location.pathname;
-  const params = new URLSearchParams({ redirect_to: redirectUrl, popup: "true" });
+type OAuthProvider = { name: string; label: string };
+
+// Only providers with configured keys come back, so an empty list hides OAuth entirely
+const requestOAuthProviders = (): Promise<OAuthProvider[]> =>
+  fetch(\`\${AUTH_API_URL}/api/oauth/providers\`, { credentials: "include" })
+    .then((res) => (res.ok ? res.json() : { data: [] }))
+    .then(({ data }) => data || [])
+    .catch(() => []);
+
+const initiateOAuth = (
+  provider: string,
+  redirectTo?: string,
+) => {
+  const redirectUrl =
+    redirectTo || window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({
+    redirect_to: redirectUrl,
+    popup: "true",
+  });
   const oauthUrl = \`\${AUTH_API_URL}/oauth/\${provider}?\${params.toString()}\`;
 
   const width = 600;
@@ -185,22 +207,34 @@ const initiateOAuth = (provider: "google" | "microsoft", redirectTo?: string) =>
   ].join(",");
 
   const popup = window.open(oauthUrl, "oauth_popup", features);
-  
+
   if (popup) {
     const checkClosed = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkClosed);
       }
     }, 500);
-    
-    setTimeout(() => {
-      clearInterval(checkClosed);
-    }, 5 * 60 * 1000);
+
+    setTimeout(
+      () => {
+        clearInterval(checkClosed);
+      },
+      5 * 60 * 1000,
+    );
   }
 };
 // ** IMMUTABLE User REQUEST_API d4e5f6g7-h8i9-0123-def0-123456789012 **
 
-export { requestCurrentUser, updateUser, loginUser, registerUser, logoutUser, initiateOAuth };
+export {
+  requestCurrentUser,
+  updateUser,
+  loginUser,
+  registerUser,
+  logoutUser,
+  initiateOAuth,
+  requestOAuthProviders,
+};
+export type { OAuthProvider };
 `;
 
   return generateFile({ dir, filename, content }, "add_auth_user_requests");
