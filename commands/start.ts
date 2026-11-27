@@ -72,13 +72,14 @@ const ensureAsdf = () =>
 
 const ensureAsdfTool = ([plugin, version]: [string, string]) =>
   ensureInstalled({
-    check: `asdf list ${plugin}`,
+    check: `asdf where ${plugin} ${version}`,
     install: [
       `asdf plugin list | grep -qx ${plugin} || asdf plugin add ${plugin}`,
       `asdf install ${plugin} ${version}`,
       `asdf set -u ${plugin} ${version}`,
     ],
-    found: `${plugin} is already installed.`,
+    found: `${plugin} ${version} is already installed.`,
+    installing: `Installing ${plugin} ${version}...`,
   });
 
 const ensureAsdfTools = ({ ERLANG_VERSION, ELIXIR_VERSION, NODE_VERSION }: Versions) =>
