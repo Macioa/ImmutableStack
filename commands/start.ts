@@ -81,9 +81,8 @@ const ensureAsdfTool = ([plugin, version]: [string, string]) =>
     found: `${plugin} is already installed.`,
   });
 
-const ensureAsdfTools = ({ ERLANG_VERSION, ELIXIR_VERSION, nodejs }: Versions) =>
-  ([["erlang", ERLANG_VERSION], ["elixir", ELIXIR_VERSION], ["nodejs", nodejs]] as [string, string][])
-    .filter(([, version]) => version)
+const ensureAsdfTools = ({ ERLANG_VERSION, ELIXIR_VERSION, NODE_VERSION }: Versions) =>
+  ([["erlang", ERLANG_VERSION], ["elixir", ELIXIR_VERSION], ["nodejs", NODE_VERSION]] as [string, string][])
     .reduce<Promise<unknown>>(
       (previous, tool) => previous.then(() => ensureAsdfTool(tool)),
       Promise.resolve()
