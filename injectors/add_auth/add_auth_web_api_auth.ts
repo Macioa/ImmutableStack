@@ -54,9 +54,14 @@ const add_auth_web_api_auth = async ({ WebDir, AppNameSnake, AppNameCamel, ApiNa
             `def connect(params, socket, _connect_info) do
     case ${plug}.user_from_token(params["token"]) do
       nil -> :error
-      user -> {:ok, assign(socket, :current_user, user)}
+      user -> {:ok, socket |> assign(:current_user, user) |> assign(:token, params["token"])}
     end
   end`
+          ).replace(
+            /def id\(_socket\), do: nil/,
+            `# Ithibati broadcasts "disconnect" here when this session is revoked or expires.
+  def id(%{assigns: %{token: encoded}}),
+    do: encoded |> Base.url_decode64!() |> Ithibati.Web.Gate.live_socket_id()`
           )
         ),
       },

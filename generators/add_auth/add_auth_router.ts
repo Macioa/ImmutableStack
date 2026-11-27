@@ -6,6 +6,7 @@ import { ApiAppData } from "../add_api";
 const add_auth_router = async ({
   AppDir,
   AppNameSnake,
+  AppNameCamel,
   ApiNameSnake,
   ApiNameCamel,
 }: ApiAppData) => {
@@ -32,6 +33,22 @@ defmodule ${ApiNameCamel}.Router do
 
     get("/nodes", StatusController, :index)
     get("/", PageController, :index)
+  end
+
+  import Ithibati.Web.Router
+
+  # Passkey sign-up and sign-in keep their challenge in the session cookie between the two requests.
+  pipeline :webauthn_ceremony do
+    plug(:accepts, ["json"])
+    plug(:fetch_session)
+    plug(:fetch_current_user)
+  end
+
+  scope "/auth" do
+    pipe_through(:webauthn_ceremony)
+    ithibati_routes(handler: ${ApiNameCamel}.Passkeys, rp_name: "${AppNameCamel}")
+    get("/setup", ${ApiNameCamel}.SetupJSONController, :show)
+    post("/setup", ${ApiNameCamel}.SetupJSONController, :create)
   end
 
   pipeline :api do
@@ -61,6 +78,24 @@ defmodule ${ApiNameCamel}.Router do
 
     get("/users/settings", UserSettingsJSONController, :show)
     put("/users/settings", UserSettingsJSONController, :update)
+    delete("/users/sessions", UserSessionJSONController, :delete_all)
+    get("/users/passkeys", PasskeyJSONController, :index)
+    get("/users/recovery_codes", RecoveryCodeJSONController, :show)
+    post("/users/recovery_codes", RecoveryCodeJSONController, :create)
+    put("/users/passkeys/:id", PasskeyJSONController, :update)
+    delete("/users/passkeys/:id", PasskeyJSONController, :delete)
+  end
+
+  pipeline :invitations do
+    plug(${ApiNameCamel}.Plugs.RequireAccess, ["invitations"])
+  end
+
+  scope "/api", ${ApiNameCamel} do
+    pipe_through([:api_authenticated, :invitations])
+
+    get("/invitations", InvitationJSONController, :index)
+    post("/invitations", InvitationJSONController, :create)
+    delete("/invitations/:id", InvitationJSONController, :delete)
   end
 
   if Application.compile_env(:${apiAppName}, :dev_routes) do
