@@ -30,6 +30,8 @@ export { add_auth_user_auth } from "./add_auth_user_auth";
 export { add_auth_repo } from "./add_auth_repo";
 export { add_auth_docker_init_db } from "./add_auth_docker_init_db";
 export { add_auth_router } from "./add_auth_router";
+export { add_auth_plug } from "./add_auth_plug";
+export { add_auth_api_auth_plug } from "./add_auth_api_auth_plug";
 export { add_auth_migration, add_auth_oauth_tokens_migration, add_auth_oauth_states_migration, add_auth_accounts_migration, add_auth_access_control_migration } from "./add_auth_migration";
 export { add_auth_oauth_controller } from "./add_auth_oauth_controller";
 export { add_auth_oauth_adapter } from "./add_auth_oauth_adapter";

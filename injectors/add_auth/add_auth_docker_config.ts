@@ -1,8 +1,9 @@
+import crypto from "crypto";
 import { join } from "@/utils/path";
 import { inject_file, Injection, InjectType } from "..";
 import { ApiAppData } from "@/generators/add_api";
 
-const add_auth_docker_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+const add_auth_docker_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel, ApiNameCamel }: ApiAppData) => {
   const file = join(UmbrellaDir, "config/docker.exs");
 
   const injections: Injection[] = [
@@ -12,7 +13,7 @@ const add_auth_docker_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel 
       (content: string) => {
         if (content.includes(`${AppNameCamel}.AuthRepo`)) return content;
 
-        return content.replace(
+        const withRepo = content.replace(
           new RegExp(
             `(config :${AppNameSnake}, ${AppNameCamel}\\.Repo,[\\s\\S]*?pool_size: 10\\n)`,
             "m"
@@ -28,6 +29,15 @@ config :${AppNameSnake}, ${AppNameCamel}.AuthRepo,
   pool_size: 10
 `
         );
+
+        return `${withRepo.trimEnd()}
+
+config :${AppNameSnake}_auth, ${ApiNameCamel}.Endpoint,
+  http: [ip: {0, 0, 0, 0}, port: 4001],
+  check_origin: false,
+  debug_errors: true,
+  secret_key_base: "${crypto.randomBytes(32).toString("hex")}"
+`;
       },
     ],
   ];

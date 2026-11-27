@@ -78,7 +78,6 @@ const gen_phx_channel_test = (
     test "handles message event", %{socket: socket} do
       push(socket, "message", %{"body" => "test message"})
       assert_broadcast "message", %{"body" => "test message"}
-      assert_reply :noreply
     end
   end
 
@@ -103,8 +102,8 @@ const gen_phx_channel_test = (
 
     test "handles reconnection attempts", %{socket: socket} do
       # Test reconnection after disconnection
-      push(socket, "reconnect", %{attempt: 1})
-      assert_reply %{status: "reconnected", attempt: 1}
+      ref = push(socket, "reconnect", %{attempt: 1})
+      assert_reply ref, :ok, %{status: "reconnected", attempt: 1}
     end
   end
 

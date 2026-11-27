@@ -7,10 +7,11 @@ const add_auth_user_menu = async ({
   AppNameSnake,
   LibDir,
   ApiNameSnake,
+  ApiPort,
 }: ApiAppData) => {
   const dir = join(LibDir || "", "lib/typescript/components");
   const filename = "UserMenu.tsx";
-  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:4002"`;
+  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}"`;
   const content = `import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { Dispatch } from "redux";
@@ -160,7 +161,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
         return;
       }
       
-      const authUrl = (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:4002";
+      const authUrl = (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}";
       const authOrigin = new URL(authUrl).origin;
       const uiOrigin = window.location.origin;
       

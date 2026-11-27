@@ -11,9 +11,11 @@ import { readGenFile } from "@/readers/genfile";
 import { AppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
+import { applyPinnedVersions } from "@/utils/versions";
 import { Names } from "@/utils/string";
 
 setLogLevel(5);
+applyPinnedVersions(__dirname);
 
 type ImmutableGenerator = {
   name: Names;

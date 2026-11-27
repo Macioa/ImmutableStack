@@ -2,8 +2,10 @@ import { add_auth } from "@/composite/add_auth";
 import { getAppData, AppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
+import { applyPinnedVersions } from "@/utils/versions";
 
 setLogLevel(3);
+applyPinnedVersions(__dirname);
 
 const main = async () => {
   const args = process.argv.slice(2);

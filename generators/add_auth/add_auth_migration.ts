@@ -3,7 +3,16 @@ import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "../add_api";
 
-const timestamp = () => {
+const MIGRATION_ORDER = [
+  "create_users_auth_tables.exs",
+  "create_accounts_table.exs",
+  "create_oauth_states.exs",
+  "create_oauth_tokens.exs",
+  "create_access_control_tables.exs",
+];
+
+// Ecto requires unique versions, and users must migrate before tables that reference it
+const migrationVersion = (baseName: string) => {
   const now = new Date();
   const pad = (value: number) => value.toString().padStart(2, "0");
   return (
@@ -12,7 +21,7 @@ const timestamp = () => {
     pad(now.getUTCDate()) +
     pad(now.getUTCHours()) +
     pad(now.getUTCMinutes()) +
-    pad(now.getUTCSeconds())
+    pad(MIGRATION_ORDER.indexOf(baseName))
   );
 };
 
@@ -25,7 +34,7 @@ const add_auth_migration = async ({
   const legacyDir = join(AppDir || "", `${AppNameSnake}/priv/repo/migrations`);
   const baseName = "create_users_auth_tables.exs";
 
-  let filename = `${timestamp()}_${baseName}`;
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
 
   if (existsSync(dir)) {
     const existing = readdirSync(dir).find(name => name.endsWith(baseName));
@@ -82,7 +91,7 @@ const add_auth_oauth_tokens_migration = async ({
 }: ApiAppData) => {
   const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
   const baseName = "create_oauth_tokens.exs";
-  let filename = `${timestamp()}_${baseName}`;
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
 
   if (existsSync(dir)) {
     const existing = readdirSync(dir).find(name => name.endsWith(baseName));
@@ -123,7 +132,7 @@ const add_auth_oauth_states_migration = async ({
 }: ApiAppData) => {
   const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
   const baseName = "create_oauth_states.exs";
-  let filename = `${timestamp()}_${baseName}`;
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
 
   if (existsSync(dir)) {
     const existing = readdirSync(dir).find(name => name.endsWith(baseName));
@@ -159,7 +168,7 @@ const add_auth_accounts_migration = async ({
 }: ApiAppData) => {
   const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
   const baseName = "create_accounts_table.exs";
-  let filename = `${timestamp()}_${baseName}`;
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
 
   if (existsSync(dir)) {
     const existing = readdirSync(dir).find(name => name.endsWith(baseName));
@@ -196,7 +205,7 @@ const add_auth_access_control_migration = async ({
 }: ApiAppData) => {
   const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
   const baseName = "create_access_control_tables.exs";
-  let filename = `${timestamp()}_${baseName}`;
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
 
   if (existsSync(dir)) {
     const existing = readdirSync(dir).find(name => name.endsWith(baseName));

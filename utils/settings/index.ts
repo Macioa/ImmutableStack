@@ -1,4 +1,3 @@
-import { exec } from "child_process";
 import { createCipheriv, createDecipheriv, createHash } from "crypto";
 import {
   createReadStream,
@@ -11,17 +10,12 @@ import { homedir } from "os";
 import { join } from "../../utils/path";
 import { StringOnlyMap } from "../map";
 import { log } from "../logger";
+import { detectEnvironment, environmentIsStale, installPrefix } from "../os_adapter";
 
 const SETTINGS = ".immutable";
 const cred = gen();
 
-const IMM_DIR = (function (): Promise<string> {
-  return new Promise((resolve, reject) =>
-    exec("brew --prefix immutable", (err, stdout, stderr) =>
-      resolve(stdout.trim())
-    )
-  );
-})();
+const IMM_DIR = installPrefix();
 
 interface Settings {
   openai?: string;
@@ -39,7 +33,10 @@ async function SHA(filePath: string): Promise<string> {
   log({ level: 38 }, "Hashing file", {
     dir: join(await IMM_DIR, "bin/" + filePath),
   });
-  const stream = createReadStream(join(await IMM_DIR, "bin/" + filePath));
+  const immDir = await IMM_DIR;
+  const stream = createReadStream(
+    immDir ? join(immDir, "bin/" + filePath) : join(__dirname, filePath)
+  );
   return new Promise((resolve, reject) => {
     stream.on("data", (chunk) => hash.update(chunk));
     stream.on("end", () => {
@@ -100,17 +97,26 @@ const decrypt = (
 let SETTINGS_CACHE: StringOnlyMap = {};
 const clearSettingsCache = () => (SETTINGS_CACHE = {});
 
+const loadSettings = async (): Promise<StringOnlyMap | null> => {
+  const decrypted = decrypt(await cred, readFileSync(join(homedir(), SETTINGS), "utf8"));
+  return decrypted === null ? null : JSON.parse(decrypted || "{}");
+};
+
+const resyncOS = async ({ shell: _shell, ...settings }: StringOnlyMap = {}) => {
+  const synced = { ...settings, ...detectEnvironment() };
+  await writeSettings(synced);
+  return synced;
+};
+
 const readSettings = async (): Promise<StringOnlyMap> => {
   log({ level: 37 }, "Reading settings", { home: homedir(), SETTINGS });
   if (Object.keys(SETTINGS_CACHE).length) return SETTINGS_CACHE;
+  if (!existsSync(join(homedir(), SETTINGS))) return resyncOS();
 
-  if (!existsSync(join(homedir(), SETTINGS))) {
-    await writeSettings({});
-    return {};
-  }
-  const data = readFileSync(join(homedir(), SETTINGS), "utf8");
-  SETTINGS_CACHE = JSON.parse(decrypt(await cred, data) || "{}");
-  return SETTINGS_CACHE;
+  const saved = await loadSettings();
+  // Unreadable settings use detected values for this run and are never overwritten
+  if (!saved) return (SETTINGS_CACHE = detectEnvironment());
+  return environmentIsStale(saved) ? resyncOS(saved) : (SETTINGS_CACHE = saved);
 };
 
 const writeSettings = async (settings: StringOnlyMap) => {
@@ -157,6 +163,7 @@ export {
   clearSettings,
   clearSettingsCache,
   readSettings,
+  resyncOS,
   updateSetting,
   getSetting,
 };

@@ -1,5 +1,24 @@
 # ImmutableStack Project Rules
 
+## MOST IMPORTANT RULE: Code Style
+This rule takes priority over every other project rule.
+
+### Architecture
+- Use simple SRP functions in correlating modules.
+- Use options args to create controller style management functions with SRP functions inside.
+- Use appropriate SRP modules, reuse existing modules when appropriate.
+
+### Functional programming
+- Use functional programming techniques.
+- Avoid references, avoid classes, avoid in-memory state outside of single functions.
+- Use const as much as possible.
+
+### Control flow
+- Prioritize switch statements and destructuring to avoid redundant statements.
+- Prioritize array functions over for loops whenever possible.
+- Prioritize minimal code one or two line if statements.
+- Avoid while loops.
+
 ## Project Overview
 ImmutableStack is a comprehensive toolkit for creating applications with the "Immutable Stack" - Elixir/Phoenix backend with React/Redux frontend. It provides code generation, AI-powered file repair, and development tooling for full-stack applications.
 ## Project Structure

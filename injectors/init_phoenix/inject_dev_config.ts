@@ -1,6 +1,7 @@
 import path from "path";
 import { inject_file, Injection, InjectType } from "..";
 import { AppData } from "../../readers/get_app_data";
+import { devCorsConfig } from "../../utils/cors";
 
 const inject_dev_config = async ({ AppNameSnake, UmbrellaDir }: AppData) => {
   const file = path.join(UmbrellaDir, `config/dev.exs`);
@@ -8,7 +9,7 @@ const inject_dev_config = async ({ AppNameSnake, UmbrellaDir }: AppData) => {
     [
       InjectType.BEFORE,
       /config\s*:\w+\s*,\s*\w+\.\s*Endpoint\s*,/,
-      `config :${AppNameSnake}, CORSPlug, origin: "*"\n`,
+      `${devCorsConfig(AppNameSnake)}\n`,
     ],
     [
       InjectType.REPLACE,
