@@ -3,18 +3,19 @@ import * as os from "os";
 import { log, setLogLevel } from "@/utils/logger";
 import { readSettings } from "@/utils/settings";
 import { execute as exec } from "@/runners";
-import { installApp, installPackage, isWindows, resolveShell, runPowerShellFile } from "@/utils/os_adapter";
+import { installApp, isWindows, resolveShell, runPowerShellFile } from "@/utils/os_adapter";
 import { asdfEnv, readVersions } from "@/utils/versions";
 import type { Versions } from "@/utils/versions";
 setLogLevel(5);
 
 const home = os.homedir();
 const asdfDir = path.join(home, ".asdf");
-const asdfShims = path.join(home, ".asdf", "shims");
+const asdfBin = path.join(asdfDir, "bin");
+const asdfShims = path.join(asdfDir, "shims");
 const env = {
   ...process.env,
-  PATH: `${asdfShims}:${process.env.PATH}`,
-  ASDF_DIR: asdfDir,
+  PATH: `${asdfBin}:${asdfShims}:${process.env.PATH}`,
+  ASDF_DATA_DIR: asdfDir,
 };
 
 // Homebrew (macOS only)
@@ -27,7 +28,7 @@ const env = {
 //     await exec({command: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"', dir: home}, "start_script");
 //   }
 // }
-const run = (command: string, runEnv?: NodeJS.ProcessEnv) =>
+const run = (command: string, runEnv: NodeJS.ProcessEnv = env) =>
   exec({ command, dir: home, env: runEnv }, "start_script");
 
 const runInOrder = (commands: string[], runEnv?: NodeJS.ProcessEnv) =>
@@ -62,12 +63,22 @@ const storeEnvironment = async () => {
   if (isWindows) log({ level: 3, color: "GREEN" }, `Detected Git Bash: ${resolveShell(shell)}`);
 };
 
-const ensureAsdf = () =>
+// The pinned asdf release binary goes in ~/.asdf/bin, ahead of any other asdf on PATH
+const asdfRelease = (version: string) =>
+  `https://github.com/asdf-vm/asdf/releases/download/v${version}/asdf-v${version}-$(uname -s | tr A-Z a-z)-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz`;
+
+const asdfIs = (version: string) => `asdf --version | grep -qF "${version}"`;
+
+const ensureAsdf = ({ ASDF_VERSION }: Versions) =>
   ensureInstalled({
-    check: "asdf --version",
-    install: [installPackage("asdf")],
-    found: "asdf is installed.",
-    installing: "Installing asdf...",
+    check: asdfIs(ASDF_VERSION),
+    install: [
+      `mkdir -p "${asdfBin}"`,
+      `curl -fsSL "${asdfRelease(ASDF_VERSION)}" | tar -xz -C "${asdfBin}" asdf`,
+      asdfIs(ASDF_VERSION),
+    ],
+    found: `asdf ${ASDF_VERSION} is installed.`,
+    installing: `Installing asdf ${ASDF_VERSION}...`,
   });
 
 const ensureAsdfTool = ([plugin, version]: [string, string]) =>
@@ -116,12 +127,12 @@ const ensurePnpm = () =>
 
 // Windows uses mise instead of asdf
 const setupWindows = () =>
-  run(runPowerShellFile(path.join(__dirname, "start_windows.ps1")));
+  run(runPowerShellFile(path.join(__dirname, "start_windows.ps1")), process.env);
 
 const setupUnix = async () => {
-  await ensureAsdf();
   log({ level: 3, color: "GREEN" }, "Sourcing versions.sh...");
   const versions = readVersions(__dirname);
+  await ensureAsdf(versions);
   await ensureAsdfTools(versions);
   await ensureDocker();
   await ensurePnpm();
