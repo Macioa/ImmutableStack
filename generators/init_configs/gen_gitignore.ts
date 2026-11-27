@@ -15,7 +15,7 @@ erl_crash.dump
 /tmp/
 
 # Node.js/React (for UI apps)
-node_modules/
+node_modules
 dist/
 dist-ssr/
 *.local
@@ -46,6 +46,7 @@ docker/pgdata/
 
 # Environment files
 .env
+!docker/.env
 .env.local
 .env.development.local
 .env.test.local
@@ -62,7 +63,6 @@ ehthumbs.db
 Desktop.ini
 
 # Package manager files
-package-lock.json
 yarn.lock
 pnpm-lock.yaml`;
 

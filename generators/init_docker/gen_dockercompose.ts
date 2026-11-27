@@ -9,14 +9,16 @@ const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
   ${AppNameSnake}_dev:
     build:
       context: ..
-      dockerfile: docker/dev.dockerfile
+      dockerfile: docker/base.dockerfile
+      target: toolchain
     volumes:
       - ../:/app:cached
-      - /app/_build
+      - dev_build:/app/_build
     working_dir: /app
     command: bash -c "iex -S mix phx.server"
     ports:
       - "4000:4000"
+      - "4001:4001"
       - "5173-5183:5173-5183"
     environment:
       - MIX_ENV=docker
@@ -37,7 +39,11 @@ const gen_docker_compose = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"`;
+      - "5432:5432"
+
+volumes:
+  dev_build:
+`;
 
   return generateFile({ filename, dir, content }, "gen_docker_compose");
 };

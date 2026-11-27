@@ -18,6 +18,7 @@ const gen_entity_requests = async (
   const APIS = [
     gen_request_show,
     gen_request_list,
+    gen_request_create,
     gen_request_update,
     gen_request_delete,
   ]
@@ -45,7 +46,7 @@ import { set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singl
 import type { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
 import type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
 
-  const exports = `export { request${singleUpperCamel}, request${pluralUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
+  const exports = `export { request${singleUpperCamel}, request${pluralUpperCamel}, create${singleUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
 `;
   const content = [imports, APIS, exports].join("\n");
   return requests
@@ -74,6 +75,21 @@ const gen_request_list = ({
       name: "fetch${pluralUpperCamel}",
       route: \`${singleSnake}\`,
       callback: (res: any) => dispatch(set${pluralUpperCamel}(res.data)),
+    }, dispatch) as Promise<${singleUpperCamel}Response>;`;
+
+const gen_request_create = ({
+  singleUpperCamel,
+  singleLowerCamel,
+  singleSnake,
+}: StringOnlyMap) =>
+  `const create${singleUpperCamel} = (${singleLowerCamel}: Partial<${singleUpperCamel}>, dispatch: Dispatch) =>
+    Request.API({
+      name: "create${singleUpperCamel}",
+      route: "${singleSnake}",
+      options: {
+        method: "POST",
+        body: JSON.stringify(${singleLowerCamel}),
+      },
     }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_update = ({

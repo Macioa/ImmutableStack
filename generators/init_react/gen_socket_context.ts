@@ -7,11 +7,11 @@ const gen_socket_context = async ({ LibDir, AppNameSnake }: AppData) => {
   const filename = "PhoenixSocketContext.tsx";
   const content = `import { createContext, useContext, useEffect, useState } from "react";
 import { Socket } from "phoenix";
+import { readToken } from "../requests";
 
 const SOCKET_URL =
   (import.meta as any).env["VITE_UI_SOCKET_URL"] ||
   "ws://localhost:4000/socket";
-const TOKEN = "";
 
 type PhoenixSocketContextType = {
   socket: Socket | null;
@@ -35,7 +35,8 @@ export const PhoenixSocketProvider = ({ children }: Props) => {
 
   useEffect(() => {
     const socketInstance = new Socket(SOCKET_URL, {
-      params: { TOKEN },
+      // Evaluated on every connect, so the socket picks up a token after login
+      params: () => ({ token: readToken() }),
     });
 
     socketInstance.connect();

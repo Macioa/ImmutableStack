@@ -1,4 +1,5 @@
 import { join } from "path";
+import { devCorsConfig } from "@/utils/cors";
 import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { generateFile } from "../index";
 
@@ -26,7 +27,7 @@ config :${AppNameSnake}, ${AppNameCamel}.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :${AppNameSnake}, CORSPlug, origin: "*"
+${devCorsConfig(AppNameSnake)}
 
 config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.

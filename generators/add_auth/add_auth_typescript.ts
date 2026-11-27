@@ -5,13 +5,15 @@ import { ApiAppData } from "../add_api";
 const add_auth_user_requests = async ({
   LibDir,
   ApiNameSnake,
+  ApiPort,
 }: ApiAppData) => {
   const dir = join(LibDir || "", "lib/typescript/requests");
   const filename = "User.tsx";
-  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:4002"`;
+  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}"`;
   const content = `import type { Dispatch } from "redux";
 import { Request } from "./index";
 import { setUserdata, setToken } from "../state/User";
+import { storeToken } from "./index";
 import type { User } from "../state/User";
 import type {
   UserResponse,
@@ -80,6 +82,7 @@ const requestCurrentUser = (dispatch: Dispatch) => {
         dispatch(setUserdata(res.data));
       }
       if (res.token) {
+        storeToken(res.token);
         dispatch(setToken(res.token));
       }
     },
@@ -113,7 +116,10 @@ const loginUser = (credentials: { email: string; password: string }, dispatch: D
     "loginUser",
     (res: any) => {
       if (res.data) dispatch(setUserdata(res.data));
-      if (res.token) dispatch(setToken(res.token));
+      if (res.token) {
+        storeToken(res.token);
+        dispatch(setToken(res.token));
+      }
     },
   ) as Promise<UserResponse>;
 // ** IMMUTABLE User REQUEST_API a1b2c3d4-e5f6-7890-abcd-ef1234567890 **
@@ -130,7 +136,10 @@ const registerUser = (userData: { email: string; password: string }, dispatch: D
     "registerUser",
     (res: any) => {
       if (res.data) dispatch(setUserdata(res.data));
-      if (res.token) dispatch(setToken(res.token));
+      if (res.token) {
+        storeToken(res.token);
+        dispatch(setToken(res.token));
+      }
     },
   ) as Promise<UserResponse>;
 // ** IMMUTABLE User REQUEST_API b2c3d4e5-f6a7-8901-bcde-f12345678901 **
@@ -146,6 +155,7 @@ const logoutUser = (dispatch: Dispatch) =>
     "logoutUser",
     () => {
       dispatch(setUserdata(null as any));
+      storeToken(null);
       dispatch(setToken(""));
     },
   ) as Promise<CountUserResponse>;

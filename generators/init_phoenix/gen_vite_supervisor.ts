@@ -10,6 +10,7 @@ const gen_vite_supervisor = async ({
   const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `
+if Mix.env() == :dev do
 defmodule ${AppNameCamel}.ViteDevSupervisor do
   use GenServer
 
@@ -144,12 +145,7 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
         if existing = Process.whereis(atom_name), do: cleanup_port(atom_name, existing)
 
         port =
-          {:spawn_executable, System.find_executable("npm")}
-          |> Port.open([
-            :binary,
-            {:args, ["run", "dev", "--prefix", "apps/${AppNameSnake}_#{ui_name}/"]},
-            :stderr_to_stdout
-          ])
+          ${AppNameCamel}.OSAdapter.open_npm(["run", "dev", "--prefix", "apps/${AppNameSnake}_#{ui_name}/"])
 
         Process.register(port, atom_name)
         Process.link(port)
@@ -180,11 +176,10 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
       |> Enum.uniq()
 
     updated_pids = (pids ++ new_pids) |> Enum.uniq()
-    orphaned_pids = get_vite_processes() |> Enum.reject(&(&1 in updated_pids))
+    orphaned_pids = ${AppNameCamel}.OSAdapter.orphan_pids(updated_pids)
 
     if orphaned_pids != [] do
-      cmd = "sleep #{@timeout_sec + 0.15} ; kill -9 #{Enum.join(orphaned_pids, " ")} #ViteTimeout"
-      timeout = Task.async(fn -> {_, 0} = System.cmd("bash", ["-c", cmd]) end)
+      timeout = Task.async(fn -> ${AppNameCamel}.OSAdapter.kill_after(@timeout_sec + 0.15, orphaned_pids) end)
       %{state | timeout: timeout, existing_vite_pids: updated_pids}
     else
       %{state | existing_vite_pids: updated_pids}
@@ -194,40 +189,12 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
   defp cancel_timeout(state = %{timeout: timeout}) do
     Task.shutdown(timeout)
 
-    case System.cmd("bash", [
-           "-c",
-           "ps aux | grep 'ViteTimeout' | grep -v grep | awk '{print $2}'"
-         ]) do
-      {timeout_pids, 0} ->
-        timeout_pids
-        |> String.split("\n")
-        |> Enum.filter(fn s -> s not in ["", nil] end)
-        |> Enum.each(&kill/1)
-
-      _ ->
-        :ok
-    end
+    ${AppNameCamel}.OSAdapter.timer_pids() |> Enum.each(&kill/1)
 
     %{state | timeout: nil}
   end
 
-  defp get_vite_processes do
-    case System.cmd("pgrep", ["-af", "vite"]) do
-      {output, 0} ->
-        output
-        |> String.split("\n")
-        |> Enum.map(fn line ->
-          case Regex.run(~r/^(\\d+)/, String.trim(line)) do
-            [_, pid] -> String.to_integer(pid)
-            _ -> nil
-          end
-        end)
-        |> Enum.filter(& &1)
-
-      _ ->
-        []
-    end
-  end
+  defp get_vite_processes, do: ${AppNameCamel}.OSAdapter.vite_pids()
 
   defp kill(nil), do: :ok
 
@@ -235,17 +202,11 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
     port |> Port.info() |> Keyword.get(:os_pid) |> kill()
   end
 
-  defp kill(pid) when is_integer(pid),
-    do: System.cmd("kill", ["-9", to_string(pid)], stderr_to_stdout: true)
-
-  defp kill(pid) when is_binary(pid), do: System.cmd("kill", ["-9", pid], stderr_to_stdout: true)
+  defp kill(pid) when is_integer(pid) or is_binary(pid), do: ${AppNameCamel}.OSAdapter.kill_pid(pid)
   defp kill(pid) when is_pid(pid), do: Process.exit(pid, :kill)
   defp kill(_), do: :ok
 
-  defp cleanup_all_vite_processes do
-    for pattern <- ["npm.*run dev", "vite", "node.*vite"],
-        do: System.cmd("pkill", ["-9", "-f", pattern], stderr_to_stdout: true)
-  end
+  defp cleanup_all_vite_processes, do: ${AppNameCamel}.OSAdapter.stop_vite()
 
   # Start an external monitoring process using an inline script
   # This MUST be external to survive CTRL+C which kills the entire VM
@@ -255,48 +216,14 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
 
     # Launch external monitor process
     spawn(fn ->
-      start_monitor_by_os(os_type, beam_pid)
+      ${AppNameCamel}.OSAdapter.watch_beam(beam_pid)
     end)
 
     IO.puts(
       "[ViteDevSupervisor] Started external orphan monitor (monitoring beam: #{beam_pid}, OS: #{inspect(os_type)})"
     )
   end
-
-  defp start_monitor_by_os({:win32, _}, beam_pid) do
-    # Windows PowerShell script
-    cmd = """
-    while ($true) {
-      try {
-        $proc = Get-Process -Id #{beam_pid} -ErrorAction Stop
-        Start-Sleep -Seconds 2
-      } catch {
-        # Process dead, kill vite processes
-        Get-Process | Where-Object { $_.ProcessName -like '*vite*' -or $_.CommandLine -like '*vite*' } | Stop-Process -Force
-        Get-Process | Where-Object { $_.ProcessName -like '*npm*' } | Where-Object { $_.CommandLine -like '*run dev*' } | Stop-Process -Force
-        Write-Host "[ViteOrphanMonitor] Cleanup complete"
-        exit 0
-      }
-    }
-    """
-
-    System.cmd("powershell", ["-NoProfile", "-Command", cmd], [{:stderr_to_stdout, true}])
-  end
-
-  defp start_monitor_by_os(_, beam_pid) do
-    # Unix/Linux/macOS bash script
-    cmd = """
-    while kill -0 #{beam_pid} 2>/dev/null; do
-      sleep 2
-    done
-    pkill -9 -f "npm.*run dev" 2>/dev/null
-    pkill -9 -f "vite" 2>/dev/null
-    pkill -9 -f "node.*vite" 2>/dev/null
-    echo "[ViteOrphanMonitor] Cleanup complete"
-    """
-
-    System.cmd("bash", ["-c", cmd], [{:stderr_to_stdout, true}])
-  end
+end
 end
 `;
 
