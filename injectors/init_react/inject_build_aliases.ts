@@ -11,11 +11,11 @@ const inject_viteconfig = async (AppNameSnake: string, UiDir: string) => {
       `\n
   resolve: {
     alias: {
-      '@utils': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/utils'),
-      '@state': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/state'),
-      '@requests': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/requests'),
-      '@components': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/components'),
-      '@test': path.resolve(__dirname, 'src/test')
+      '@utils': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/utils'),
+      '@state': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/state'),
+      '@requests': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/requests'),
+      '@components': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/components'),
+      '@test': path.resolve(import.meta.dirname, 'src/test')
     }
   },
 `,
@@ -34,24 +34,30 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
       InjectType.AFTER,
       /"compilerOptions":\s+\{/,
       `\n
-  "baseUrl": "../../",
   "paths": {
-    "@utils/*": ["apps/${AppNameSnake}/lib/typescript/utils/*"],
-    "@state/*": ["apps/${AppNameSnake}/lib/typescript/state/*"],
-    "@requests/*": ["apps/${AppNameSnake}/lib/typescript/requests/*"],
-    "@components/*": ["apps/${AppNameSnake}/lib/typescript/components/*"]
+    "@utils/*": ["../${AppNameSnake}/lib/typescript/utils/*"],
+    "@state/*": ["../${AppNameSnake}/lib/typescript/state/*"],
+    "@requests/*": ["../${AppNameSnake}/lib/typescript/requests/*"],
+    "@components/*": ["../${AppNameSnake}/lib/typescript/components/*"]
   },
 `,
+    ],
+    [
+      InjectType.REPLACE,
+      /"types":\s*\["vite\/client"\]/,
+      `"types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"]`,
     ],
   ];
 
   return inject_file({ file, injections }, "inject_tsconfig");
 };
 
-const inject_build_aliases = async ({ AppNameSnake, UiDir }: AppData) =>
-  Promise.all([
+const inject_build_aliases = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
+  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
+  return Promise.all([
     inject_viteconfig(AppNameSnake, UiDir),
     inject_tsconfig(AppNameSnake, UiDir),
   ]);
+};
 
 export { inject_viteconfig, inject_tsconfig, inject_build_aliases };

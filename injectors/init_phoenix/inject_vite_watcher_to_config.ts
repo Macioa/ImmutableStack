@@ -15,7 +15,7 @@ const inject_vite_watcher_to_config = async (
 if Mix.env() == :dev do
   config :${AppName}_web, ${AppNameCamel}Web.Endpoint,
     watchers: [
-      npm: [
+      pnpm: [
         "run",
         "dev",
         cd: Path.expand("../apps/${AppName}_ui", __DIR__)

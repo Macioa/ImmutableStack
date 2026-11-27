@@ -1,0 +1,1942 @@
+import { join } from "../../utils/path";
+import { generateFile } from "..";
+import { ApiAppData } from "../add_api";
+
+const add_auth_accounts_context = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}`);
+  const filename = "accounts.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts do
+  @moduledoc """
+  The Accounts context.
+  """
+
+  import Ecto.Query, warn: false
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  alias ${ApiNameCamel}.Accounts.{
+    Account,
+    AccountAccess,
+    AccessGroup,
+    AccessTag,
+    GroupTag,
+    OAuthState,
+    OAuthToken,
+    User,
+    UserAccess,
+    UserToken,
+    UserNotifier
+  }
+
+  ## Database getters
+
+  @doc """
+  Gets a user by email.
+
+  ## Examples
+
+      iex> get_user_by_email("foo@example.com")
+      %User{}
+
+      iex> get_user_by_email("unknown@example.com")
+      nil
+
+  """
+  def get_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email)
+  end
+
+  @doc """
+  Gets a user by email and password.
+
+  ## Examples
+
+      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
+      %User{}
+
+      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
+      nil
+
+  """
+  def get_user_by_email_and_password(email, password) when is_binary(email) and is_binary(password) do
+    user = Repo.get_by(User, email: email)
+    if User.valid_password?(user, password), do: user
+  end
+
+  @doc """
+  Gets a single user.
+
+  Raises Ecto.NoResultsError if the User does not exist.
+
+  ## Examples
+
+      iex> get_user!(123)
+      %User{}
+
+      iex> get_user!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_user!(id), do: Repo.get!(User, id)
+
+  ## User registration
+
+  @doc """
+  Registers a user.
+
+  ## Examples
+
+      iex> register_user(%{field: value})
+      {:ok, %User{}}
+
+      iex> register_user(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def register_user(attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:account, User.registration_changeset(%User{}, attrs))
+    |> claim_first_account()
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{account: user}} -> {:ok, user}
+      {:error, :account, changeset, _changes} -> {:error, changeset}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Appends the first-account claim to a multi whose \`:account\` step inserts a user.
+
+  The first account becomes the admin holding the "invitations" tag. With
+  \`config :ithibati, initial_claim: :operator_code\` (prod) only a sign-up that
+  carries the operator's proof claims; elsewhere the first sign-up of any kind does.
+  """
+  def claim_first_account(multi, authorization \\\\ nil) do
+    if Ithibati.Identity.Instance.needs_setup?() and (authorization || not operator_claim?()) do
+      multi
+      |> Ithibati.Identity.Instance.claim(authorization: authorization)
+      |> Ecto.Multi.insert(:admin, &%UserAccess{user_id: &1.account.id, tag_id: "invitations"})
+    else
+      multi
+    end
+  end
+
+  @doc "Whether the first account needs the operator code from the setup task."
+  def operator_claim?, do: Application.get_env(:ithibati, :initial_claim, :open) == :operator_code
+
+  @doc """
+  Returns an %Ecto.Changeset{} for tracking user changes.
+
+  ## Examples
+
+      iex> change_user_registration(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_registration(%User{} = user, attrs \\\\ %{}) do
+    User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
+  end
+
+  ## Settings
+
+  @doc """
+  Returns an %Ecto.Changeset{} for changing the user email.
+
+  ## Examples
+
+      iex> change_user_email(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_email(user, attrs \\\\ %{}) do
+    User.email_changeset(user, attrs, validate_email: false)
+  end
+
+  @doc """
+  Emulates that the email will change without actually changing
+  it in the database.
+
+  ## Examples
+
+      iex> apply_user_email(user, "valid password", %{email: ...})
+      {:ok, %User{}}
+
+      iex> apply_user_email(user, "invalid password", %{email: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def apply_user_email(user, password, attrs) do
+    user
+    |> User.email_changeset(attrs)
+    |> User.validate_current_password(password)
+    |> Ecto.Changeset.apply_action(:update)
+  end
+
+  @doc """
+  Updates the user email using the given token.
+
+  If the token matches, the user email is updated and the token is deleted.
+  The confirmed_at date is also updated to the current time.
+  """
+  def update_user_email(user, token) do
+    context = "change:#{user.email}"
+
+    with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
+         %UserToken{sent_to: email} <- Repo.one(query),
+         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
+  defp user_email_multi(user, email, context) do
+    changeset =
+      user
+      |> User.email_changeset(%{email: email})
+      |> User.confirm_changeset()
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, [context]))
+  end
+
+  @doc ~S"""
+  Delivers the update email instructions to the given user.
+
+  ## Examples
+
+      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/users/settings/confirm_email/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+
+  """
+  def deliver_user_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
+      when is_function(update_email_url_fun, 1) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
+
+    Repo.insert!(user_token)
+    UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
+  end
+
+  @doc """
+  Returns an %Ecto.Changeset{} for changing the user password.
+
+  ## Examples
+
+      iex> change_user_password(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_password(user, attrs \\\\ %{}) do
+    User.password_changeset(user, attrs, hash_password: false)
+  end
+
+  @doc """
+  Updates the user password.
+
+  ## Examples
+
+      iex> update_user_password(user, "valid password", %{password: ...})
+      {:ok, %User{}}
+
+      iex> update_user_password(user, "invalid password", %{password: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_user_password(user, password, attrs) do
+    changeset =
+      user
+      |> User.password_changeset(attrs)
+      |> User.validate_current_password(password)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Changes the password, or sets the first one on a passkey-only account.
+
+  Only an existing password has to be confirmed with the current one.
+  """
+  def set_user_password(%User{hashed_password: nil} = user, _current_password, attrs) do
+    user |> User.password_changeset(attrs) |> Repo.update()
+  end
+
+  def set_user_password(user, current_password, attrs),
+    do: update_user_password(user, current_password || "", attrs)
+
+  ## Session
+
+  @doc """
+  Generates a session token.
+  """
+  def generate_user_session_token(user), do: Ithibati.Identity.Sessions.generate_session_token(user)
+
+  @doc """
+  Gets the user with the given signed token.
+  """
+  def get_user_by_session_token(token), do: Ithibati.Identity.Sessions.get_user_by_session_token(token)
+
+  @doc """
+  Deletes the signed token with the given context.
+  """
+  def delete_user_session_token(token), do: Ithibati.Identity.Sessions.delete_session_token(token)
+
+  @doc """
+  Revokes every session of the user and disconnects their sockets.
+  """
+  def revoke_all_user_sessions(user) do
+    user
+    |> Ithibati.Identity.Sessions.revoke_all()
+    |> then(&Ithibati.Web.Gate.disconnect_sessions(${ApiNameCamel}.Endpoint, &1))
+  end
+
+  ## Confirmation
+
+  @doc ~S"""
+  Delivers the confirmation email instructions to the given user.
+
+  ## Examples
+
+      iex> deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+
+      iex> deliver_user_confirmation_instructions(confirmed_user, &url(~p"/users/confirm/#{&1}"))
+      {:error, :already_confirmed}
+
+  """
+  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
+      when is_function(confirmation_url_fun, 1) do
+    if user.confirmed_at do
+      {:error, :already_confirmed}
+    else
+      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      Repo.insert!(user_token)
+      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
+    end
+  end
+
+  @doc """
+  Confirms a user by the given token.
+
+  If the token matches, the user account is marked as confirmed
+  and the token is deleted.
+  """
+  def confirm_user(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
+         %User{} = user <- Repo.one(query),
+         {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  defp confirm_user_multi(user) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.confirm_changeset(user))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["confirm"]))
+  end
+
+  ## Reset password
+
+  @doc ~S"""
+  Delivers the reset password email to the given user.
+
+  ## Examples
+
+      iex> deliver_user_reset_password_instructions(user, &url(~p"/users/reset_password/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+
+  """
+  def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
+      when is_function(reset_password_url_fun, 1) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
+    Repo.insert!(user_token)
+    UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
+  end
+
+  @doc """
+  Gets the user by reset password token.
+
+  ## Examples
+
+      iex> get_user_by_reset_password_token("validtoken")
+      %User{}
+
+      iex> get_user_by_reset_password_token("invalidtoken")
+      nil
+
+  """
+  def get_user_by_reset_password_token(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
+         %User{} = user <- Repo.one(query) do
+      user
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Resets the user password.
+
+  ## Examples
+
+      iex> reset_user_password(user, %{password: "new long password", password_confirmation: "new long password"})
+      {:ok, %User{}}
+
+      iex> reset_user_password(user, %{password: "valid", password_confirmation: "not the same"})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def reset_user_password(user, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  ## Access control
+
+  @doc """
+  Returns true when the user holds any of the given tags or groups.
+
+  Grants made through a group only count while that group still contains the tag.
+  """
+  def user_has_access?(%User{id: user_id}, tags, groups) when is_list(tags) and is_list(groups) do
+    from(ua in UserAccess,
+      left_join: gt in GroupTag,
+      on: gt.group_id == ua.group_id and gt.tag_id == ua.tag_id,
+      where: ua.user_id == ^user_id,
+      where: is_nil(ua.group_id) or not is_nil(gt.group_id),
+      where: ua.tag_id in ^tags or ua.group_id in ^groups
+    )
+    |> Repo.exists?()
+  end
+
+  ## OAuth
+
+  @doc """
+  Creates an OAuth state for CSRF protection.
+  """
+  def create_oauth_state(provider, state) do
+    provider_string = to_string(provider)
+    expires_at = DateTime.utc_now() |> DateTime.add(10, :minute) |> DateTime.truncate(:second)
+
+    %OAuthState{}
+    |> OAuthState.changeset(%{
+      state: state,
+      provider: provider_string,
+      expires_at: expires_at
+    })
+    |> Repo.insert()
+  end
+
+  @doc """
+  Validates and consumes an OAuth state.
+  Returns :ok if valid, :error if invalid or expired.
+  """
+  def validate_oauth_state(state, provider) do
+    provider_string = to_string(provider)
+    now = DateTime.utc_now()
+
+    case Repo.get_by(OAuthState, state: state, provider: provider_string) do
+      nil ->
+        :error
+
+      oauth_state ->
+        if DateTime.compare(oauth_state.expires_at, now) == :gt do
+          Repo.delete(oauth_state)
+          :ok
+        else
+          Repo.delete(oauth_state)
+          :error
+        end
+    end
+  end
+
+  @doc """
+  Cleans up expired OAuth states.
+  """
+  def cleanup_expired_oauth_states do
+    now = DateTime.utc_now()
+
+    from(os in OAuthState, where: os.expires_at < ^now)
+    |> Repo.delete_all()
+  end
+
+  @doc """
+  Stores or updates an OAuth token for a user.
+  """
+  def upsert_oauth_token(user, provider, attrs) do
+    if is_nil(user.id) do
+      {:error, "User ID is nil - user must be saved before storing OAuth token"}
+    else
+      provider_string = to_string(provider)
+
+      case Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string) do
+        nil ->
+          %OAuthToken{}
+          |> OAuthToken.changeset(Map.merge(attrs, %{user_id: user.id, provider: provider_string}))
+          |> Repo.insert()
+
+        oauth_token ->
+          oauth_token
+          |> OAuthToken.changeset(attrs)
+          |> Repo.update()
+      end
+    end
+  end
+
+  @doc """
+  Gets an OAuth token for a user and provider.
+  """
+  def get_oauth_token(user, provider) do
+    provider_string = to_string(provider)
+    Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string)
+  end
+
+  @doc """
+  Gets a user by OAuth provider and provider user ID.
+  Returns the user if found, nil otherwise.
+  """
+  def get_user_by_oauth_provider(provider, provider_user_id) do
+    provider_string = to_string(provider)
+
+    from(ot in OAuthToken,
+      where: ot.provider == ^provider_string and ot.provider_user_id == ^provider_user_id,
+      join: u in assoc(ot, :user),
+      select: u
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Deletes an OAuth token for a user and provider.
+  """
+  def delete_oauth_token(user, provider) do
+    provider_string = to_string(provider)
+
+    case Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string) do
+      nil -> {:ok, nil}
+      oauth_token -> Repo.delete(oauth_token)
+    end
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_accounts_context");
+};
+
+const add_auth_user_schema = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "user.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.User do
+  use Ecto.Schema
+  use Ithibati.Schema.User,
+    identifier: :email,
+    format: Ithibati.Schema.Identifier.email_format(),
+    unique_index: false
+
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.{Account, UserAccess}
+
+  @primary_key {:id, :binary_id, autogenerate: false, read_after_writes: true}
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          email: String.t() | nil,
+          hashed_password: String.t() | nil,
+          confirmed_at: DateTime.t() | nil,
+          two_factor_enabled: boolean(),
+          totp_secret: binary() | nil,
+          totp_enabled_at: DateTime.t() | nil,
+          totp_last_used_at: DateTime.t() | nil,
+          email_otp_enabled_at: DateTime.t() | nil,
+          access_entries: [UserAccess.t()] | nil,
+          accounts: [Account.t()] | nil,
+          access_tags: [map()] | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  schema "users" do
+    ithibati_account()
+    field :password, :string, virtual: true, redact: true
+    field :hashed_password, :string, redact: true
+    field :current_password, :string, virtual: true, redact: true
+    field :confirmed_at, :utc_datetime
+
+    field :two_factor_enabled, :boolean, default: false
+    field :totp_secret, :binary, redact: true
+    field :totp_enabled_at, :utc_datetime
+    field :totp_last_used_at, :utc_datetime
+    field :email_otp_enabled_at, :utc_datetime
+
+    field :access_tags, {:array, :map}, virtual: true, default: []
+
+    has_many :access_entries, UserAccess, foreign_key: :user_id
+    has_many :accounts, Account, foreign_key: :owner_id
+
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc """
+  A user changeset for registration.
+
+  It is important to validate the length of both email and password.
+  Otherwise databases may truncate the email without warnings, which
+  could lead to unpredictable or insecure behaviour. Long passwords may
+  also be very expensive to hash for certain algorithms.
+
+  ## Options
+
+    * :hash_password - Hashes the password so it can be stored securely
+      in the database and ensures the password field is cleared to prevent
+      leaks in the logs. If password hashing is not needed and clearing the
+      password field is not desired (like when using this changeset for
+      validations on a LiveView form), this option can be set to false.
+      Defaults to true.
+
+    * :validate_email - Validates the uniqueness of the email, in case
+      you don't want to validate the uniqueness of the email (like when
+      using this changeset for validations on a LiveView form before
+      submitting the form), this option can be set to false.
+      Defaults to true.
+  """
+  def registration_changeset(user, attrs, opts \\\\ []) do
+    user
+    |> cast(attrs, [:email, :password])
+    |> validate_email(opts)
+    |> validate_password(opts)
+  end
+
+  defp validate_email(changeset, opts) do
+    changeset
+    |> validate_required([:email])
+    |> validate_format(:email, ~r/^[^\\s]+@[^\\s]+$/, message: "must have the @ sign and no spaces")
+    |> validate_length(:email, max: 160)
+    |> maybe_validate_unique_email(opts)
+  end
+
+  defp validate_password(changeset, opts) do
+    changeset
+    |> validate_required([:password])
+    |> validate_length(:password, min: 12, max: 72)
+    # Examples of additional password validation:
+    # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
+    # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
+    # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
+    |> maybe_hash_password(opts)
+  end
+
+  defp maybe_hash_password(changeset, opts) do
+    hash_password? = Keyword.get(opts, :hash_password, true)
+    password = get_change(changeset, :password)
+
+    if hash_password? && password && changeset.valid? do
+      changeset
+      # Hashing could be done with Ecto.Changeset.prepare_changes/2, but that
+      # would keep the database transaction open longer and hurt performance.
+      |> put_change(:hashed_password, Pbkdf2.hash_pwd_salt(password, rounds: pbkdf2_rounds()))
+      |> delete_change(:password)
+    else
+      changeset
+    end
+  end
+
+  defp pbkdf2_rounds, do: Application.get_env(:pbkdf2_elixir, :rounds, 210_000)
+
+  defp maybe_validate_unique_email(changeset, opts) do
+    if Keyword.get(opts, :validate_email, true) do
+      changeset
+      |> unsafe_validate_unique(:email, ${AppNameCamel}.AuthRepo)
+      |> unique_constraint(:email)
+    else
+      changeset
+    end
+  end
+
+  @doc """
+  A user changeset for changing the email.
+
+  It requires the email to change otherwise an error is added.
+  """
+  def email_changeset(user, attrs, opts \\\\ []) do
+    user
+    |> cast(attrs, [:email])
+    |> validate_email(opts)
+    |> case do
+      %{changes: %{email: _}} = changeset -> changeset
+      %{} = changeset -> add_error(changeset, :email, "did not change")
+    end
+  end
+
+  @doc """
+  A user changeset for changing the password.
+
+  ## Options
+
+    * :hash_password - Hashes the password so it can be stored securely
+      in the database and ensures the password field is cleared to prevent
+      leaks in the logs. If password hashing is not needed and clearing the
+      password field is not desired (like when using this changeset for
+      validations on a LiveView form), this option can be set to false.
+      Defaults to true.
+  """
+  def password_changeset(user, attrs, opts \\\\ []) do
+    user
+    |> cast(attrs, [:password])
+    |> validate_confirmation(:password, message: "does not match password")
+    |> validate_password(opts)
+  end
+
+  @doc """
+  Confirms the account by setting confirmed_at.
+  """
+  def confirm_changeset(user) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    change(user, confirmed_at: now)
+  end
+
+  @doc """
+  Verifies the password.
+
+  If there is no user or the user doesn't have a password, we call
+  Pbkdf2.no_user_verify/1 to avoid timing attacks.
+  """
+  def valid_password?(%${ApiNameCamel}.Accounts.User{hashed_password: hashed_password}, password)
+      when is_binary(hashed_password) and byte_size(password) > 0 do
+    Pbkdf2.verify_pass(password, hashed_password)
+  end
+
+  def valid_password?(_, _) do
+    Pbkdf2.no_user_verify(rounds: pbkdf2_rounds())
+    false
+  end
+
+  @doc """
+  Validates the current password otherwise adds an error to the changeset.
+  """
+  def validate_current_password(changeset, password) do
+    changeset = cast(changeset, %{current_password: password}, [:current_password])
+
+    if valid_password?(changeset.data, password) do
+      changeset
+    else
+      add_error(changeset, :current_password, "is not valid")
+    end
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_schema");
+};
+
+const add_auth_user_token = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "user_token.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.UserToken do
+  use Ecto.Schema
+  import Ecto.Query
+  alias ${ApiNameCamel}.Accounts.UserToken
+
+  @foreign_key_type :binary_id
+
+  @hash_algorithm :sha256
+  @rand_size 32
+
+  # It is very important to keep the reset password token expiry short,
+  # since someone with access to the email may take over the account.
+  @reset_password_validity_in_days 1
+  @confirm_validity_in_days 7
+  @change_email_validity_in_days 7
+  @session_validity_in_days 60
+
+  schema "users_tokens" do
+    field :token, :binary
+    field :context, :string
+    field :sent_to, :string
+    belongs_to :user, ${ApiNameCamel}.Accounts.User
+
+    timestamps(type: :utc_datetime, updated_at: false)
+  end
+
+  @doc """
+  Generates a token that will be stored in a signed place,
+  such as session or cookie. As they are signed, those
+  tokens do not need to be hashed.
+
+  The reason why we store session tokens in the database, even
+  though Phoenix already provides a session cookie, is because
+  Phoenix' default session cookies are not persisted, they are
+  simply signed and potentially encrypted. This means they are
+  valid indefinitely, unless you change the signing/encryption
+  salt.
+
+  Therefore, storing them allows individual user
+  sessions to be expired. The token system can also be extended
+  to store additional data, such as the device used for logging in.
+  You could then use this information to display all valid sessions
+  and devices in the UI and allow users to explicitly expire any
+  session they deem invalid.
+  """
+  def build_session_token(user) do
+    token = :crypto.strong_rand_bytes(@rand_size)
+    {token, %UserToken{token: token, context: "session", user_id: user.id}}
+  end
+
+  @doc """
+  Checks if the token is valid and returns its underlying lookup query.
+
+  The query returns the user found by the token, if any.
+
+  The token is valid if it matches the value in the database and it has
+  not expired (after @session_validity_in_days).
+  """
+  def verify_session_token_query(token) do
+    query =
+      from token in by_token_and_context_query(token, "session"),
+        join: user in assoc(token, :user),
+        where: token.inserted_at > ago(@session_validity_in_days, "day"),
+        select: user
+
+    {:ok, query}
+  end
+
+  @doc """
+  Builds a token and its hash to be delivered to the user's email.
+
+  The non-hashed token is sent to the user email while the
+  hashed part is stored in the database. The original token cannot be reconstructed,
+  which means anyone with read-only access to the database cannot directly use
+  the token in the application to gain access. Furthermore, if the user changes
+  their email in the system, the tokens sent to the previous email are no longer
+  valid.
+
+  Users can easily adapt the existing code to provide other types of delivery methods,
+  for example, by phone numbers.
+  """
+  def build_email_token(user, context) do
+    build_hashed_token(user, context, user.email)
+  end
+
+  defp build_hashed_token(user, context, sent_to) do
+    token = :crypto.strong_rand_bytes(@rand_size)
+    hashed_token = :crypto.hash(@hash_algorithm, token)
+
+    {Base.url_encode64(token, padding: false),
+     %UserToken{
+       token: hashed_token,
+       context: context,
+       sent_to: sent_to,
+       user_id: user.id
+     }}
+  end
+
+  @doc """
+  Checks if the token is valid and returns its underlying lookup query.
+
+  The query returns the user found by the token, if any.
+
+  The given token is valid if it matches its hashed counterpart in the
+  database and the user email has not changed. This function also checks
+  if the token is being used within a certain period, depending on the
+  context. The default contexts supported by this function are either
+  "confirm", for account confirmation emails, and "reset_password",
+  for resetting the password. For verifying requests to change the email,
+  see verify_change_email_token_query/2.
+  """
+  def verify_email_token_query(token, context) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+        days = days_for_context(context)
+
+        query =
+          from token in by_token_and_context_query(hashed_token, context),
+            join: user in assoc(token, :user),
+            where: token.inserted_at > ago(^days, "day") and token.sent_to == user.email,
+            select: user
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
+  defp days_for_context("confirm"), do: @confirm_validity_in_days
+  defp days_for_context("reset_password"), do: @reset_password_validity_in_days
+
+  @doc """
+  Checks if the token is valid and returns its underlying lookup query.
+
+  The query returns the user found by the token, if any.
+
+  This is used to validate requests to change the user
+  email. It is different from verify_email_token_query/2 precisely because
+  verify_email_token_query/2 validates the email has not changed, which is
+  the starting point by this function.
+
+  The given token is valid if it matches its hashed counterpart in the
+  database and if it has not expired (after @change_email_validity_in_days).
+  The context must always start with "change:".
+  """
+  def verify_change_email_token_query(token, "change:" <> _ = context) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+
+        query =
+          from token in by_token_and_context_query(hashed_token, context),
+            where: token.inserted_at > ago(@change_email_validity_in_days, "day")
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
+  @doc """
+  Returns the token struct for the given token value and context.
+  """
+  def by_token_and_context_query(token, context) do
+    from UserToken, where: [token: ^token, context: ^context]
+  end
+
+  @doc """
+  Gets all tokens for the given user for the given contexts.
+  """
+  def by_user_and_contexts_query(user, :all) do
+    from t in UserToken, where: t.user_id == ^user.id
+  end
+
+  def by_user_and_contexts_query(user, [_ | _] = contexts) do
+    from t in UserToken, where: t.user_id == ^user.id and t.context in ^contexts
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_token");
+};
+
+
+// Themed HTML and plain-text bodies for every auth email
+const add_auth_email_template = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile(
+    {
+      dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`),
+      filename: "email_template.ex",
+      content: `defmodule ${ApiNameCamel}.Accounts.EmailTemplate do
+  @moduledoc """
+  The HTML and plain-text bodies for every auth email, in the app's theme: navy
+  surfaces, a cyan-to-purple accent and a glowing title. Email clients ignore
+  stylesheets, so every style is inline and the layout is tables.
+
+  Content is a map:
+    * \`:heading\` - the title
+    * \`:lines\` - paragraphs above the action
+    * \`:action\` - \`{label, url}\` for a button, or nil
+    * \`:code\` - a one-time code shown large, or nil
+    * \`:footer\` - the small print under the card
+  """
+
+  @navy "#0d0d1a"
+  @surface "#1a1a2e"
+  @card "#16213e"
+  @cyan "#61dafb"
+  @purple "#b300ff"
+  @text "#e6fbff"
+  @muted "#9fb3c8"
+  @font "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+
+  def text(app, content) do
+    [
+      content.heading,
+      "",
+      Enum.join(content[:lines] || [], "\\n\\n"),
+      text_action(content[:action]),
+      text_code(content[:code]),
+      "",
+      content[:footer],
+      "",
+      "- #{app}"
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("\\n")
+  end
+
+  defp text_action({label, url}), do: "\\n#{label}:\\n#{url}"
+  defp text_action(_none), do: nil
+  defp text_code(nil), do: nil
+  defp text_code(code), do: "\\n#{code}"
+
+  def html(app, content) do
+    """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="dark">
+      <title>#{escape(content.heading)}</title>
+    </head>
+    <body style="margin:0;padding:0;background:#{@navy};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#{@navy};padding:32px 12px;">
+        <tr><td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+            <tr><td style="height:3px;background:#{@cyan};background-image:linear-gradient(90deg,#{@cyan},#ff4500,#{@purple});border-radius:16px 16px 0 0;"></td></tr>
+            <tr><td style="background:#{@card};background-image:linear-gradient(135deg,#{@surface} 0%,#{@card} 100%);border:1px solid rgba(97,218,251,0.35);border-top:0;border-radius:0 0 16px 16px;padding:36px 36px 32px;font-family:#{@font};color:#{@text};">
+              <p style="margin:0 0 24px;text-align:center;font-size:12px;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:#{@cyan};">#{escape(app)}</p>
+              <h1 style="margin:0 0 20px;text-align:center;font-size:22px;font-weight:600;color:#{@text};text-shadow:0 0 12px rgba(97,218,251,0.6);">#{escape(content.heading)}</h1>
+              #{paragraphs(content[:lines] || [])}
+              #{code_block(content[:code])}
+              #{button(content[:action])}
+            </td></tr>
+            <tr><td style="padding:20px 12px 0;text-align:center;font-family:#{@font};font-size:12px;line-height:18px;color:#{@muted};">
+              #{escape(content[:footer] || "")}
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+    """
+  end
+
+  defp paragraphs(lines),
+    do:
+      Enum.map_join(
+        lines,
+        &~s(<p style="margin:0 0 16px;font-size:15px;line-height:24px;color:#{@text};">#{escape(&1)}</p>)
+      )
+
+  defp code_block(nil), do: ""
+
+  defp code_block(code),
+    do: """
+    <p style="margin:8px 0 24px;text-align:center;">
+      <span style="display:inline-block;padding:14px 28px;border:1px solid #{@cyan};border-radius:10px;background:#{@navy};font-family:Consolas,Menlo,monospace;font-size:30px;font-weight:700;letter-spacing:0.35em;color:#{@cyan};">#{escape(code)}</span>
+    </p>
+    """
+
+  defp button(nil), do: ""
+
+  defp button({label, url}),
+    do: """
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:12px auto 24px;">
+      <tr><td style="border-radius:10px;background:#{@cyan};background-image:linear-gradient(90deg,#{@cyan},#{@purple});">
+        <a href="#{escape(url)}" style="display:inline-block;padding:12px 28px;font-family:#{@font};font-size:15px;font-weight:600;color:#{@navy};text-decoration:none;">#{escape(label)}</a>
+      </td></tr>
+    </table>
+    <p style="margin:0;font-size:12px;line-height:18px;color:#{@muted};word-break:break-all;">Or paste this link into your browser:<br><a href="#{escape(url)}" style="color:#{@cyan};">#{escape(url)}</a></p>
+    """
+
+  defp escape(text), do: text |> to_string() |> Plug.HTML.html_escape()
+end
+`,
+    },
+    "add_auth_email_template"
+  );
+
+
+// Changing email, verified with a code while require_2fa is on
+const add_auth_email_change = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "email_change.ex", content: `defmodule ${ApiNameCamel}.Accounts.EmailChange do
+  @moduledoc """
+  Changing a signed-in user's email. Every account has one. While the server requires
+  two-factor (\`require_2fa\`), a new email is only saved once the code sent to it comes
+  back; otherwise it changes right away.
+  """
+  import Ecto.Query, warn: false
+
+  alias ${ApiNameCamel}.Accounts.{TwoFactor, User, UserNotifier, UserToken}
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  @context "change_email"
+  @code_minutes 10
+
+  def verification_required?, do: TwoFactor.server_required?()
+
+  @doc "Saves the new email, or emails a code to it first. Returns {:ok, user} or {:ok, :verify}."
+  def request(%User{} = user, email) do
+    changeset = User.email_changeset(user, %{email: email})
+
+    cond do
+      not changeset.valid? -> {:error, changeset}
+      verification_required?() -> send_code(user, changeset.changes.email)
+      true -> Repo.update(changeset)
+    end
+  end
+
+  defp send_code(user, email) do
+    code = TwoFactor.new_code()
+    Repo.delete_all(UserToken.by_user_and_contexts_query(user, [@context]))
+
+    Repo.insert!(%UserToken{
+      token: TwoFactor.hash(code),
+      context: @context,
+      sent_to: email,
+      user_id: user.id
+    })
+
+    UserNotifier.deliver_email_verification_code(email, code)
+    {:ok, :verify}
+  end
+
+  @doc "Saves a new email once the code sent to it is entered. The email counts as confirmed."
+  def confirm(%User{} = user, email, code) do
+    from(t in UserToken,
+      where:
+        t.user_id == ^user.id and t.context == @context and t.sent_to == ^email and
+          t.token == ^TwoFactor.hash(code) and t.inserted_at > ago(@code_minutes, "minute")
+    )
+    |> Repo.delete_all()
+    |> case do
+      {1, _} ->
+        user
+        |> User.email_changeset(%{email: email})
+        |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
+        |> Repo.update()
+
+      _ ->
+        {:error, :invalid_code}
+    end
+  end
+end
+` }, "add_auth_email_change");
+
+// OAuth accounts: link many, sign up with a chosen email
+const add_auth_oauth_accounts = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "oauth_accounts.ex", content: `defmodule ${ApiNameCamel}.Accounts.OAuthAccounts do
+  @moduledoc """
+  OAuth accounts linked to users. A user can link any number of them, several from the
+  same provider too; each provider account belongs to one user.
+
+  Signing up with OAuth does not create the user straight away. The provider's details
+  wait in an encrypted \`pending\` token while the person picks the account's email, which
+  does not have to match the provider's. While \`require_2fa\` is on, that email is
+  verified with a code first. The code is derived from the token and the email, so
+  nothing is stored before the account exists.
+  """
+  import Ecto.Query, warn: false
+
+  alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.Accounts.{OAuthToken, TwoFactor, User, UserNotifier}
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  @pending_salt "oauth_signup"
+  @pending_seconds 900
+  @link_salt "oauth_link"
+  @link_seconds 300
+
+  ## Linked accounts
+
+  def list(%User{id: id}),
+    do: Repo.all(from(t in OAuthToken, where: t.user_id == ^id, order_by: t.inserted_at))
+
+  @doc "The user a provider account is linked to, or nil."
+  def user_for(provider, provider_user_id) do
+    from(t in OAuthToken,
+      where: t.provider == ^to_string(provider) and t.provider_user_id == ^to_string(provider_user_id),
+      preload: :user
+    )
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      token -> token.user
+    end
+  end
+
+  @doc "Links a provider account to the user, or refreshes its tokens when it is already theirs."
+  def link(%User{id: user_id}, provider, profile, token_data) do
+    attrs = attrs(provider, profile, token_data)
+
+    case Repo.get_by(OAuthToken, provider: attrs.provider, provider_user_id: attrs.provider_user_id) do
+      nil -> %OAuthToken{user_id: user_id} |> OAuthToken.changeset(attrs) |> Repo.insert()
+      %OAuthToken{user_id: ^user_id} = token -> token |> OAuthToken.changeset(attrs) |> Repo.update()
+      _theirs -> {:error, :linked_to_another_user}
+    end
+  end
+
+  def unlink(%User{id: user_id}, id) do
+    case Repo.get_by(OAuthToken, id: id, user_id: user_id) do
+      nil -> {:error, :not_found}
+      token -> Repo.delete(token)
+    end
+  end
+
+  @doc "A short-lived token the account page passes to the OAuth popup to link instead of sign in."
+  def link_token(%User{id: id}), do: Phoenix.Token.sign(${ApiNameCamel}.Endpoint, @link_salt, id)
+
+  def link_user(token) when is_binary(token) do
+    with {:ok, id} <- Phoenix.Token.verify(${ApiNameCamel}.Endpoint, @link_salt, token, max_age: @link_seconds),
+         %User{} = user <- Repo.get(User, id) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  def link_user(_token), do: :error
+
+  ## Sign-up
+
+  def pending(provider, profile, token_data),
+    do: Phoenix.Token.encrypt(${ApiNameCamel}.Endpoint, @pending_salt, attrs(provider, profile, token_data))
+
+  def pending_details(pending) do
+    case Phoenix.Token.decrypt(${ApiNameCamel}.Endpoint, @pending_salt, pending, max_age: @pending_seconds) do
+      {:ok, attrs} -> {:ok, attrs}
+      _ -> {:error, :expired}
+    end
+  end
+
+  def email_verification_required?, do: TwoFactor.server_required?()
+
+  @doc "Emails the code that verifies the sign-up email."
+  def send_signup_code(pending, email) do
+    with {:ok, _attrs} <- pending_details(pending) do
+      UserNotifier.deliver_email_verification_code(email, signup_code(pending, email))
+      :ok
+    end
+  end
+
+  @doc "Creates the user with the chosen email and links the provider account."
+  def complete_signup(pending, email, code \\\\ nil) do
+    with {:ok, attrs} <- pending_details(pending),
+         :ok <- check_code(pending, email, code) do
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:account, signup_changeset(email))
+      |> Accounts.claim_first_account()
+      |> Ecto.Multi.insert(:oauth, &OAuthToken.changeset(%OAuthToken{user_id: &1.account.id}, attrs))
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{account: user}} -> {:ok, user}
+        {:error, _step, %Ecto.Changeset{} = changeset, _changes} -> {:error, changeset}
+        {:error, _step, reason, _changes} -> {:error, reason}
+      end
+    end
+  end
+
+  # OAuth accounts have no password until the user sets one
+  defp signup_changeset(email) do
+    changeset = User.email_changeset(%User{}, %{email: email})
+
+    if email_verification_required?(),
+      do: Ecto.Changeset.put_change(changeset, :confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second)),
+      else: changeset
+  end
+
+  defp check_code(pending, email, code) do
+    cond do
+      not email_verification_required?() -> :ok
+      Plug.Crypto.secure_compare(to_string(code), signup_code(pending, email)) -> :ok
+      true -> {:error, :invalid_code}
+    end
+  end
+
+  defp signup_code(pending, email) do
+    <<n::unsigned-32, _rest::binary>> =
+      :crypto.mac(:hmac, :sha256, ${ApiNameCamel}.Endpoint.config(:secret_key_base), pending <> "|" <> String.downcase(email))
+
+    n |> rem(1_000_000) |> Integer.to_string() |> String.pad_leading(6, "0")
+  end
+
+  ## Helpers
+
+  def provider_user_id(profile), do: to_string(profile["id"] || profile["sub"] || "")
+
+  # Providers that never share an email get an undeliverable placeholder; it is not worth showing
+  def provider_email(%{"email" => email}) when is_binary(email),
+    do: if(String.ends_with?(email, ".oauth.invalid"), do: nil, else: email)
+
+  def provider_email(_profile), do: nil
+
+  defp attrs(provider, profile, token_data),
+    do: %{
+      provider: to_string(provider),
+      provider_user_id: provider_user_id(profile),
+      provider_email: provider_email(profile),
+      access_token: token_data["access_token"],
+      refresh_token: token_data["refresh_token"],
+      expires_at: expires_at(token_data["expires_in"])
+    }
+
+  defp expires_at(nil), do: nil
+
+  defp expires_at(seconds),
+    do: DateTime.utc_now() |> DateTime.add(seconds, :second) |> DateTime.truncate(:second)
+end
+` }, "add_auth_oauth_accounts");
+
+// Recovery codes in the configured batch size (config :app, recovery_code_count)
+const add_auth_recovery = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "recovery.ex", content: `defmodule ${ApiNameCamel}.Accounts.Recovery do
+  @moduledoc """
+  Issues recovery codes in the configured batch size:
+  \`config :${AppNameSnake}, recovery_code_count: 12\` (config/config.exs).
+  """
+  alias Ithibati.Identity.RecoveryCodes
+
+  def count, do: Application.get_env(:${AppNameSnake}, :recovery_code_count, 12)
+
+  @doc "A fresh batch for the user; earlier codes stop working."
+  def issue(user), do: RecoveryCodes.regenerate(user, count: count())
+end
+` }, "add_auth_recovery");
+
+const add_auth_user_notifier = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "user_notifier.ex";
+  const displayName = ApiNameCamel.replace(/Web$/, "");
+  const content = `defmodule ${ApiNameCamel}.Accounts.UserNotifier do
+  @moduledoc "Every email the auth app sends, as themed HTML with a plain-text part."
+  import Swoosh.Email
+
+  alias ${ApiNameCamel}.Accounts.EmailTemplate
+  alias ${AppNameCamel}.Mailer
+
+  # From external_service_keys/email.exs (from_name, from_address), via runtime.exs
+  defp sender,
+    do: Application.get_env(:${AppNameSnake}, :email, [])[:from] || {"${AppNameCamel}", "contact@example.com"}
+
+  defp deliver(recipient, subject, content) do
+    {app, _address} = from = sender()
+
+    email =
+      new()
+      |> to(recipient)
+      |> from(from)
+      |> subject(subject)
+      |> text_body(EmailTemplate.text(app, content))
+      |> html_body(EmailTemplate.html(app, content))
+
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
+  end
+
+  @doc "Deliver instructions to confirm account."
+  def deliver_confirmation_instructions(user, url),
+    do:
+      deliver(user.email, "Confirm your account", %{
+        heading: "Confirm your account",
+        lines: ["Welcome! Confirm #{user.email} to finish setting up your account."],
+        action: {"Confirm account", url},
+        footer: "If you didn't create an account, you can ignore this email."
+      })
+
+  @doc "Deliver instructions to reset a user password."
+  def deliver_reset_password_instructions(user, url),
+    do:
+      deliver(user.email, "Reset your password", %{
+        heading: "Reset your password",
+        lines: ["We got a request to reset the password for #{user.email}."],
+        action: {"Choose a new password", url},
+        footer: "If you didn't ask for this, you can ignore this email. Your password stays the same."
+      })
+
+  @doc "Deliver a two-factor sign-in code."
+  def deliver_two_factor_code(user, code),
+    do:
+      deliver(user.email, "Your sign-in code", %{
+        heading: "Your sign-in code",
+        lines: ["Enter this code to finish signing in. It expires in 10 minutes."],
+        code: code,
+        footer: "If you didn't try to sign in, change your password now."
+      })
+
+  @doc "Deliver instructions to update a user email."
+  def deliver_update_email_instructions(user, url),
+    do:
+      deliver(user.email, "Confirm your new email", %{
+        heading: "Confirm your new email",
+        lines: ["Confirm this address to make it the email on your account."],
+        action: {"Confirm new email", url},
+        footer: "If you didn't ask for this change, you can ignore this email."
+      })
+
+  @doc "Deliver a code that verifies an email address before it is used."
+  def deliver_email_verification_code(email, code),
+    do:
+      deliver(email, "Verify your email", %{
+        heading: "Verify your email",
+        lines: ["Enter this code to confirm this address for your account. It expires in 10 minutes."],
+        code: code,
+        footer: "If you didn't ask for this, you can ignore this email."
+      })
+
+  @doc "Deliver an invitation to create an account."
+  def deliver_invitation(email, url, inviter_email, note),
+    do:
+      deliver(email, "You're invited", %{
+        heading: "You're invited",
+        lines:
+          ["#{inviter_email} invited you to create an account."] ++
+            if(note in [nil, ""], do: [], else: ["\\"#{note}\\""]),
+        action: {"Create your account", url},
+        footer: "If you weren't expecting this, you can ignore this email."
+      })
+end
+`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_notifier");
+};
+
+const add_auth_oauth_state = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "oauth_state.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.OAuthState do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          state: String.t() | nil,
+          provider: String.t() | nil,
+          expires_at: DateTime.t() | nil,
+          inserted_at: DateTime.t() | nil
+        }
+
+  schema "oauth_states" do
+    field(:state, :string)
+    field(:provider, :string)
+    field(:expires_at, :utc_datetime)
+
+    timestamps(type: :utc_datetime, updated_at: false)
+  end
+
+  @doc false
+  def changeset(oauth_state, attrs) do
+    oauth_state
+    |> cast(attrs, [:state, :provider, :expires_at])
+    |> validate_required([:state, :provider, :expires_at])
+    |> validate_length(:provider, max: 50)
+    |> unique_constraint(:state)
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_oauth_state");
+};
+
+const add_auth_oauth_token = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "oauth_token.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.OAuthToken do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.User
+
+  @primary_key {:id, :binary_id, autogenerate: false, read_after_writes: true}
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          user_id: Ecto.UUID.t() | nil,
+          provider: String.t() | nil,
+          access_token: String.t() | nil,
+          refresh_token: String.t() | nil,
+          expires_at: DateTime.t() | nil,
+          provider_user_id: String.t() | nil,
+          provider_email: String.t() | nil,
+          user: User.t() | Ecto.Association.NotLoaded.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  schema "oauth_tokens" do
+    field(:provider, :string)
+    field(:access_token, :string)
+    field(:refresh_token, :string)
+    field(:expires_at, :utc_datetime)
+    field(:provider_user_id, :string)
+    field(:provider_email, :string)
+    belongs_to(:user, User)
+
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc false
+  def changeset(oauth_token, attrs) do
+    oauth_token
+    |> cast(attrs, [
+      :provider,
+      :access_token,
+      :refresh_token,
+      :expires_at,
+      :provider_user_id,
+      :provider_email,
+      :user_id
+    ])
+    |> validate_required([:provider, :provider_user_id, :access_token, :user_id])
+    |> validate_length(:provider, max: 50)
+    # One provider account belongs to one user; a user may link many, even from one provider
+    |> unique_constraint([:provider, :provider_user_id])
+  end
+end
+`;
+
+  return generateFile({ dir, filename, content }, "add_auth_oauth_token");
+};
+
+const add_auth_account_schema = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+  AppNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "account.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.Account do
+  use Ecto.Schema
+  import Ecto.Changeset
+  import Ecto.Query
+
+  alias ${ApiNameCamel}.Accounts.{Account, AccountAccess, User}
+  alias ${AppNameCamel}.AuthRepo, as: AuthRepo
+
+  @primary_key {:id, :binary_id, autogenerate: false, read_after_writes: true}
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          name: String.t() | nil,
+          parent_account_id: Ecto.UUID.t() | nil,
+          owner_id: Ecto.UUID.t() | nil,
+          parent_account: Account.t() | nil,
+          owner: %User{} | nil,
+          master_account: Account.t() | nil,
+          access_entries: [AccountAccess.t()] | nil,
+          parent_accounts: [Account.t()] | nil,
+          access_tags: [map()] | nil
+        }
+
+  schema "accounts" do
+    field :name, :string
+    belongs_to :parent_account, Account, foreign_key: :parent_account_id
+    belongs_to :owner, User, foreign_key: :owner_id
+    field :master_account, :any, virtual: true, default: nil
+    field :parent_accounts, {:array, :map}, virtual: true, default: []
+    field :access_tags, {:array, :map}, virtual: true, default: []
+    has_many :access_entries, AccountAccess, foreign_key: :account_id
+
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc false
+  def changeset(account, attrs) do
+    account
+    |> cast(attrs, [:name, :parent_account_id, :owner_id])
+    |> validate_required([:name, :owner_id])
+    |> assoc_constraint(:parent_account)
+    |> assoc_constraint(:owner)
+  end
+
+  @doc """
+  Populates the \`master_account\` virtual field by recursively walking
+  the account's parents until the root account is found.
+  """
+  @spec put_master_account(t()) :: t()
+  def put_master_account(%Account{id: nil} = account), do: %{account | master_account: nil}
+
+  def put_master_account(%Account{id: id} = account) do
+    master =
+      Account
+      |> build_master_account_cte(id)
+      |> AuthRepo.one()
+
+    %{account | master_account: master}
+  end
+
+  defp build_master_account_cte(queryable, id) do
+    base_query =
+      from a in queryable,
+        where: a.id == ^id,
+        select: %{id: a.id, parent_account_id: a.parent_account_id}
+
+    recursive_query =
+      from a in queryable,
+        join: ancestor in "account_ancestors",
+        on: ancestor.parent_account_id == a.id,
+        select: %{id: a.id, parent_account_id: a.parent_account_id}
+
+    cte =
+      base_query
+      |> union_all(^recursive_query)
+
+    queryable
+    |> recursive_ctes(true)
+    |> with_cte("account_ancestors", as: ^cte)
+    |> join(:inner, [account], ancestor in "account_ancestors", on: ancestor.id == account.id)
+    |> where([account, ancestor], is_nil(ancestor.parent_account_id))
+    |> select([account, _ancestor], account)
+    |> limit(1)
+  end
+
+  @doc """
+  Builds a recursive query that returns all accounts owned by the given user along with their ancestor chain.
+  Each row contains the account struct, the descendant account id (an account owned by the user), and the depth
+  of the ancestor relative to that descendant (0 for the descendant itself, increasing by 1 per level).
+  """
+  @spec build_account_hierarchy_query(Ecto.Queryable.t(), Ecto.UUID.t()) :: Ecto.Query.t()
+  def build_account_hierarchy_query(queryable \\\\ Account, user_id) do
+    base_query =
+      from a in queryable,
+        where: a.owner_id == ^user_id,
+        select: %{
+          descendant_id: a.id,
+          account_id: a.id,
+          parent_account_id: a.parent_account_id,
+          depth: 0
+        }
+
+    recursive_query =
+      from a in queryable,
+        join: path in "account_hierarchy",
+        on: path.parent_account_id == a.id,
+        select: %{
+          descendant_id: path.descendant_id,
+          account_id: a.id,
+          parent_account_id: a.parent_account_id,
+          depth: path.depth + 1
+        }
+
+    cte =
+      base_query
+      |> union_all(^recursive_query)
+
+    queryable
+    |> recursive_ctes(true)
+    |> with_cte("account_hierarchy", as: ^cte)
+    |> join(:inner, [account], path in "account_hierarchy", on: path.account_id == account.id)
+    |> select([account, path], %{
+      account: account,
+      descendant_id: path.descendant_id,
+      depth: path.depth
+    })
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_account_schema");
+};
+
+const add_auth_access_group = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "access_group.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.AccessGroup do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.AccessTag
+
+  @type t :: %__MODULE__{
+          name: String.t() | nil,
+          desc: String.t() | nil,
+          tags: [AccessTag.t()] | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key {:name, :string, autogenerate: false}
+  schema "access_groups" do
+    field :desc, :string
+
+    many_to_many :tags, AccessTag,
+      join_through: "group_tags",
+      join_keys: [group_id: :name, tag_id: :name],
+      on_replace: :delete
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(group, attrs) do
+    group
+    |> cast(attrs, [:name, :desc])
+    |> validate_required([:name])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_access_group");
+};
+
+const add_auth_access_tag = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "access_tag.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.AccessTag do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.AccessGroup
+
+  @type t :: %__MODULE__{
+          name: String.t() | nil,
+          desc: String.t() | nil,
+          groups: [AccessGroup.t()] | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key {:name, :string, autogenerate: false}
+  schema "access_tags" do
+    field :desc, :string
+
+    many_to_many :groups, AccessGroup,
+      join_through: "group_tags",
+      join_keys: [tag_id: :name, group_id: :name],
+      on_replace: :delete
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(tag, attrs) do
+    tag
+    |> cast(attrs, [:name, :desc])
+    |> validate_required([:name])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_access_tag");
+};
+
+const add_auth_account_access = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "account_access.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.AccountAccess do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.{AccessTag, Account}
+
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          account_id: Ecto.UUID.t() | nil,
+          tag_id: String.t() | nil,
+          group_ids: [String.t()],
+          account: Account.t() | nil,
+          tag: AccessTag.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key false
+  schema "account_access" do
+    belongs_to :account, Account, primary_key: true
+
+    belongs_to :tag, AccessTag,
+      foreign_key: :tag_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    field :group_ids, {:array, :string}, default: []
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(account_access, attrs) do
+    account_access
+    |> cast(attrs, [:account_id, :tag_id, :group_ids])
+    |> validate_required([:account_id, :tag_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_account_access");
+};
+
+const add_auth_user_access = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "user_access.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.UserAccess do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.{AccessGroup, AccessTag, User}
+
+  @foreign_key_type :binary_id
+
+  @type t :: %__MODULE__{
+          user_id: Ecto.UUID.t() | nil,
+          tag_id: String.t() | nil,
+          group_id: String.t() | nil,
+          user: User.t() | nil,
+          tag: AccessTag.t() | nil,
+          group: AccessGroup.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key false
+  schema "user_access" do
+    belongs_to :user, User, primary_key: true
+
+    belongs_to :tag, AccessTag,
+      foreign_key: :tag_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    belongs_to :group, AccessGroup,
+      foreign_key: :group_id,
+      references: :name,
+      type: :string
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(user_access, attrs) do
+    user_access
+    |> cast(attrs, [:user_id, :tag_id, :group_id])
+    |> validate_required([:user_id, :tag_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_user_access");
+};
+
+const add_auth_group_tag = async ({
+  AppDir,
+  AppNameSnake,
+  ApiNameSnake,
+  ApiNameCamel,
+}: ApiAppData) => {
+  const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
+  const dir = join(AppDir || "", `${apiAppName}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`);
+  const filename = "group_tag.ex";
+  const content = `defmodule ${ApiNameCamel}.Accounts.GroupTag do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias ${ApiNameCamel}.Accounts.{AccessGroup, AccessTag}
+
+  @type t :: %__MODULE__{
+          group_id: String.t() | nil,
+          tag_id: String.t() | nil,
+          group: AccessGroup.t() | nil,
+          tag: AccessTag.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @primary_key false
+  schema "group_tags" do
+    belongs_to :group, AccessGroup,
+      foreign_key: :group_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    belongs_to :tag, AccessTag,
+      foreign_key: :tag_id,
+      references: :name,
+      type: :string,
+      primary_key: true
+
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(group_tag, attrs) do
+    group_tag
+    |> cast(attrs, [:group_id, :tag_id])
+    |> validate_required([:group_id, :tag_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_group_tag");
+};
+
+export {
+  add_auth_accounts_context,
+  add_auth_user_schema,
+  add_auth_user_token,
+  add_auth_user_notifier,
+  add_auth_email_template,
+  add_auth_email_change,
+  add_auth_recovery,
+  add_auth_oauth_accounts,
+  add_auth_oauth_state,
+  add_auth_oauth_token,
+  add_auth_account_schema,
+  add_auth_access_group,
+  add_auth_access_tag,
+  add_auth_account_access,
+  add_auth_user_access,
+  add_auth_group_tag,
+};
+

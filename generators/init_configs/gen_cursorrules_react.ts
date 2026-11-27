@@ -1,8 +1,9 @@
+import path from "path";
 import { AppData } from "../../readers/get_app_data";
 import { generateFile } from "../index";
 
-const gen_cursorrules_react = async ({ UiDir }: AppData) => {
-  let dir = UiDir || "";
+const gen_cursorrules_react = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
+  const dir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const filename = ".cursorrules";
   const content = `# React/TypeScript Frontend Rules
 
@@ -41,16 +42,16 @@ React/TypeScript frontend application with Vite build tool.
 - Extract custom hooks for reusable logic
 
 ## Testing
-- Use Jest for unit testing
+- Use Vitest for unit testing
 - Use React Testing Library for component testing
 - Test user interactions, not implementation details
 - Mock external dependencies and API calls
-- Use \`npm test\` to run tests
+- Use \`pnpm test\` to run tests
 
 ## Build & Development
-- Use \`npm run dev\` for development server
-- Use \`npm run build\` for production build
-- Use \`npm run preview\` to preview production build
+- Use \`pnpm run dev\` for development server
+- Use \`pnpm run build\` for production build
+- Use \`pnpm run preview\` to preview production build
 - Configure Vite for optimal development experience`;
 
   return generateFile({ filename, dir, content }, "gen_cursorrules_react");

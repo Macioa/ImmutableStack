@@ -1,0 +1,56 @@
+import { gen_demo_component_styles } from "../../generators/gen_react/demo_components/gen_demo_component_styles";
+import { gen_index_html } from "../../generators/init_react/gen_index.html";
+import {
+  gen_vitest_config,
+  gen_vitest_setup,
+  gen_smoke_test,
+} from "../../generators/init_react/gen_vitest_configs";
+import { gen_lorem_utils } from "../../generators/init_react/gen_lorem_utils";
+import { gen_request_lib } from "../../generators/init_react/gen_request_lib";
+import { gen_socket_context } from "../../generators/init_react/gen_socket_context";
+import { gen_store } from "../../generators/init_react/gen_store";
+import { gen_update_apps_package_json } from "../../generators/add_ui/gen_update_apps_package_json";
+import { gen_docker_ui_prod } from "../../generators/init_docker/gen_docker_ui_prod";
+import { inject_package_scripts } from "../../injectors/init_react/inject_package_scripts";
+import { inject_react_deps } from "../../injectors/init_react/inject_react_deps";
+import { inject_redux_provider } from "../../injectors/init_react/inject_redux_provider";
+import { inject_socket_provider } from "../../injectors/init_react/inject_socket_provider";
+import { inject_ui_package_minimal_for_add_ui } from "../../injectors/add_ui/inject_ui_package_minimal_for_add_ui";
+import { inject_ui_to_custom_compiler } from "../../injectors/add_ui/inject_ui_to_custom_compiler";
+import { inject_ui_to_custom_formatter } from "../../injectors/add_ui/inject_ui_to_custom_formatter";
+import { inject_ui_to_page_controller_add_ui } from "../../injectors/add_ui/inject_ui_to_page_controller_add_ui";
+import { inject_ui_to_router } from "../../injectors/add_ui/inject_ui_to_router";
+import { inject_ui_static_serving } from "../../injectors/add_ui/inject_ui_static_serving";
+import { inject_ui_to_vite_supervisor } from "../../injectors/add_ui/inject_ui_to_vite_supervisor";
+import { AppData } from "../../readers/get_app_data";
+
+const build_tool_agnostic_init_tasks_for_add_ui = async (appdata: AppData, uiName: string) => {
+  const tasks = await Promise.all([
+    gen_update_apps_package_json(appdata, uiName),
+    inject_ui_package_minimal_for_add_ui(appdata, uiName),
+    inject_ui_to_custom_compiler(appdata, uiName),
+    inject_ui_to_custom_formatter(appdata, uiName),
+    inject_ui_to_page_controller_add_ui(appdata, uiName),
+    inject_ui_to_router(appdata, uiName),
+    inject_ui_static_serving(appdata, uiName),
+    inject_ui_to_vite_supervisor(appdata, uiName),
+    gen_docker_ui_prod(appdata, uiName),
+    gen_store(appdata, uiName),
+    await inject_redux_provider(appdata, uiName),
+    inject_socket_provider(appdata, uiName),
+    gen_lorem_utils(appdata),
+    gen_request_lib(appdata),
+    inject_package_scripts(appdata, uiName),
+    inject_react_deps(appdata, uiName),
+    gen_vitest_config(appdata, uiName),
+    gen_vitest_setup(appdata, uiName),
+    gen_smoke_test(appdata, uiName),
+    gen_socket_context(appdata),
+    gen_index_html(appdata, uiName),
+    gen_demo_component_styles(appdata),
+  ]).catch(console.error);
+
+  return [tasks].flat();
+};
+
+export { build_tool_agnostic_init_tasks_for_add_ui };

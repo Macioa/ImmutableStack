@@ -69,6 +69,31 @@ type requestAPIinterface = {
   options?: RequestInit;
   callback?: Function;
 };
+const TOKEN_KEY = "immutable_auth_token";
+
+// Persists the login token for API requests and socket connections
+const readToken = () => {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const storeToken = (token: string | null) => {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    return;
+  }
+};
+
+const authHeaders = (): Record<string, string> => {
+  const token = readToken();
+  return token ? { Authorization: \`Bearer \${token}\` } : {};
+};
+
 const defaultOptions = {
   method: "GET",
   headers: {
@@ -93,7 +118,10 @@ const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
     };
 
     try {
-      const reqOptions = merge(defaultOptions, options || {});
+      const reqOptions = merge(
+        { ...defaultOptions, headers: { ...defaultOptions.headers, ...authHeaders() } },
+        options || {},
+      );
 
       const res = await fetch(FULL_URL, reqOptions)
         .catch((err) => handleError(String(err), reject));
@@ -115,6 +143,8 @@ const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
 };
 
 const Request = { API };
+
+export { readToken, storeToken };
 
 export const { addRequest, completeRequest } = requestSlice.actions;
 export type { AppRequest, RequestsStoreState, requestAPIinterface, GenericAppState };

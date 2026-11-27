@@ -6,21 +6,22 @@ const gen_vite_supervisor = async ({
   AppNameSnake,
   AppNameCamel,
   LibDir,
-}: AppData) => {
+}: AppData, uiName: string = 'ui') => {
   const supervisorPath = join(LibDir, `/lib/mix/processes/`);
 
   const content = `
+if Mix.env() == :dev do
 defmodule ${AppNameCamel}.ViteDevSupervisor do
   use GenServer
 
-  @vite_dev_cmd ["run", "dev", "--prefix", "apps/${AppNameSnake}_ui/"]
-  @timeout_sec 5
+  @ui_names ["${uiName}"]
+  @timeout_sec 10
   @type state :: %{
-          vite_server: nil | Port.t(),
+          vite_servers: %{String.t() => nil | Port.t()},
           existing_vite_pids: [Integer.t()],
           timeout: nil | PID.t()
         }
-  @init_state %{vite_server: nil, existing_vite_pids: [], timeout: nil}
+  @init_state %{vite_servers: %{}, existing_vite_pids: [], timeout: nil}
 
   def init_state(map) when is_map(map), do: Map.merge(@init_state, map)
 
@@ -32,132 +33,197 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
     Process.flag(:trap_exit, true)
     Process.link(self())
 
-    Process.whereis(:vite_server) |> kill
+    # Kill existing vite servers for all UIs
+    Enum.each(@ui_names, fn ui_name ->
+      Process.whereis(String.to_atom("vite_server_#{ui_name}")) |> kill
+    end)
 
     state =
       %{existing_vite_pids: existing_vite_pids}
       |> init_state()
-      |> restart_timeout()
+      |> start_all_dev_servers()
+      |> start_timeout()
 
+    # Start periodic health checks
     Process.send_after(self(), :restart, @timeout_sec * 1000)
+
+    # Start orphan monitor to ensure cleanup even if CTRL+C doesn't reach us
+    start_orphan_monitor()
+
     {:ok, state}
   end
 
   @impl true
-  # Polling mechanism
+  def terminate(_reason, state) do
+    IO.puts("[ViteDevSupervisor] terminate called")
+
+    if state.timeout, do: Task.shutdown(state.timeout)
+
+    cleanup_all_vite_processes()
+    IO.puts("[ViteDevSupervisor] cleanup complete")
+    :ok
+  end
+
+  @impl true
   def handle_info(:restart, state) do
-    Process.send_after(self(), :restart, @timeout_sec * 1000)
-    {:noreply, restart_timeout(state)}
-  end
+    # Check if servers are still alive and only restart if needed
+    alive_servers = filter_alive_servers(state.vite_servers)
+    dead_count = map_size(state.vite_servers) - map_size(alive_servers)
 
-  @impl true
-  # Forward Vite console output
-  def handle_info({_port, {:data, msg}}, state) do
-    IO.puts(msg)
-    {:noreply, state}
-  end
-
-  @impl true
-  # Ignore Process exit
-  def handle_info({:EXIT, _port, :normal}, state), do: {:noreply, state}
-
-  @impl true
-  # Catch all unhandled info, print, and force error
-  def handle_info(msg, state) do
-    IO.inspect({msg, state}, label: :error_unhandled_info)
-    {:error, :unhandled_info}
-  end
-
-  defp restart_timeout(state = %{vite_server: port, timeout: timeout}) do
-    case [port, timeout] do
-      [nil, nil] ->
-        state
-        |> start_dev_server()
-        |> start_timeout()
-
-      [nil, _] ->
-        state
-        |> cancel_timeout()
-        |> start_dev_server()
-        |> start_timeout()
-
-      [_, nil] ->
-        state
-        |> start_timeout()
-
-      [_, _] ->
-        state
-        |> cancel_timeout()
-        |> start_timeout()
+    if dead_count > 0 do
+      IO.puts("[ViteDevSupervisor] Detected #{dead_count} dead server(s), restarting...")
+      Process.send_after(self(), :restart, @timeout_sec * 1000)
+      {:noreply, restart_timeout(%{state | vite_servers: alive_servers})}
+    else
+      # All servers healthy, just reschedule check
+      Process.send_after(self(), :restart, @timeout_sec * 1000)
+      {:noreply, state}
     end
   end
 
-  defp start_dev_server(state) do
-    port =
-      {:spawn_executable, System.find_executable("npm")}
-      |> Port.open([:binary, args: @vite_dev_cmd])
-
-    Process.register(port, :vite_server)
-    Process.link(port)
-
-    %{state | vite_server: port}
+  def handle_info({_port, {:data, data}}, state) do
+    # Forward stdout/stderr to console
+    IO.write(data)
+    {:noreply, state}
   end
 
-  defp start_timeout(state = %{existing_vite_pids: pids}) do
-    spawned_vite_pids =
-      get_vite_processes()
-      |> Enum.filter(fn pid -> pid not in pids end)
+  def handle_info({:EXIT, port, _reason}, %{vite_servers: servers} = state) when is_port(port) do
+    # Server died, trigger immediate restart check
+    Process.send_after(self(), :restart, 0)
+    new_servers = servers |> Enum.reject(fn {_, p} -> p == port end) |> Enum.into(%{})
+    {:noreply, %{state | vite_servers: new_servers}}
+  end
 
-    kill_cmd = fn pid -> "kill -9 #{pid}" end
-    kill_vite_pids = spawned_vite_pids |> Enum.map(&kill_cmd.(&1)) |> Enum.join(" & ")
+  def handle_info({:EXIT, pid, _reason}, state) when pid == self() do
+    IO.puts("[ViteDevSupervisor] GenServer exiting, cleaning up")
+    cleanup_all_vite_processes()
+    {:stop, :normal, state}
+  end
 
-    full_cmd =
-      "sleep #{@timeout_sec + 0.15} ; #{kill_vite_pids} #ViteTimeout"
+  def handle_info({ref, _result}, %{timeout: %Task{ref: ref}} = state), do: {:noreply, state}
 
-    %{state | timeout: Task.async(fn -> {_, 0} = System.cmd("bash", ["-c", full_cmd]) end)}
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, %{timeout: %Task{ref: ref}} = state),
+    do: {:noreply, state}
+
+  def handle_info(msg, state) do
+    IO.inspect(msg, label: :unhandled_info)
+    {:noreply, state}
+  end
+
+  defp restart_timeout(state = %{timeout: timeout}) do
+    # Only start servers if we don't have any alive ones
+    alive_servers = filter_alive_servers(state.vite_servers)
+    has_live_servers = map_size(alive_servers) > 0
+
+    if has_live_servers do
+      # Just update the state with alive servers, no restart needed
+      %{state | vite_servers: alive_servers}
+    else
+      # No live servers, restart them and setup timeout
+      next_state = if timeout, do: cancel_timeout(state), else: state
+      restarted_state = next_state |> start_all_dev_servers()
+      IO.puts("[ViteDevSupervisor] Restarted all vite servers")
+      start_timeout(restarted_state)
+    end
+  end
+
+  defp filter_alive_servers(servers) do
+    servers |> Enum.filter(fn {_, port} -> alive_port?(port) end) |> Enum.into(%{})
+  end
+
+  defp alive_port?(nil), do: false
+
+  defp alive_port?(port) do
+    info = Port.info(port)
+    info != nil && Keyword.get(info, :os_pid) != nil
+  end
+
+  defp start_all_dev_servers(state) do
+    new_servers =
+      Enum.reduce(@ui_names, %{}, fn ui_name, acc ->
+        atom_name = String.to_atom("vite_server_#{ui_name}")
+        if existing = Process.whereis(atom_name), do: cleanup_port(atom_name, existing)
+
+        port =
+          ${AppNameCamel}.OSAdapter.open_npm(["run", "dev", "--prefix", "apps/${AppNameSnake}_#{ui_name}/"])
+
+        Process.register(port, atom_name)
+        Process.link(port)
+        Map.put(acc, ui_name, port)
+      end)
+
+    %{state | vite_servers: new_servers}
+  end
+
+  defp cleanup_port(atom_name, port) do
+    kill(port)
+    Process.unregister(atom_name)
+  rescue
+    ArgumentError -> :ok
+  end
+
+  defp start_timeout(state = %{existing_vite_pids: pids, vite_servers: servers}) do
+    new_pids =
+      servers
+      |> Map.values()
+      |> Enum.flat_map(fn port ->
+        case Port.info(port) do
+          nil -> []
+          info -> [Keyword.get(info, :os_pid)]
+        end
+      end)
+      |> Enum.filter(& &1)
+      |> Enum.uniq()
+
+    updated_pids = (pids ++ new_pids) |> Enum.uniq()
+    orphaned_pids = ${AppNameCamel}.OSAdapter.orphan_pids(updated_pids)
+
+    if orphaned_pids != [] do
+      timeout = Task.async(fn -> ${AppNameCamel}.OSAdapter.kill_after(@timeout_sec + 0.15, orphaned_pids) end)
+      %{state | timeout: timeout, existing_vite_pids: updated_pids}
+    else
+      %{state | existing_vite_pids: updated_pids}
+    end
   end
 
   defp cancel_timeout(state = %{timeout: timeout}) do
     Task.shutdown(timeout)
 
-    case System.cmd("bash", [
-           "-c",
-           "ps aux | grep 'ViteTimeout' | grep -v grep | awk '{print $2}'"
-         ]) do
-      {timeout_pids, 0} ->
-        timeout_pids
-        |> String.split("\n")
-        |> Enum.filter(fn s -> s not in ["", nil] end)
-        |> Enum.each(&kill/1)
-
-      _ ->
-        :ok
-    end
+    ${AppNameCamel}.OSAdapter.timer_pids() |> Enum.each(&kill/1)
 
     %{state | timeout: nil}
   end
 
-  defp get_vite_processes do
-    case System.cmd("pgrep", ["-af", "vite"]) do
-      {output, 0} ->
-        output
-        |> String.split("\n")
-        |> Enum.map(&String.trim/1)
-        |> Enum.filter(fn string -> string != "" end)
+  defp get_vite_processes, do: ${AppNameCamel}.OSAdapter.vite_pids()
 
-      _ ->
-        []
-    end
+  defp kill(nil), do: :ok
+
+  defp kill(port) when is_port(port) do
+    port |> Port.info() |> Keyword.get(:os_pid) |> kill()
   end
 
-  defp get_pid(nil), do: {:error, :cannot_be_nil}
-  defp get_pid(port) when is_port(port), do: Port.info(port)[:os_pid]
-  defp get_pid(key) when is_atom(key), do: Process.whereis(key)
-
-  defp kill(nil), do: {:error, :cannot_be_nil}
-  defp kill(pid) when is_integer(pid) or is_binary(pid), do: System.cmd("kill", ["-9", pid])
-  defp kill(port) when is_port(port), do: port |> get_pid |> kill
+  defp kill(pid) when is_integer(pid) or is_binary(pid), do: ${AppNameCamel}.OSAdapter.kill_pid(pid)
   defp kill(pid) when is_pid(pid), do: Process.exit(pid, :kill)
+  defp kill(_), do: :ok
+
+  defp cleanup_all_vite_processes, do: ${AppNameCamel}.OSAdapter.stop_vite()
+
+  # Start an external monitoring process using an inline script
+  # This MUST be external to survive CTRL+C which kills the entire VM
+  defp start_orphan_monitor do
+    beam_pid = :os.getpid() |> List.to_string()
+    os_type = :os.type()
+
+    # Launch external monitor process
+    spawn(fn ->
+      ${AppNameCamel}.OSAdapter.watch_beam(beam_pid)
+    end)
+
+    IO.puts(
+      "[ViteDevSupervisor] Started external orphan monitor (monitoring beam: #{beam_pid}, OS: #{inspect(os_type)})"
+    )
+  end
+end
 end
 `;
 

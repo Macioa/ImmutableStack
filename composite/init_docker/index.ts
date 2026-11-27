@@ -1,8 +1,10 @@
 import { gen_docker_compose } from "../../generators/init_docker/gen_dockercompose";
-import { gen_docker_dev } from "../../generators/init_docker/gen_dockerdev";
+import { gen_docker_compose_cluster } from "../../generators/init_docker/gen_dockercompose_cluster";
+import { gen_docker_base } from "../../generators/init_docker/gen_dockerbase";
 import { gen_docker_env } from "../../generators/init_docker/gen_dockerenv";
 import { gen_docker_ignore } from "../../generators/init_docker/gen_dockerignore";
 import { gen_docker_prod } from "../../generators/init_docker/gen_dockerprod";
+import { gen_docker_ui_prod } from "../../generators/init_docker/gen_docker_ui_prod";
 import { inject_docker_scripts_package } from "../../injectors/init_docker/inject_docker_scripts_package";
 import { AppData } from "../../readers/get_app_data";
 import { execute } from "../../runners/index";
@@ -21,14 +23,16 @@ const init_docker = async (appdata: AppData) => {
   await execute(
     {
       dir: UmbrellaDir,
-      command: "mkdir -p docker/pgdata",
+      command: "mkdir -p docker/pgdata docker/prod",
     },
     "init_docker"
   );
   const init = await Promise.all([
     gen_docker_compose(appdata),
-    gen_docker_dev(appdata),
+    gen_docker_compose_cluster(appdata),
+    gen_docker_base(appdata),
     gen_docker_prod(appdata),
+    gen_docker_ui_prod(appdata, 'ui'),
     gen_docker_env(appdata),
     gen_docker_ignore(appdata),
     init_package_json(appdata),

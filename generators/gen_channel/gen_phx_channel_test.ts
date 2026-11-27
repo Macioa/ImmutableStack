@@ -77,16 +77,17 @@ const gen_phx_channel_test = (
   describe "handle_in/3" do
     test "handles message event", %{socket: socket} do
       push(socket, "message", %{"body" => "test message"})
-      assert_broadcast "message", %{"body" => "test message"}
-      assert_reply :noreply
+      assert_broadcast "message", %{body: "test message"}
     end
   end
 
   describe "disconnection handling" do
     test "handles network disconnection gracefully", %{socket: socket} do
-      # Simulate network disconnection
-      Process.exit(socket.transport_pid, :kill)
-      assert_receive {:DOWN, _, :process, _, :killed}
+      # Simulate network disconnection; transport_pid is the test process in ChannelTest
+      Process.unlink(socket.channel_pid)
+      ref = Process.monitor(socket.channel_pid)
+      Process.exit(socket.channel_pid, :kill)
+      assert_receive {:DOWN, ^ref, :process, _, :killed}
     end
 
     test "handles server-side disconnection", %{socket: socket} do
@@ -103,8 +104,8 @@ const gen_phx_channel_test = (
 
     test "handles reconnection attempts", %{socket: socket} do
       # Test reconnection after disconnection
-      push(socket, "reconnect", %{attempt: 1})
-      assert_reply %{status: "reconnected", attempt: 1}
+      ref = push(socket, "reconnect", %{attempt: 1})
+      assert_reply ref, :ok, %{status: "reconnected", attempt: 1}
     end
   end
 

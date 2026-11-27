@@ -28,6 +28,15 @@ const gen_phx_channel = (
     {:error, %{reason: "invalid_topic_format"}}
   end
 
+  def handle_in("ping", payload, socket) do
+    {:reply, {:ok, payload}, socket}
+  end
+
+  def handle_in("shout", payload, socket) do
+    broadcast!(socket, "shout", payload)
+    {:noreply, socket}
+  end
+
   def handle_in("message", %{"body" => body}, socket) do
     broadcast!(socket, "message", %{body: body})
     {:noreply, socket}
@@ -59,7 +68,7 @@ const gen_phx_channel = (
   end
 
   def handle_in("reconnect", %{"attempt" => attempt}, socket) do
-    {:reply, %{status: "reconnected", attempt: attempt}, socket}
+    {:reply, {:ok, %{status: "reconnected", attempt: attempt}}, socket}
   end
 
   def handle_in("invalid_message", _params, socket) do

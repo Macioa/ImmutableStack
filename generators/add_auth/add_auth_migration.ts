@@ -1,0 +1,367 @@
+import { existsSync, readdirSync, unlinkSync } from "fs";
+import { join } from "../../utils/path";
+import { generateFile } from "..";
+import { ApiAppData } from "../add_api";
+import { db } from "../../utils/database";
+
+const MIGRATION_ORDER = [
+  "create_users_auth_tables.exs",
+  "create_accounts_table.exs",
+  "create_oauth_states.exs",
+  "create_oauth_tokens.exs",
+  "create_access_control_tables.exs",
+  // Ithibati checks the configured invitation table, so it must exist first
+  "create_invitations.exs",
+  "add_ithibati.exs",
+  "add_two_factor_to_users.exs",
+];
+
+// Ecto requires unique versions, and users must migrate before tables that reference it
+const migrationVersion = (baseName: string) => {
+  const now = new Date();
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  return (
+    now.getUTCFullYear().toString() +
+    pad(now.getUTCMonth() + 1) +
+    pad(now.getUTCDate()) +
+    pad(now.getUTCHours()) +
+    pad(now.getUTCMinutes()) +
+    pad(MIGRATION_ORDER.indexOf(baseName))
+  );
+};
+
+const add_auth_migration = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+  Database,
+}: ApiAppData) => {
+  const { citext, uuid } = db(Database);
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const legacyDir = join(AppDir || "", `${AppNameSnake}/priv/repo/migrations`);
+  const baseName = "create_users_auth_tables.exs";
+
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
+
+  if (existsSync(dir)) {
+    const existing = readdirSync(dir).find(name => name.endsWith(baseName));
+    if (existing) {
+      filename = existing;
+    }
+  }
+
+  if (existsSync(legacyDir)) {
+    const legacyMigration = readdirSync(legacyDir).find(name => name.endsWith(baseName));
+    if (legacyMigration) {
+      unlinkSync(join(legacyDir, legacyMigration));
+    }
+  }
+
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateUsersAuthTables do
+  use Ecto.Migration
+
+  def change do
+    ${citext}
+
+    create table(:users, primary_key: false) do
+      add :id, :uuid, primary_key: true, null: false, default: fragment("${uuid}")
+      add :email, :citext, null: false
+      # Passkey-only accounts have no password
+      add :hashed_password, :string
+      add :confirmed_at, :utc_datetime
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create unique_index(:users, [:email])
+
+    create table(:users_tokens) do
+      add :user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
+      add :token, :binary, null: false
+      add :context, :string, null: false
+      add :sent_to, :string
+
+      timestamps(type: :utc_datetime, updated_at: false)
+    end
+
+    create index(:users_tokens, [:user_id])
+    create unique_index(:users_tokens, [:context, :token])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_migration");
+};
+
+const add_auth_oauth_tokens_migration = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+  Database,
+}: ApiAppData) => {
+  const { uuid } = db(Database);
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const baseName = "create_oauth_tokens.exs";
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
+
+  if (existsSync(dir)) {
+    const existing = readdirSync(dir).find(name => name.endsWith(baseName));
+    if (existing) {
+      filename = existing;
+    }
+  }
+
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateOAuthTokens do
+  use Ecto.Migration
+
+  def change do
+    create table(:oauth_tokens, primary_key: false) do
+      add :id, :uuid, primary_key: true, null: false, default: fragment("${uuid}")
+      add :user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
+      add :provider, :string, null: false
+      add :access_token, :text, null: false
+      add :refresh_token, :text
+      add :expires_at, :utc_datetime
+      add :provider_user_id, :string
+      add :provider_email, :string
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create index(:oauth_tokens, [:user_id])
+    # A user may link many OAuth accounts, several from one provider too; each provider
+    # account belongs to one user.
+    create unique_index(:oauth_tokens, [:provider, :provider_user_id])
+    create index(:oauth_tokens, [:provider_user_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_oauth_tokens_migration");
+};
+
+const add_auth_oauth_states_migration = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+}: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const baseName = "create_oauth_states.exs";
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
+
+  if (existsSync(dir)) {
+    const existing = readdirSync(dir).find(name => name.endsWith(baseName));
+    if (existing) {
+      filename = existing;
+    }
+  }
+
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateOAuthStates do
+  use Ecto.Migration
+
+  def change do
+    create table(:oauth_states) do
+      add :state, :string, null: false
+      add :provider, :string, null: false
+      add :expires_at, :utc_datetime, null: false
+
+      timestamps(type: :utc_datetime, updated_at: false)
+    end
+
+    create unique_index(:oauth_states, [:state])
+    create index(:oauth_states, [:expires_at])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_oauth_states_migration");
+};
+
+const add_auth_accounts_migration = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+  Database,
+}: ApiAppData) => {
+  const { uuid } = db(Database);
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const baseName = "create_accounts_table.exs";
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
+
+  if (existsSync(dir)) {
+    const existing = readdirSync(dir).find(name => name.endsWith(baseName));
+    if (existing) {
+      filename = existing;
+    }
+  }
+
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateAccountsTable do
+  use Ecto.Migration
+
+  def change do
+    create table(:accounts, primary_key: false) do
+      add :id, :uuid, primary_key: true, null: false, default: fragment("${uuid}")
+      add :name, :string, null: false
+      add :parent_account_id, references(:accounts, type: :uuid, on_delete: :nilify_all)
+      add :owner_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create index(:accounts, [:owner_id])
+    create index(:accounts, [:parent_account_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_accounts_migration");
+};
+
+const add_auth_access_control_migration = async ({
+  AppDir,
+  AppNameSnake,
+  AppNameCamel,
+}: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const baseName = "create_access_control_tables.exs";
+  let filename = `${migrationVersion(baseName)}_${baseName}`;
+
+  if (existsSync(dir)) {
+    const existing = readdirSync(dir).find(name => name.endsWith(baseName));
+    if (existing) {
+      filename = existing;
+    }
+  }
+
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateAccessControlTables do
+  use Ecto.Migration
+
+  def change do
+    create table(:access_tags, primary_key: false) do
+      add :name, :string, primary_key: true
+      add :desc, :text
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create table(:access_groups, primary_key: false) do
+      add :name, :string, primary_key: true
+      add :desc, :text
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create table(:group_tags, primary_key: false) do
+      add :group_id, references(:access_groups, column: :name, type: :string, on_delete: :delete_all),
+        null: false
+
+      add :tag_id, references(:access_tags, column: :name, type: :string, on_delete: :delete_all),
+        null: false
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create index(:group_tags, [:group_id])
+    create unique_index(:group_tags, [:group_id, :tag_id])
+
+    create table(:user_access, primary_key: false) do
+      add :user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
+      add :tag_id, references(:access_tags, column: :name, type: :string, on_delete: :delete_all), null: false
+      add :group_id, references(:access_groups, column: :name, type: :string, on_delete: :nilify_all)
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create index(:user_access, [:user_id])
+    create unique_index(:user_access, [:user_id, :tag_id, :group_id])
+
+    create table(:account_access, primary_key: false) do
+      add :account_id, references(:accounts, type: :uuid, on_delete: :delete_all), null: false
+      add :tag_id, references(:access_tags, column: :name, type: :string, on_delete: :delete_all), null: false
+      add :group_ids, {:array, :string}, null: false, default: []
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create index(:account_access, [:account_id])
+    create unique_index(:account_access, [:account_id, :tag_id])
+  end
+end`;
+
+  return generateFile({ dir, filename, content }, "add_auth_access_control_migration");
+};
+
+// Reuses an existing migration's version so regenerating does not add a duplicate
+const migrationFilename = (dir: string, baseName: string) =>
+  (existsSync(dir) && readdirSync(dir).find((name) => name.endsWith(baseName))) ||
+  `${migrationVersion(baseName)}_${baseName}`;
+
+// Ithibati's passkey, recovery-code, session, bootstrap, challenge and setup-code tables
+const add_auth_ithibati_migration = async ({ AppDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.AddIthibati do
+  use Ecto.Migration
+
+  def up, do: Ithibati.Migration.up(version: 5)
+  def down, do: Ithibati.Migration.down(version: 5)
+end
+`;
+
+  return generateFile({ dir, filename: migrationFilename(dir, "add_ithibati.exs"), content }, "add_auth_ithibati_migration");
+};
+
+// Invitations plus the access tag that lets a user issue them
+const add_auth_invitations_migration = async ({ AppDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.CreateInvitations do
+  use Ecto.Migration
+
+  def change do
+    create table(:invitations, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+      Ithibati.Migration.invitation_columns(version: 5)
+      timestamps(type: :utc_datetime_usec)
+    end
+
+    Ithibati.Migration.invitation_index(version: 5)
+
+    # Holders of this access tag may invite others.
+    execute(
+      "INSERT INTO access_tags (name, \\"desc\\", inserted_at, updated_at) VALUES ('invitations', 'Invite new users', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      "DELETE FROM access_tags WHERE name = 'invitations'"
+    )
+  end
+end
+`;
+
+  return generateFile({ dir, filename: migrationFilename(dir, "create_invitations.exs"), content }, "add_auth_invitations_migration");
+};
+
+// Two-factor columns: the requirement switch, the authenticator secret and when each method was enabled
+const add_auth_two_factor_migration = async ({ AppDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.AddTwoFactorToUsers do
+  use Ecto.Migration
+
+  def change do
+    alter table(:users) do
+      add :two_factor_enabled, :boolean, null: false, default: false
+      add :totp_secret, :binary
+      add :totp_enabled_at, :utc_datetime
+      add :totp_last_used_at, :utc_datetime
+      add :email_otp_enabled_at, :utc_datetime
+    end
+  end
+end
+`;
+
+  return generateFile({ dir, filename: migrationFilename(dir, "add_two_factor_to_users.exs"), content }, "add_auth_two_factor_migration");
+};
+
+export {
+  add_auth_migration,
+  add_auth_oauth_tokens_migration,
+  add_auth_oauth_states_migration,
+  add_auth_accounts_migration,
+  add_auth_access_control_migration,
+  add_auth_ithibati_migration,
+  add_auth_invitations_migration,
+  add_auth_two_factor_migration,
+};
+

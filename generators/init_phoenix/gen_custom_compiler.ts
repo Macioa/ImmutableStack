@@ -1,12 +1,14 @@
 import { join } from "@/utils/path";
 import { generateFile } from "@/generators/index";
 import { AppData } from "@/readers/get_app_data";
+import { elixirLinkDir, elixirRunCmd } from "@/generators/init_phoenix/elixir_os_helpers";
 
 const gen_custom_compiler = async ({
   AppNameSnake,
   AppNameCamel,
   LibDir,
-}: AppData) => {
+  AppDir
+}: AppData, uiName: string = 'ui') => {
   const compilerPath = join(LibDir, `/lib/mix/tasks`);
 
   const content = `
@@ -17,77 +19,87 @@ defmodule Mix.Tasks.Compile.CustomCompiler do
   def run(_args) do
     %{${AppNameSnake}: app_path} = Mix.Project.deps_paths()
 
-    ui_path =
-      Path.join([app_path, "./..", "${AppNameSnake}_ui"])
-      |> Path.expand()
+    project_uis = [
+      {"pnpm run build:${uiName}", Path.join([app_path, "./..", "${AppNameSnake}_${uiName}"]) |> Path.expand()}
+    ]
 
     typescript_path =
       Path.join([app_path, "lib", "typescript"])
       |> Path.expand()
 
-    ${AppNameCamel}.Tasks.ExportConfig.generate_env_file(ui_path)
+    # Generate env files for all UI projects
+    Enum.each(project_uis, fn {_build_cmd, ui_path} ->
+      ${AppNameCamel}.Tasks.ExportConfig.generate_env_file(ui_path)
+    end)
 
-    # Create symlink for TypeScript dependencies
+    # Create symlink if paths exist
     typescript_node_modules = Path.join(typescript_path, "node_modules")
-    ui_node_modules = Path.join(ui_path, "node_modules")
+    apps_dir = Path.expand(Path.join(app_path, ".."))
+    apps_node_modules = Path.join(apps_dir, "node_modules")
     
-    if File.exists?(typescript_path) and File.exists?(ui_node_modules) do
-      # Remove existing symlink or directory if it exists
-      if File.exists?(typescript_node_modules) do
-        File.rm_rf(typescript_node_modules)
-        IO.puts("Removed existing: #{typescript_node_modules}")
-      end
-      
-      case File.ln_s(ui_node_modules, typescript_node_modules) do
-        :ok ->
-          IO.puts("Symlink created: #{typescript_node_modules} -> #{ui_node_modules}")
-        {:error, reason} ->
-          IO.puts(:stderr, "Failed to create symlink: #{reason}")
-      end
+    if File.exists?(typescript_path) and File.exists?(apps_node_modules) do
+      link_dir(apps_node_modules, typescript_node_modules)
+      IO.puts("Symlink created: #{typescript_node_modules} -> #{apps_node_modules}")
     else
-      IO.puts("Warning: TypeScript directory or UI node_modules not found, skipping symlink creation")
+      IO.puts("Warning: TypeScript directory or apps node_modules not found, skipping symlink creation")
     end
 
-    case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: ui_path) do
+    # Build all UI projects with retry on dependency errors
+    Enum.each(project_uis, fn {build_cmd, _ui_path} ->
+      build_with_retry(apps_dir, build_cmd)
+    end)
+  end
+
+${elixirRunCmd}
+
+${elixirLinkDir}
+
+  defp build_with_retry(apps_path, build_cmd) do
+    [cmd | args] = String.split(build_cmd, " ")
+    case run_cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
       {output, 0} ->
         IO.puts(output)
         {:ok, []}
       {output, _exit_code} ->
         IO.puts(:stderr, output)
         
-        # Check for common dependency errors that require clean install
-        if String.contains?(output, "@rollup/rollup-darwin-arm64") or 
-           String.contains?(output, "Cannot find module") or
-           String.contains?(output, "npm has a bug related to optional dependencies") do
-          
+        if dependency_error?(output) do
           IO.puts("Detected dependency error, attempting clean install...")
-          
-          # Clean install
-          case System.cmd("npm", ["ci"], stderr_to_stdout: true, cd: ui_path) do
-            {install_output, 0} ->
-              IO.puts("Clean install successful, retrying build...")
-              IO.puts(install_output)
-              
-              # Retry the build
-              case System.cmd("npm", ["run", "build", "--emptyOutDir"], stderr_to_stdout: true, cd: ui_path) do
-                {retry_output, 0} ->
-                  IO.puts("Build successful after clean install!")
-                  IO.puts(retry_output)
-                  {:ok, []}
-                {retry_output, _retry_exit_code} ->
-                  IO.puts(:stderr, "Build failed even after clean install:")
-                  IO.puts(:stderr, retry_output)
-                  {:error, []}
-              end
-            {install_output, _install_exit_code} ->
-              IO.puts(:stderr, "Clean install failed:")
-              IO.puts(:stderr, install_output)
-              {:error, []}
-          end
+          retry_after_clean_install(apps_path, build_cmd)
         else
           {:error, []}
         end
     end
+  end
+
+  defp retry_after_clean_install(apps_path, build_cmd) do
+    case run_cmd("pnpm", ["install", "--frozen-lockfile"], stderr_to_stdout: true, cd: apps_path) do
+      {install_output, 0} ->
+        IO.puts("Clean install successful, retrying build...")
+        IO.puts(install_output)
+        
+        [cmd | args] = String.split(build_cmd, " ")
+        case run_cmd(cmd, args ++ ["--emptyOutDir"], stderr_to_stdout: true, cd: apps_path) do
+          {retry_output, 0} ->
+            IO.puts("Build successful after clean install!")
+            IO.puts(retry_output)
+            {:ok, []}
+          {retry_output, _retry_exit_code} ->
+            IO.puts(:stderr, "Build failed even after clean install:")
+            IO.puts(:stderr, retry_output)
+            {:error, []}
+        end
+      {install_output, _install_exit_code} ->
+        IO.puts(:stderr, "Clean install failed:")
+        IO.puts(:stderr, install_output)
+        {:error, []}
+    end
+  end
+
+  defp dependency_error?(output) do
+    String.contains?(output, "@rollup/rollup-darwin-arm64") or 
+    String.contains?(output, "Cannot find module") or
+    String.contains?(output, "npm has a bug related to optional dependencies")
   end
 
   @impl Mix.Task.Compiler

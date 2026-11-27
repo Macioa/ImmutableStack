@@ -1,16 +1,20 @@
-import { join } from "@/utils/path";
+import { allowEnvKeys } from "@/generators/init_configs/gen_keys";
+import { envConfigDir } from "@/utils/config_paths";
 import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { generateFile } from "@/generators/index";
 import { AppData } from "@/readers/get_app_data";
+import { devCorsConfig } from "@/utils/cors";
+import { db } from "@/utils/database";
 
 const gen_dev_config_env = async ({
   UmbrellaDir,
   AppNameCamel,
   AppNameSnake,
+  Database,
 }: AppData) => {
-  const filename = "dev.exs";
-  let dir = UmbrellaDir || "";
-  dir = join(dir, "config");
+  const filename = "config.exs";
+  const connection = db(Database).connection(`${AppNameSnake}_db`);
+  const dir = envConfigDir(UmbrellaDir, "dev");
   const content = `import Config
 
 # Set UI variables
@@ -21,10 +25,7 @@ config :${AppNameSnake}, :ui,
 
 # Configure your database
 config :${AppNameSnake}, ${AppNameCamel}.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "${AppNameSnake}_db",
+  ${connection}
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -35,7 +36,7 @@ config :${AppNameSnake}, ${AppNameCamel}.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :${AppNameSnake}, CORSPlug, origin: "*"
+${devCorsConfig(AppNameSnake)}
 
 config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
@@ -70,7 +71,7 @@ config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-# Enable dev routes for dashboard and mailbox
+# Enable dev routes for dashboard
 config :${AppNameSnake}_web, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
@@ -79,13 +80,10 @@ config :logger, :console, format: "[$level] $message\n"
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-# Disable swoosh api client as it is only required for production adapters.
-config :swoosh, :api_client, false
-
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
-`;
+${allowEnvKeys(AppNameSnake, "dev")}`;
 
   return generateFile(
     {

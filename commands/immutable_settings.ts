@@ -32,7 +32,7 @@ const main = async () => {
     return;
   }
   const newSettings: [string, string][] = chunk2(
-    args.map((a) => a.replace(/[:,]/g, ""))
+    args.map((a) => a.replace(/[:,]$/, ""))
   );
   const stngs = newSettings.reduce(
     (acc: Record<string, string>, [key, value]) => {

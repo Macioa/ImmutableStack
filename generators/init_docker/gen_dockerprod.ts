@@ -3,13 +3,13 @@ import { generateFile } from "../index";
 
 const gen_docker_prod = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
   let dir = UmbrellaDir || "";
-  dir += "/docker";
-  const filename = "prod.dockerfile";
+  dir += "/docker/prod";
+  const filename = `${AppNameSnake}_web.dockerfile`;
   const content = `# Stage 1: Build Elixir/Phoenix
-FROM elixir:1.18-alpine AS builder
+FROM elixir:1.20-alpine AS builder
 
 # Install OS dependencies
-RUN apk add --no-cache build-base git npm nodejs postgresql-dev
+RUN apk add --no-cache build-base git npm nodejs postgresql-dev && npm install -g pnpm
 RUN mix local.hex --force
 
 # Set environment
@@ -32,7 +32,7 @@ RUN mix local.hex --force && \
 RUN mix phx.digest --priv=apps/${AppNameSnake}_web/priv
 
 # Compile entire umbrella and build release
-RUN mix compile && mix release
+RUN mix compile && mix release ${AppNameSnake}_web
 
 # Stage 2: Minimal Runtime
 FROM alpine:3.18 AS app
@@ -44,10 +44,10 @@ RUN apk add --no-cache libstdc++ openssl ncurses-libs
 WORKDIR /app
 
 # Copy the release from the builder stage
-COPY --from=builder /app/_build/prod/rel/your_release_name ./
+COPY --from=builder /app/_build/prod/rel/${AppNameSnake}_web ./
 
 # Run the release
-CMD ["bin/YOUR_RELEASE_NAME", "start"]`;
+CMD ["bin/${AppNameSnake}_web", "start"]`;
 
   return generateFile({ filename, dir, content }, "gen_docker_prod");
 };

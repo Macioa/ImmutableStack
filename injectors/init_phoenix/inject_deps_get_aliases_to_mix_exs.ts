@@ -5,15 +5,16 @@ import { AppData } from "../../readers/get_app_data";
 const inject_deps_get_aliases_to_mix_exs = async ({
   AppNameSnake,
   UmbrellaDir,
-}: AppData) => {
+}: AppData, uiName: string = 'ui') => {
   const file = path.join(UmbrellaDir, `mix.exs`);
+  
   const injections: Injection[] = [
     [
       InjectType.BEFORE,
       /defp\s+aliases\s+do[\s\n]+\[/,
       `
   defp npm_install(_) do
-    Mix.shell().cmd("npm install", cd: "apps/${AppNameSnake}_ui")
+    unless System.get_env("SKIP_UI_INSTALL"), do: Mix.shell().cmd("pnpm install", cd: "apps")
   end\n\n
 `,
     ],
