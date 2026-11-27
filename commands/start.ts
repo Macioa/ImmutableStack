@@ -4,18 +4,16 @@ import { log, setLogLevel } from "@/utils/logger";
 import { readSettings } from "@/utils/settings";
 import { execute as exec } from "@/runners";
 import { installApp, isWindows, resolveShell, runPowerShellFile } from "@/utils/os_adapter";
-import { asdfEnv, readVersions } from "@/utils/versions";
+import { readVersions } from "@/utils/versions";
 import type { Versions } from "@/utils/versions";
 setLogLevel(5);
 
 const home = os.homedir();
-const asdfDir = path.join(home, ".asdf");
-const asdfBin = path.join(asdfDir, "bin");
-const asdfShims = path.join(asdfDir, "shims");
+const miseBin = path.join(home, ".local", "bin");
+const miseShims = path.join(home, ".local", "share", "mise", "shims");
 const env = {
   ...process.env,
-  PATH: `${asdfBin}:${asdfShims}:${process.env.PATH}`,
-  ASDF_DATA_DIR: asdfDir,
+  PATH: `${miseBin}:${miseShims}:${process.env.PATH}`,
 };
 
 // Homebrew (macOS only)
@@ -63,40 +61,33 @@ const storeEnvironment = async () => {
   if (isWindows) log({ level: 3, color: "GREEN" }, `Detected Git Bash: ${resolveShell(shell)}`);
 };
 
-// The pinned asdf release binary goes in ~/.asdf/bin, ahead of any other asdf on PATH
-const asdfRelease = (version: string) =>
-  `https://github.com/asdf-vm/asdf/releases/download/v${version}/asdf-v${version}-$(uname -s | tr A-Z a-z)-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz`;
+// The pinned mise goes in ~/.local/bin, ahead of any other mise on PATH
+const miseIs = (version: string) => `mise --version | grep -qF "${version}"`;
 
-const asdfIs = (version: string) => `asdf --version | grep -qF "${version}"`;
-
-const ensureAsdf = ({ ASDF_VERSION }: Versions) =>
+const ensureMise = ({ MISE_VERSION }: Versions) =>
   ensureInstalled({
-    check: asdfIs(ASDF_VERSION),
+    check: miseIs(MISE_VERSION),
     install: [
-      `mkdir -p "${asdfBin}"`,
-      `curl -fsSL "${asdfRelease(ASDF_VERSION)}" | tar -xz -C "${asdfBin}" asdf`,
-      asdfIs(ASDF_VERSION),
+      `curl -fsSL https://mise.run | MISE_VERSION="v${MISE_VERSION}" MISE_INSTALL_PATH="${path.join(miseBin, "mise")}" sh`,
+      miseIs(MISE_VERSION),
     ],
-    found: `asdf ${ASDF_VERSION} is installed.`,
-    installing: `Installing asdf ${ASDF_VERSION}...`,
+    found: `mise ${MISE_VERSION} is installed.`,
+    installing: `Installing mise ${MISE_VERSION}...`,
   });
 
-const ensureAsdfTool = ([plugin, version]: [string, string]) =>
+// mise uses precompiled Erlang and Elixir where available
+const ensureMiseTool = ([tool, version]: [string, string]) =>
   ensureInstalled({
-    check: `asdf where ${plugin} ${version}`,
-    install: [
-      `asdf plugin list | grep -qx ${plugin} || asdf plugin add ${plugin}`,
-      `asdf install ${plugin} ${version}`,
-      `asdf set -u ${plugin} ${version}`,
-    ],
-    found: `${plugin} ${version} is already installed.`,
-    installing: `Installing ${plugin} ${version}...`,
+    check: `mise where ${tool}@${version}`,
+    install: [`mise use --global ${tool}@${version}`],
+    found: `${tool} ${version} is already installed.`,
+    installing: `Installing ${tool} ${version}...`,
   });
 
-const ensureAsdfTools = ({ ERLANG_VERSION, ELIXIR_VERSION, NODE_VERSION }: Versions) =>
-  ([["erlang", ERLANG_VERSION], ["elixir", ELIXIR_VERSION], ["nodejs", NODE_VERSION]] as [string, string][])
+const ensureMiseTools = ({ ERLANG_VERSION, ELIXIR_VERSION, NODE_VERSION }: Versions) =>
+  ([["erlang", ERLANG_VERSION], ["elixir", ELIXIR_VERSION], ["node", NODE_VERSION]] as [string, string][])
     .reduce<Promise<unknown>>(
-      (previous, tool) => previous.then(() => ensureAsdfTool(tool)),
+      (previous, tool) => previous.then(() => ensureMiseTool(tool)),
       Promise.resolve()
     );
 
@@ -112,8 +103,7 @@ const ensureDocker = () =>
 const installPhoenix = (versions: Versions) => {
   log({ level: 3, color: "GREEN" }, "Installing Hex and Phoenix...");
   return runInOrder(
-    ["mix local.hex --force", `mix archive.install hex phx_new ${versions.PHOENIX_VERSION} --force`],
-    { ...env, ...asdfEnv(versions) }
+    ["mix local.hex --force", "mix local.rebar --force", `mix archive.install hex phx_new ${versions.PHOENIX_VERSION} --force`]
   );
 };
 
@@ -125,15 +115,15 @@ const ensurePnpm = () =>
     installing: "Installing pnpm...",
   });
 
-// Windows uses mise instead of asdf
+// Windows installs mise through winget in PowerShell
 const setupWindows = () =>
   run(runPowerShellFile(path.join(__dirname, "start_windows.ps1")), process.env);
 
 const setupUnix = async () => {
   log({ level: 3, color: "GREEN" }, "Sourcing versions.sh...");
   const versions = readVersions(__dirname);
-  await ensureAsdf(versions);
-  await ensureAsdfTools(versions);
+  await ensureMise(versions);
+  await ensureMiseTools(versions);
   await ensureDocker();
   await ensurePnpm();
   await installPhoenix(versions);

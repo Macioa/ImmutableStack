@@ -28,12 +28,14 @@ jobs:
       - name: Install toolchain
         run: node .build/start.js
 
-      # asdf (Mac, Linux) and mise (Windows) shims for the steps that follow
-      - name: Add version manager shims to PATH
+      # mise and its shims for the steps that follow
+      - name: Add mise shims to PATH
         run: |
-          echo "$HOME/.asdf/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.asdf/shims" >> "$GITHUB_PATH"
-          if [ -n "$LOCALAPPDATA" ]; then echo "$LOCALAPPDATA/mise/shims" >> "$GITHUB_PATH"; fi
+          if [ -n "$LOCALAPPDATA" ]; then echo "$LOCALAPPDATA/mise/shims" >> "$GITHUB_PATH"; else
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
+          fi
+
 
       # Empty answer to the git domain prompt skips the remote
       - name: Init
@@ -43,3 +45,4 @@ jobs:
       - name: Add auth
         working-directory: ${{ runner.temp }}/envtest_umbrella
         run: echo "" | node "$GITHUB_WORKSPACE/.build/add_auth.js" -quick
+
