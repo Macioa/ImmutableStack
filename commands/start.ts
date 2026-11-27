@@ -106,6 +106,14 @@ const installPhoenix = (versions: Versions) => {
   );
 };
 
+const ensurePnpm = () =>
+  ensureInstalled({
+    check: "pnpm --version",
+    install: ["npm install -g pnpm"],
+    found: "pnpm is installed.",
+    installing: "Installing pnpm...",
+  });
+
 // Windows uses mise instead of asdf
 const setupWindows = () =>
   run(runPowerShellFile(path.join(__dirname, "start_windows.ps1")));
@@ -116,6 +124,7 @@ const setupUnix = async () => {
   const versions = readVersions(__dirname);
   await ensureAsdfTools(versions);
   await ensureDocker();
+  await ensurePnpm();
   await installPhoenix(versions);
   log({ level: 1, color: "GREEN" }, "Setup complete.");
 };

@@ -27,7 +27,7 @@ const inject_ui_package_minimal = async (appdata: AppData, uiName: string = 'ui'
       "dev": "vite",
       "build": "tsc -b && vite build",
       "lint": "oxlint",
-      "format": "prettier --write .",
+      "format": "oxfmt .",
       "preview": "vite preview"
     }
   };

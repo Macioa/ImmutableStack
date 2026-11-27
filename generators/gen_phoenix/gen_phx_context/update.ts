@@ -103,12 +103,14 @@ def update_${genName}(attrs) when is_map(attrs) do
   if id == nil do
     create_${genName}(attrs)
   else
-    changeset =
-      MapUtil.get(attrs, :id)
-      |> get_${genName}!()
-      |> change_${genName}(attrs)
+    case get_${genName}(id) do
+      nil ->
+        {:error, :not_found}
 
-    if changeset.valid?, do: Repo.update(changeset)
+      ${genName} ->
+        changeset = change_${genName}(${genName}, attrs)
+        if changeset.valid?, do: Repo.update(changeset), else: {:error, changeset}
+    end
   end
 end
 `;

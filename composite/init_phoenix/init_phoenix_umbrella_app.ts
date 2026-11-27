@@ -32,16 +32,25 @@ import { join } from "../../utils/path";
 import { configure_phoenix_to_format_react } from "./configure_phoenix_to_format_react";
 import { configure_phoenix_to_serve_react } from "./configure_phoenix_to_serve_react";
 
-const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui', webName: string = 'web') => {
-  const { AppNameSnake, UmbrellaDir } = appdata;
+const scaffold_phoenix_umbrella = async ({ AppNameSnake, UmbrellaDir }: AppData) => {
   log({ level: 2, color: "BLUE" }, "\nGenerating Phoenix project...");
-  const init = await exec(
+  return exec(
     {
       command: autoYes(`mix phx.new ${AppNameSnake} --no-live --no-html --no-assets --binary-id --umbrella --no-install`),
       dir: join(UmbrellaDir, ".."),
     },
     "init_phoenix_umbrella_app"
   );
+};
+
+// scaffold: false when phx.new already ran, e.g. in parallel with the UI scaffold
+const init_phoenix_umbrella_app = async (
+  appdata: AppData,
+  uiName: string = 'ui',
+  webName: string = 'web',
+  { scaffold = true }: { scaffold?: boolean } = {}
+) => {
+  const init = scaffold ? await scaffold_phoenix_umbrella(appdata) : null;
   const envConfigs = await inject_env_config_folders(appdata);
   const declarations = await inject_app_declarations(appdata);
   const tasks = await Promise.all([
@@ -91,4 +100,4 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
   ].flat();
 };
 
-export { init_phoenix_umbrella_app };
+export { init_phoenix_umbrella_app, scaffold_phoenix_umbrella };

@@ -2,6 +2,7 @@ import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType } from "../index";
 import { ApiAppData } from "../../generators/add_api";
 import crypto from "crypto";
+import { existsSync, readFileSync } from "fs";
 
 const DEV_ROUTES = /# Enable dev routes/;
 
@@ -15,22 +16,32 @@ const numberedDevPort = (content: string, apiNumber: string) => {
   return usedDevPorts(content).includes(preferred) ? nextDevPort(content) : preferred;
 };
 
-const get_dev_port = (content: string, ApiNameSnake: string, ApiPort?: number) => {
+const get_dev_port = (content: string, ApiNameSnake: string, ApiPort?: number, ApiPortEnv?: string) => {
   const apiNumber = ApiNameSnake.match(/\d+$/)?.[0];
   const namedEnv = `${ApiNameSnake.toUpperCase()}_PORT`;
-  if (ApiPort) return { port: ApiPort, portEnv: namedEnv };
+  if (ApiPort) return { port: ApiPort, portEnv: ApiPortEnv || namedEnv };
   return apiNumber
     ? { port: numberedDevPort(content, apiNumber), portEnv: `PORT${apiNumber}` }
     : { port: nextDevPort(content), portEnv: namedEnv };
 };
 
-const inject_api_to_dev_config = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake, ApiNameCamel, ApiPort }: ApiAppData) => {
+// Picks the dev port once, before generation, so the endpoint config, UI requests and
+// OAuth redirect comments all use the same port
+const resolve_api_port = (apiAppData: ApiAppData): ApiAppData => {
+  const { UmbrellaDir, ApiNameSnake, ApiPort } = apiAppData;
+  const file = envConfigFile(UmbrellaDir, "dev");
+  const content = existsSync(file) ? readFileSync(file, "utf8") : "";
+  const { port, portEnv } = get_dev_port(content, ApiNameSnake, ApiPort);
+  return { ...apiAppData, ApiPort: port, ApiPortEnv: portEnv };
+};
+
+const inject_api_to_dev_config = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake, ApiNameCamel, ApiPort, ApiPortEnv }: ApiAppData) => {
   const file = envConfigFile(UmbrellaDir, "dev");
   const apiAppName = `${AppNameSnake}_${ApiNameSnake}`;
   const secretKey = crypto.randomBytes(32).toString("hex");
 
   const endpointConfig = (content: string) => {
-    const { port, portEnv } = get_dev_port(content, ApiNameSnake, ApiPort);
+    const { port, portEnv } = get_dev_port(content, ApiNameSnake, ApiPort, ApiPortEnv);
     return `
 config :${apiAppName}, ${ApiNameCamel}.Endpoint,
   http: [ip: {0, 0, 0, 0}, port: System.get_env("${portEnv}", "${port}") |> String.to_integer()],
@@ -60,5 +71,5 @@ config :${apiAppName}, ${ApiNameCamel}.Endpoint,
   return inject_file({ file, injections }, "inject_api_to_dev_config");
 };
 
-export { inject_api_to_dev_config };
+export { inject_api_to_dev_config, resolve_api_port };
 

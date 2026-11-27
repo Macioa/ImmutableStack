@@ -3,16 +3,21 @@ import { getAppData, AppData } from "@/readers/get_app_data";
 import { setUmbrellaDirCache, writeLog } from "@/utils/history_cache";
 import { log, setLogLevel } from "@/utils/logger";
 import { applyPinnedVersions } from "@/utils/versions";
+import { parseFlags, positionalArgs } from "@/utils/flags";
+import { run_command, start_quick_mode } from "@/utils/quick";
+import { resolve_api_port } from "@/injectors/add_api/inject_api_to_dev_config";
 import { execute as exec } from "@/runners";
 
 setLogLevel(3);
 applyPinnedVersions(__dirname);
 
 const main = async () => {
-  const args = process.argv.slice(2);
+  const argv = process.argv.slice(2);
+  const { quick } = parseFlags(argv);
+  const args = positionalArgs(argv);
   
   if (args.length < 1) {
-    console.error("Usage: immutable -add_api <api_name> [port]");
+    console.error("Usage: immutable -add_api <api_name> [port] [-quick]");
     console.error("Example: immutable -add_api web2");
     console.error("Example: immutable -add_api admin 5000");
     process.exit(1);
@@ -33,23 +38,25 @@ const main = async () => {
   }
 
   const { AppNameSnake, UmbrellaDir } = appData;
+  start_quick_mode(AppNameSnake, "add_api", { quick });
   const apiAppName = `${AppNameSnake}_${apiName}`;
   
   log({ level: 1, color: "GREEN" }, `\n\n Generating Web API: ${apiAppName}${port ? ` on port ${port}` : ''}\n\n`);
   
   const apiNameCamel = apiName.replace(/_([a-z])/g, (g) => g[1].toUpperCase()).replace(/^./, (g) => g.toUpperCase());
-  const apiAppData = {
+  const apiAppData = resolve_api_port({
     ...appData,
     ApiNameSnake: apiName,
     ApiNameCamel: `${apiNameCamel}Web`,
     ApiPort: port,
-  };
+  });
 
   setUmbrellaDirCache(UmbrellaDir);
 
-  await add_api(apiAppData);
-
-  writeLog(UmbrellaDir, `add_api_${apiName}`);
+  await run_command(async () => {
+    await add_api(apiAppData);
+    writeLog(UmbrellaDir, `add_api_${apiName}`);
+  });
 
   log({ level: 1, color: "GREEN" }, `\n\nWeb API Generation Complete.\n\nGenerated ${apiAppName}\n`);
 };

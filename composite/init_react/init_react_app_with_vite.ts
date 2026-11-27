@@ -9,22 +9,35 @@ import { AppData } from "../../readers/get_app_data";
 import { execute as exec } from "../../runners";
 import { log } from "../../utils/logger";
 
-const init_react_app_with_vite = async (appdata: AppData, uiName: string = 'ui') => {
-  const { AppNameSnake, AppDir } = appdata;
+const CREATE_VITE = "create-vite@9.3.4";
+
+// offline: use the pinned create-vite from the local npx cache when present
+const scaffold_react_app_with_vite = async (
+  { AppNameSnake, AppDir }: AppData,
+  uiName: string = 'ui',
+  { offline = false }: { offline?: boolean } = {}
+) => {
   log(
     { level: 1, color: "BLUE" },
     `\nGenerating React App: ${AppNameSnake}_${uiName} with Vite ...`
   );
-  const init = await exec(
+  const npx = offline ? "npx --prefer-offline" : "npx";
+  return exec(
     {
-      command: `y | npx create-vite@9.3.4 ${AppNameSnake}_${uiName} --template react-ts --no-install`,
+      command: `y | ${npx} ${CREATE_VITE} ${AppNameSnake}_${uiName} --template react-ts --no-install`,
       dir: AppDir,
-      // options: {
-      //   timeoutResolve: 1000 * 30,
-      // }
     },
     "init_react_app_with_vite"
   );
+};
+
+// scaffold: false when create-vite already ran, e.g. in parallel with phx.new
+const init_react_app_with_vite = async (
+  appdata: AppData,
+  uiName: string = 'ui',
+  { scaffold = true, offline = false }: { scaffold?: boolean; offline?: boolean } = {}
+) => {
+  const init = scaffold ? await scaffold_react_app_with_vite(appdata, uiName, { offline }) : null;
 
   log(
     { level: 1, color: "BLUE" },
@@ -43,4 +56,4 @@ const init_react_app_with_vite = async (appdata: AppData, uiName: string = 'ui')
   return tasks.flat();
 };
 
-export { init_react_app_with_vite };
+export { init_react_app_with_vite, scaffold_react_app_with_vite };

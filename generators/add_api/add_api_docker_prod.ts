@@ -17,7 +17,7 @@ const add_api_docker_prod = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake }: 
 FROM elixir:1.20-alpine AS builder
 
 # Install OS dependencies
-RUN apk add --no-cache build-base git npm nodejs postgresql-dev
+RUN apk add --no-cache build-base git npm nodejs postgresql-dev && npm install -g pnpm
 RUN mix local.hex --force
 
 # Set environment

@@ -12,28 +12,45 @@ const urls = files.map((name) => ({
   url: new URL(name, url_path).toString(),
 }));
 
-async function fetch_assets({ AppDir, AppNameSnake }: AppData, uiName: string = 'ui') {
+const download = async (url: string, file: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+  //@ts-ignore unreachable ts error
+  const nodeStream = Readable.fromWeb(res.body);
+  const fileStream = fs.createWriteStream(file);
+
+  return new Promise((resolve, reject) => {
+    nodeStream.pipe(fileStream);
+    fileStream.on("finish", resolve);
+    fileStream.on("error", reject);
+  });
+};
+
+// Cached assets are copied, missing ones are downloaded into the cache first
+const fromCache = async (url: string, name: string, file: string, cacheDir: string) => {
+  const cached = join(cacheDir, "assets", name);
+  await fs.promises.mkdir(path.dirname(cached), { recursive: true });
+  if (!fs.existsSync(cached)) await download(url, cached);
+  return fs.promises.copyFile(cached, file);
+};
+
+// cacheDir: reuse assets from the -cache dependency cache instead of downloading each init
+async function fetch_assets(
+  { AppDir, AppNameSnake }: AppData,
+  uiName: string = 'ui',
+  { cacheDir }: { cacheDir?: string } = {}
+) {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const outDir = join(UiDir, "./src/assets/");
   await fs.promises.mkdir(outDir, { recursive: true });
 
-  const downloads = urls.map(async ({ name, url }) => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch ${url}`);
-    //@ts-ignore unreachable ts error
-    const nodeStream = Readable.fromWeb(res.body);
-    const fileStream = fs.createWriteStream(join(outDir, name));
-
-    await new Promise((resolve, reject) => {
-      nodeStream.pipe(fileStream);
-      fileStream.on("finish", resolve);
-      fileStream.on("error", reject);
-    });
-
+  const fetches = urls.map(async ({ name, url }) => {
+    const file = join(outDir, name);
+    await (cacheDir ? fromCache(url, name, file, cacheDir) : download(url, file));
     return name;
   });
 
-  return Promise.all(downloads);
+  return Promise.all(fetches);
 }
 
 export { fetch_assets };

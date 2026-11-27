@@ -80,7 +80,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
   const userdata = useSelector(selectUserdata);
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [registerModalVisible, setRegisterModalVisible] = useState(false);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSignedIn = !!userdata;
 
   const processOAuthSuccess = useCallback(
