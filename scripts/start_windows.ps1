@@ -26,23 +26,31 @@ foreach ($line in Get-Content $versionsPath) {
         $versions[$Matches[1]] = $Matches[2].Trim().Trim('"', "'")
     }
 }
-foreach ($name in "NODE_VERSION", "ERLANG_VERSION", "ELIXIR_VERSION", "PHOENIX_VERSION") {
+foreach ($name in "NODE_VERSION", "ERLANG_VERSION", "ELIXIR_VERSION", "PHOENIX_VERSION", "MISE_VERSION") {
     if (-not $versions[$name]) { throw "$name is missing from versions.sh." }
 }
 
-# Check if mise is installed
+function Get-MiseVersion {
+    if (-not (Get-Command mise -ErrorAction SilentlyContinue)) { return $null }
+    return ((& mise --version) -split '\s+')[0]
+}
+
+# Install the pinned mise, replacing any other version
 Update-SessionPath
-if (Get-Command mise -ErrorAction SilentlyContinue) {
-    Write-Output "mise is installed."
+$miseVersion = $versions.MISE_VERSION
+$installedMise = Get-MiseVersion
+if ($installedMise -eq $miseVersion) {
+    Write-Output "mise $miseVersion is installed."
 } else {
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         throw "winget is required to install mise: https://mise.jdx.dev/installing-mise.html"
     }
-    Write-Output "Installing mise..."
-    Invoke-Native "winget" @("install", "--id", "jdx.mise", "--exact", "--accept-source-agreements", "--accept-package-agreements")
+    Write-Output "Installing mise $miseVersion (found: $(if ($installedMise) { $installedMise } else { 'none' }))..."
+    Invoke-Native "winget" @("install", "--id", "jdx.mise", "--exact", "--version", $miseVersion, "--force", "--accept-source-agreements", "--accept-package-agreements")
     Update-SessionPath
-    if (-not (Get-Command mise -ErrorAction SilentlyContinue)) {
-        throw "mise installation failed or is not in PATH."
+    $installedMise = Get-MiseVersion
+    if ($installedMise -ne $miseVersion) {
+        throw "mise $miseVersion is not on PATH (found: $installedMise)."
     }
 }
 
