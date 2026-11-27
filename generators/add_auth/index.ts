@@ -40,6 +40,7 @@ export {
   add_auth_access_control_migration,
   add_auth_ithibati_migration,
   add_auth_invitations_migration,
+  add_auth_two_factor_migration,
 } from "./add_auth_migration";
 export { add_auth_oauth_controller } from "./add_auth_oauth_controller";
 export { add_auth_oauth_adapter, add_auth_oauth_provider_behaviour } from "./add_auth_oauth_adapter";
@@ -81,7 +82,6 @@ export {
   add_auth_web_test_helper,
   add_auth_passkey_requests,
   add_auth_ithibati_types,
-  add_auth_passkeys_modal,
-  add_auth_invitations_modal,
   add_auth_recovery_codes,
 } from "./add_auth_passkeys";
+export * from "./add_auth_account";

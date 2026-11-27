@@ -19,7 +19,12 @@ import { pipe } from "mincurrypipe";
 import { Avatar, ConfigProvider, Dropdown, type MenuProps } from "antd";
 import { selectUserdata, setUserdata, setToken } from "../state/User";
 import { logoutUser, requestCurrentUser } from "../requests/User";
-import { LoginModal, RegisterModal, PasskeysModal, InvitationsModal } from "./auth";
+import {
+  LoginModal,
+  RegisterModal,
+  AccountModal,
+  ResetPasswordModal,
+} from "./auth";
 import { authTheme } from "./auth/AuthModal";
 import "./styles.css";
 
@@ -80,12 +85,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
   const userdata = useSelector(selectUserdata);
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [registerModalVisible, setRegisterModalVisible] = useState(false);
-  const [passkeysModalVisible, setPasskeysModalVisible] = useState(false);
-  const [invitationsModalVisible, setInvitationsModalVisible] = useState(false);
+  const [accountModalVisible, setAccountModalVisible] = useState(false);
+  // A reset link from the password email carries ?reset=<token>.
+  const [resetToken, setResetToken] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get("reset"),
+  );
+  const closeReset = () => {
+    setResetToken(null);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  };
 
   // An invitation link opens registration straight away.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("invite")) setRegisterModalVisible(true);
+    if (new URLSearchParams(window.location.search).has("invite"))
+      setRegisterModalVisible(true);
   }, []);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSignedIn = !!userdata;
@@ -275,14 +288,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     ...(isSignedIn
       ? [
           {
-            key: "passkeys",
-            label: "Passkeys",
-            onClick: () => setPasskeysModalVisible(true),
-          },
-          {
-            key: "invitations",
-            label: "Invitations",
-            onClick: () => setInvitationsModalVisible(true),
+            key: "account",
+            label: "Account",
+            onClick: () => setAccountModalVisible(true),
           },
           {
             key: "sign-out",
@@ -359,13 +367,17 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
         visible={loginModalVisible}
         onCancel={() => setLoginModalVisible(false)}
       />
-      <InvitationsModal
-        visible={invitationsModalVisible}
-        onCancel={() => setInvitationsModalVisible(false)}
+      <AccountModal
+        visible={accountModalVisible}
+        onCancel={() => setAccountModalVisible(false)}
       />
-      <PasskeysModal
-        visible={passkeysModalVisible}
-        onCancel={() => setPasskeysModalVisible(false)}
+      <ResetPasswordModal
+        token={resetToken}
+        onCancel={closeReset}
+        onDone={() => {
+          closeReset();
+          setLoginModalVisible(true);
+        }}
       />
       <RegisterModal
         visible={registerModalVisible}
@@ -387,43 +399,54 @@ const add_auth_login_modal = async ({
   const content = `import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { Dispatch } from "redux";
-import { Form, Input, Button } from "antd";
+import { Form, Input, Button, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import "antd/dist/reset.css";
-import { loginUser, initiateOAuth } from "../../requests/User";
+import { initiateOAuth } from "../../requests/User";
 import { requestCurrentUser } from "../../requests/User";
-import { signInWithPasskey, recoverWithCode } from "../../requests/Passkeys";
-import { showRecoveryCodes } from "./RecoveryCodes";
-import { message } from "antd";
+import { signInWithPasskey } from "../../requests/Passkeys";
+import { passwordSignIn, type TwoFactorChallenge } from "../../requests/Account";
 import { selectUserdata } from "../../state/User";
 import type { User } from "../../state/User";
 import { OAuthButtons } from "./OAuthButtons";
 import { AuthModal } from "./AuthModal";
+import { TwoFactorForm } from "./login/TwoFactorForm";
+import { ForgotPasswordForm } from "./login/ForgotPasswordForm";
+import { RecoverAccountForm } from "./login/RecoverAccountForm";
+
+type View = "sign-in" | "two-factor" | "forgot-password" | "recover";
+
+const titles: Record<View, string> = {
+  "sign-in": "Sign In",
+  "two-factor": "Two-factor verification",
+  "forgot-password": "Reset password",
+  recover: "Recover account",
+};
 
 interface LoginModalProps {
   visible: boolean;
   onCancel: () => void;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({
-  visible,
-  onCancel,
-}) => {
+export const LoginModal: React.FC<LoginModalProps> = ({ visible, onCancel }) => {
   const dispatch = useDispatch<Dispatch>();
   const userdata = useSelector(selectUserdata);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [userdataWhenModalOpened, setUserdataWhenModalOpened] =
-    useState<User | null>(null);
+  const [view, setView] = useState<View>("sign-in");
+  const [pending, setPending] = useState<TwoFactorChallenge | null>(null);
+  const [userdataWhenModalOpened, setUserdataWhenModalOpened] = useState<User | null>(null);
   const [oauthInProgress, setOauthInProgress] = useState(false);
 
-  // Track userdata when modal opens to detect new logins
+  // Track userdata when modal opens to detect new logins; every opening starts at sign in.
   useEffect(() => {
     if (visible) {
       setUserdataWhenModalOpened(userdata);
     } else {
       setUserdataWhenModalOpened(null);
       setOauthInProgress(false);
+      setView("sign-in");
+      setPending(null);
     }
   }, [visible, userdata]);
 
@@ -434,7 +457,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const currentUserId = userdata.id;
     const previousUserId = userdataWhenModalOpened?.id || null;
 
-    // Close if user ID changed (new login) or OAuth is in progress
     if (currentUserId && currentUserId !== previousUserId) {
       setOauthInProgress(false);
       onCancel();
@@ -444,21 +466,26 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   }, [visible, userdata, userdataWhenModalOpened, oauthInProgress, onCancel]);
 
-  const handleEmailLogin = async (values: {
-    email: string;
-    password: string;
-  }) => {
+  const finish = () =>
+    requestCurrentUser(dispatch)
+      .catch(() => null)
+      .then(() => {
+        form.resetFields();
+        onCancel();
+      });
+
+  const askForSecondFactor = (challenge: TwoFactorChallenge) => {
+    setPending(challenge);
+    setView("two-factor");
+  };
+
+  // Accounts that require two factors answer with a challenge instead of a token.
+  const handleEmailLogin = (values: { email: string; password: string }) => {
     setLoading(true);
-    try {
-      await loginUser(values, dispatch);
-      await requestCurrentUser(dispatch);
-      setLoading(false);
-      form.resetFields();
-      onCancel();
-    } catch (error) {
-      setLoading(false);
-      console.error("Login failed:", error);
-    }
+    passwordSignIn(values, dispatch)
+      .then(({ two_factor }) => (two_factor ? askForSecondFactor(two_factor) : finish()))
+      .catch((error) => message.error(error.message === "Invalid email or password" ? error.message : "Sign in failed"))
+      .finally(() => setLoading(false));
   };
 
   const handlePasskeyLogin = () =>
@@ -466,78 +493,72 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       .then(() => onCancel())
       .catch((error) => message.error(error.message));
 
-  const handleRecovery = (code: string) =>
-    code &&
-    recoverWithCode(code.trim(), dispatch)
-      .then((res) => {
-        showRecoveryCodes(res.recovery_codes);
-        onCancel();
-      })
-      .catch((error) => message.error(error.message));
-
   const handleOAuthLogin = (provider: string) => {
     setOauthInProgress(true);
     initiateOAuth(provider, window.location.origin + window.location.pathname);
   };
 
+  const back = () => setView("sign-in");
+
+  const body = () => {
+    switch (view) {
+      case "two-factor":
+        return pending && <TwoFactorForm pending={pending} onSignedIn={finish} onBack={back} />;
+      case "forgot-password":
+        return <ForgotPasswordForm onBack={back} />;
+      case "recover":
+        return (
+          <RecoverAccountForm
+            onSignedIn={onCancel}
+            onForgotPassword={() => setView("forgot-password")}
+            onBack={back}
+          />
+        );
+      default:
+        return (
+          <>
+            <Form form={form} name="login" onFinish={handleEmailLogin} layout="vertical" autoComplete="off">
+              <Form.Item
+                name="email"
+                rules={[
+                  { required: true, message: "Please input your email!" },
+                  { type: "email", message: "Please enter a valid email!" },
+                ]}
+              >
+                <Input prefix={<UserOutlined />} placeholder="Email" size="large" />
+              </Form.Item>
+
+              <Form.Item name="password" rules={[{ required: true, message: "Please input your password!" }]}>
+                <Input.Password prefix={<LockOutlined />} placeholder="Password" size="large" />
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit" block size="large" loading={loading}>
+                  Sign In
+                </Button>
+              </Form.Item>
+
+              <Form.Item>
+                <Button block size="large" onClick={handlePasskeyLogin}>
+                  Sign in with a passkey
+                </Button>
+              </Form.Item>
+
+              <div className="auth-links">
+                <a onClick={() => setView("forgot-password")}>Forgot password?</a>
+                <a onClick={() => setView("recover")}>Recover account</a>
+              </div>
+            </Form>
+
+            <OAuthButtons onSelect={handleOAuthLogin} />
+          </>
+        );
+    }
+  };
+
   return (
-    <AuthModal title="Sign In" visible={visible} onCancel={onCancel}>
-      <Form
-        form={form}
-        name="login"
-        onFinish={handleEmailLogin}
-        layout="vertical"
-        autoComplete="off"
-      >
-        <Form.Item
-          name="email"
-          rules={[
-            { required: true, message: "Please input your email!" },
-            { type: "email", message: "Please enter a valid email!" },
-          ]}
-        >
-          <Input prefix={<UserOutlined />} placeholder="Email" size="large" />
-        </Form.Item>
-
-        <Form.Item
-          name="password"
-          rules={[{ required: true, message: "Please input your password!" }]}
-        >
-          <Input.Password
-            prefix={<LockOutlined />}
-            placeholder="Password"
-            size="large"
-          />
-        </Form.Item>
-
-        <Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-            size="large"
-            loading={loading}
-          >
-            Sign In
-          </Button>
-        </Form.Item>
-
-        <Form.Item>
-          <Button block size="large" onClick={handlePasskeyLogin}>
-            Sign in with a passkey
-          </Button>
-        </Form.Item>
-
-        <Form.Item>
-          <Input.Search
-            placeholder="Recovery code"
-            enterButton="Use code"
-            onSearch={handleRecovery}
-          />
-        </Form.Item>
-      </Form>
-
-      <OAuthButtons onSelect={handleOAuthLogin} />
+    <AuthModal title={titles[view]} visible={visible} onCancel={onCancel}>
+      {body()}
     </AuthModal>
   );
 };
@@ -586,12 +607,20 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
   // Passkey sign-up needs only the email field, no password.
   const passkeySignup = (email: string) =>
-    registerPasskey(email, dispatch, new URLSearchParams(window.location.search).get("invite"));
+    registerPasskey(
+      email,
+      dispatch,
+      new URLSearchParams(window.location.search).get("invite"),
+    );
 
   // The first account on a fresh instance needs the operator's setup code.
   const withSetupCode = (email: string) => (error: Error) => {
-    const code = error.message === "setup_authorization_required" && window.prompt("Operator setup code");
-    return code ? authorizeSetup(code).then(() => passkeySignup(email)) : Promise.reject(error);
+    const code =
+      error.message === "setup_authorization_required" &&
+      window.prompt("Operator setup code");
+    return code
+      ? authorizeSetup(code).then(() => passkeySignup(email))
+      : Promise.reject(error);
   };
 
   const handlePasskeyRegister = () =>
@@ -613,13 +642,14 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   }) => {
     setLoading(true);
     try {
-      await registerUser(
+      const res = await registerUser(
         { email: values.email, password: values.password },
         dispatch,
       );
       await requestCurrentUser(dispatch);
       setLoading(false);
       form.resetFields();
+      showRecoveryCodes((res as { recovery_codes?: string[] }).recovery_codes);
       message.success("Registration successful!");
       onCancel();
     } catch (error: any) {
@@ -774,11 +804,11 @@ const add_auth_index = async ({
   const dir = join(LibDir || "", "lib/typescript/components/auth");
   const filename = "index.tsx";
   const content = `export { UserMenu } from "../UserMenu";
-export { InvitationsModal } from "./InvitationsModal";
+export { AccountModal } from "./account/AccountModal";
 export { showRecoveryCodes } from "./RecoveryCodes";
-export { PasskeysModal } from "./PasskeysModal";
 export { LoginModal } from "./LoginModal";
 export { RegisterModal } from "./RegisterModal";
+export { ResetPasswordModal } from "./ResetPasswordModal";
 export { OAuthButtons } from "./OAuthButtons";
 `;
 

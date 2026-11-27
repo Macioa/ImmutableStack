@@ -13,6 +13,7 @@ const MIGRATION_ORDER = [
   // Ithibati checks the configured invitation table, so it must exist first
   "create_invitations.exs",
   "add_ithibati.exs",
+  "add_two_factor_to_users.exs",
 ];
 
 // Ecto requires unique versions, and users must migrate before tables that reference it
@@ -329,6 +330,27 @@ end
   return generateFile({ dir, filename: migrationFilename(dir, "create_invitations.exs"), content }, "add_auth_invitations_migration");
 };
 
+// Two-factor columns: the requirement switch, the authenticator secret and when each method was enabled
+const add_auth_two_factor_migration = async ({ AppDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
+  const dir = join(AppDir || "", `${AppNameSnake}/priv/auth_repo/migrations`);
+  const content = `defmodule ${AppNameCamel}.AuthRepo.Migrations.AddTwoFactorToUsers do
+  use Ecto.Migration
+
+  def change do
+    alter table(:users) do
+      add :two_factor_enabled, :boolean, null: false, default: false
+      add :totp_secret, :binary
+      add :totp_enabled_at, :utc_datetime
+      add :totp_last_used_at, :utc_datetime
+      add :email_otp_enabled_at, :utc_datetime
+    end
+  end
+end
+`;
+
+  return generateFile({ dir, filename: migrationFilename(dir, "add_two_factor_to_users.exs"), content }, "add_auth_two_factor_migration");
+};
+
 export {
   add_auth_migration,
   add_auth_oauth_tokens_migration,
@@ -337,5 +359,6 @@ export {
   add_auth_access_control_migration,
   add_auth_ithibati_migration,
   add_auth_invitations_migration,
+  add_auth_two_factor_migration,
 };
 

@@ -266,6 +266,18 @@ const add_auth_accounts_context = async ({
     end
   end
 
+  @doc """
+  Changes the password, or sets the first one on a passkey-only account.
+
+  Only an existing password has to be confirmed with the current one.
+  """
+  def set_user_password(%User{hashed_password: nil} = user, _current_password, attrs) do
+    user |> User.password_changeset(attrs) |> Repo.update()
+  end
+
+  def set_user_password(user, current_password, attrs),
+    do: update_user_password(user, current_password || "", attrs)
+
   ## Session
 
   @doc """
@@ -561,6 +573,11 @@ const add_auth_user_schema = async ({
           email: String.t() | nil,
           hashed_password: String.t() | nil,
           confirmed_at: DateTime.t() | nil,
+          two_factor_enabled: boolean(),
+          totp_secret: binary() | nil,
+          totp_enabled_at: DateTime.t() | nil,
+          totp_last_used_at: DateTime.t() | nil,
+          email_otp_enabled_at: DateTime.t() | nil,
           access_entries: [UserAccess.t()] | nil,
           accounts: [Account.t()] | nil,
           access_tags: [map()] | nil,
@@ -574,6 +591,12 @@ const add_auth_user_schema = async ({
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+
+    field :two_factor_enabled, :boolean, default: false
+    field :totp_secret, :binary, redact: true
+    field :totp_enabled_at, :utc_datetime
+    field :totp_last_used_at, :utc_datetime
+    field :email_otp_enabled_at, :utc_datetime
 
     field :access_tags, {:array, :map}, virtual: true, default: []
 
@@ -993,6 +1016,24 @@ const add_auth_user_notifier = async ({
     #{url}
 
     If you didn't request this change, please ignore this.
+
+    ==============================
+    """)
+  end
+
+  @doc """
+  Deliver a two-factor sign-in code.
+  """
+  def deliver_two_factor_code(user, code) do
+    deliver(user.email, "Your sign-in code", """
+
+    ==============================
+
+    Hi #{user.email},
+
+    Your sign-in code is: #{code}
+
+    It expires in 10 minutes. If you didn't try to sign in, change your password.
 
     ==============================
     """)

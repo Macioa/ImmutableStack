@@ -215,6 +215,12 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   height: 1px;
   background: linear-gradient(90deg, transparent, #61dafb, #b300ff, transparent);
 }
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
 `;
 
   return generateFile({ dir: authDir(LibDir), filename: "auth.css", content }, "add_auth_styles");

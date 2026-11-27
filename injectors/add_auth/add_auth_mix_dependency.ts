@@ -39,7 +39,8 @@ const add_auth_mix_dependency = async ({
 
   content = content.replace(
     corsPlugRegex,
-    `{:pbkdf2_elixir, "~> 3.0"},\n      {:ithibati, "~> 0.11"},\n      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},\n      {:cors_plug, "~> 3.0"},`
+    `{:pbkdf2_elixir, "~> 3.0"},\n      {:ithibati, "~> 0.11"},
+      {:nimble_totp, "~> 1.0"},\n      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},\n      {:cors_plug, "~> 3.0"},`
   ).replace(
     /setup: \["deps.get"\],/,
     // Ithibati install state plus its integration rules
