@@ -74,9 +74,9 @@ const ensureAsdfTool = ([plugin, version]: [string, string]) =>
   ensureInstalled({
     check: `asdf list ${plugin}`,
     install: [
-      `asdf plugin-add ${plugin}`,
+      `asdf plugin list | grep -qx ${plugin} || asdf plugin add ${plugin}`,
       `asdf install ${plugin} ${version}`,
-      `asdf global ${plugin} ${version}`,
+      `asdf set -u ${plugin} ${version}`,
     ],
     found: `${plugin} is already installed.`,
   });
