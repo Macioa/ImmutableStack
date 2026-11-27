@@ -17,34 +17,28 @@ else
     exit 1
 fi
 
-# Install the pinned asdf release binary ahead of any other asdf on PATH
-export ASDF_DATA_DIR="$HOME/.asdf"
-export PATH="$ASDF_DATA_DIR/bin:$ASDF_DATA_DIR/shims:$PATH"
-if asdf --version 2>/dev/null | grep -qF "$ASDF_VERSION"; then
-    echo "asdf $ASDF_VERSION is installed."
+# Install the pinned mise ahead of any other mise on PATH
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+if mise --version 2>/dev/null | grep -qF "$MISE_VERSION"; then
+    echo "mise $MISE_VERSION is installed."
 else
-    echo "Installing asdf $ASDF_VERSION..."
-    os=$(uname -s | tr A-Z a-z)
-    arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-    mkdir -p "$ASDF_DATA_DIR/bin"
-    curl -fsSL "https://github.com/asdf-vm/asdf/releases/download/v$ASDF_VERSION/asdf-v$ASDF_VERSION-$os-$arch.tar.gz" | tar -xz -C "$ASDF_DATA_DIR/bin" asdf
-    asdf --version | grep -qF "$ASDF_VERSION" || { echo "asdf $ASDF_VERSION installation failed."; exit 1; }
+    echo "Installing mise $MISE_VERSION..."
+    curl -fsSL https://mise.run | MISE_VERSION="v$MISE_VERSION" MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh
+    mise --version | grep -qF "$MISE_VERSION" || { echo "mise $MISE_VERSION installation failed."; exit 1; }
 fi
 
-# Install each pinned tool unless that exact version is present
+# Install each pinned tool unless that exact version is present (precompiled where available)
 install_tool() {
-    if asdf where "$1" "$2" >/dev/null 2>&1; then
+    if mise where "$1@$2" >/dev/null 2>&1; then
         echo "$1 $2 is already installed."
     else
         echo "Installing $1 $2..."
-        asdf plugin list | grep -qx "$1" || asdf plugin add "$1"
-        asdf install "$1" "$2"
-        asdf set -u "$1" "$2"
+        mise use --global "$1@$2"
     fi
 }
 install_tool erlang "$ERLANG_VERSION"
 install_tool elixir "$ELIXIR_VERSION"
-install_tool nodejs "$NODE_VERSION"
+install_tool node "$NODE_VERSION"
 
 # Install global npm packages
 echo "Installing global npm packages..."

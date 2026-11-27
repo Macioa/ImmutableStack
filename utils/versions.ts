@@ -21,30 +21,23 @@ const readVersions = (dir: string): Versions => {
   process.exit(1);
 };
 
-const asdfEnv = ({ ERLANG_VERSION, ELIXIR_VERSION }: Versions) => ({
-  ASDF_ERLANG_VERSION: ERLANG_VERSION,
-  ASDF_ELIXIR_VERSION: ELIXIR_VERSION,
+const pinnedEnv = ({ ERLANG_VERSION, ELIXIR_VERSION, NODE_VERSION }: Versions) => ({
+  MISE_ERLANG_VERSION: ERLANG_VERSION,
+  MISE_ELIXIR_VERSION: ELIXIR_VERSION,
+  MISE_NODE_VERSION: NODE_VERSION,
 });
 
-const pinnedEnv = (versions: Versions) => {
-  const { ERLANG_VERSION, ELIXIR_VERSION, NODE_VERSION } = versions;
-  return {
-    ...asdfEnv(versions),
-    ASDF_NODEJS_VERSION: NODE_VERSION,
-    MISE_ERLANG_VERSION: ERLANG_VERSION,
-    MISE_ELIXIR_VERSION: ELIXIR_VERSION,
-    MISE_NODE_VERSION: NODE_VERSION,
-  };
-};
+const miseShims = ({ LOCALAPPDATA, HOME, USERPROFILE }: NodeJS.ProcessEnv) =>
+  isWindows ? LOCALAPPDATA && join(LOCALAPPDATA, "mise", "shims") : join(HOME || USERPROFILE || "", ".local", "share", "mise", "shims");
 
-// Windows: run commands through the mise shims so pinned versions apply
-const miseShimEnv = ({ LOCALAPPDATA, PATH }: NodeJS.ProcessEnv) =>
-  isWindows && LOCALAPPDATA
-    ? { PATH: `${join(LOCALAPPDATA, "mise", "shims")}${delimiter}${PATH}` }
-    : {};
+// Run commands through the mise shims so pinned versions apply
+const miseShimEnv = (env: NodeJS.ProcessEnv) => {
+  const shims = miseShims(env);
+  return shims ? { PATH: `${shims}${delimiter}${env.PATH}` } : {};
+};
 
 const applyPinnedVersions = (dir: string) =>
   Object.assign(process.env, pinnedEnv(readVersions(dir)), miseShimEnv(process.env));
 
-export { applyPinnedVersions, asdfEnv, parseVersions, readVersions };
+export { applyPinnedVersions, parseVersions, readVersions };
 export type { Versions };
