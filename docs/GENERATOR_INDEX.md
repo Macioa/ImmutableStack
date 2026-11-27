@@ -30,6 +30,10 @@ dep or route.
 
 - **Exports:** `gen_react`
 
+## composite/init_agents/index.ts
+
+- **Exports:** `init_agents`, `syncedAgents`, `withDefaultAgents`
+
 ## composite/init_deps/index.ts
 
 - **Exports:** `install_all_deps`, `install_mix_deps`, `install_ui_deps`
@@ -505,10 +509,11 @@ dep or route.
 
 - **Exports:** `generateFile`
 
-## generators/init_configs/gen_claude_md.ts
+## generators/init_configs/gen_agents_md.ts
 
-- **Exports:** `gen_claude_md`
-- **Writes:** `CLAUDE.md`
+- **Exports:** `gen_agents_md`
+- **Writes:** `AGENTS.md`
+- **Edits:** `.agents`
 
 ## generators/init_configs/gen_cursorrules.ts
 
@@ -576,7 +581,7 @@ dep or route.
 
 ## generators/init_configs/index.ts
 
-- **Exports:** `gen_all_configs`, `gen_claude_md`, `gen_cursorrules`, `gen_cursorrules_phoenix`, `gen_cursorrules_react`, `gen_gitignore`, `gen_gitignore_phoenix`, `gen_gitignore_react`, `gen_readme`, `gen_readme_phoenix`, `gen_readme_react`, `gen_dev_config_env`, `gen_docker_config_env`
+- **Exports:** `gen_all_configs`, `gen_agents_md`, `gen_cursorrules`, `gen_cursorrules_phoenix`, `gen_cursorrules_react`, `gen_gitignore`, `gen_gitignore_phoenix`, `gen_gitignore_react`, `gen_readme`, `gen_readme_phoenix`, `gen_readme_react`, `gen_dev_config_env`, `gen_docker_config_env`
 
 ## generators/init_docker/gen_docker_ui_prod.ts
 
@@ -938,6 +943,11 @@ dep or route.
 ## injectors/index.ts
 
 - **Exports:** `inject_file`, `InjectType`
+
+## injectors/init_agents/inject_agents_script_package.ts
+
+- **Exports:** `agentsyncCommand`, `inject_agents_script_package`
+- **Edits:** `package.json`
 
 ## injectors/init_docker/inject_docker_scripts_package.ts
 

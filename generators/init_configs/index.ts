@@ -1,4 +1,4 @@
-import { gen_claude_md } from "./gen_claude_md";
+import { gen_agents_md } from "./gen_agents_md";
 import { gen_cursorrules } from "./gen_cursorrules";
 import { gen_cursorrules_phoenix } from "./gen_cursorrules_phoenix";
 import { gen_cursorrules_react } from "./gen_cursorrules_react";
@@ -16,7 +16,7 @@ const gen_all_configs = async (appdata: any, uiName: string = 'ui') =>
     gen_gitignore(appdata),
     gen_gitignore_phoenix(appdata),
     gen_gitignore_react(appdata, uiName),
-    gen_claude_md(appdata),
+    gen_agents_md(appdata),
     gen_cursorrules(appdata),
     gen_cursorrules_phoenix(appdata),
     gen_cursorrules_react(appdata, uiName),
@@ -27,7 +27,7 @@ const gen_all_configs = async (appdata: any, uiName: string = 'ui') =>
 
 export {
   gen_all_configs,
-  gen_claude_md,
+  gen_agents_md,
   gen_cursorrules,
   gen_cursorrules_phoenix,
   gen_cursorrules_react,
