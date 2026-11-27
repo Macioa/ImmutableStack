@@ -76,7 +76,12 @@ const delete_single = ({ genName }: StringOnlyMap) => {
 const delete_single_by_id = ({ genName }: StringOnlyMap) => {
   validate({ genName }, "delete_single_by_id");
   return `
-    def delete_${genName}(id) when is_binary(id), do: get_${genName}!(id) |> Repo.delete!    
+    def delete_${genName}(id) when is_binary(id) do
+      case get_${genName}(id) do
+        nil -> {:error, :not_found}
+        ${genName} -> Repo.delete!(${genName})
+      end
+    end
     `;
 };
 

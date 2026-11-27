@@ -47,10 +47,9 @@ const add_api_page_controller = async ({ AppDir, AppNameSnake, ApiNameSnake, Api
   const content = `defmodule ${ApiNameCamel}.PageController do
   use ${ApiNameCamel}, :controller
   
+  # API apps have no UI, so the root reports the app and its status
   def index(conn, _params) do
-    conn
-    |> put_resp_content_type("text/html")
-    |> send_file(200, Path.join([:code.priv_dir(:${apiAppName}), "static", "index.html"]))
+    json(conn, %{name: "${apiAppName}", status: "ok"})
   end
 end`;
 

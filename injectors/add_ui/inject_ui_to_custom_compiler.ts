@@ -16,7 +16,7 @@ const inject_ui_to_custom_compiler = async (appdata: AppData, uiName: string) =>
     [
       InjectType.AFTER,
       /project_uis\s*=\s*\[/,
-      `      {"npm run build:${uiName}", Path.join([app_path, "./..", "${AppNameSnake}_${uiName}"]) |> Path.expand()},\n`,
+      `      {"pnpm run build:${uiName}", Path.join([app_path, "./..", "${AppNameSnake}_${uiName}"]) |> Path.expand()},\n`,
     ],
   ];
 

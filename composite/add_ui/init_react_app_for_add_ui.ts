@@ -4,25 +4,16 @@ import { gen_app_tsx } from "../../generators/init_react/gen_app_tsx";
 import { inject_build_aliases } from "../../injectors/init_react/inject_build_aliases";
 import { inject_vite_build_output } from "../../injectors/init_react/inject_vite_build_output";
 import { AppData } from "../../readers/get_app_data";
-import { execute as exec } from "../../runners";
+import { scaffold_react_app_with_vite } from "../init_react/init_react_app_with_vite";
 import { log } from "../../utils/logger";
 
-const init_react_app_for_add_ui = async (appdata: AppData, uiName: string = 'ui') => {
-  const { AppNameSnake, AppDir } = appdata;
-  log(
-    { level: 1, color: "BLUE" },
-    `\nGenerating React App: ${AppNameSnake}_${uiName} with Vite ...`
-  );
-  const init = await exec(
-    {
-      command: `y | npx create-vite@9.3.4 ${AppNameSnake}_${uiName} --template react-ts --no-install`,
-      dir: AppDir,
-      // options: {
-      //   timeoutResolve: 1000 * 30,
-      // }
-    },
-    "init_react_app_for_add_ui"
-  );
+// offline: create-vite from the local npx cache, for projects using the dep cache
+const init_react_app_for_add_ui = async (
+  appdata: AppData,
+  uiName: string = 'ui',
+  { offline = false }: { offline?: boolean } = {}
+) => {
+  const init = await scaffold_react_app_with_vite(appdata, uiName, { offline });
 
   log(
     { level: 1, color: "BLUE" },

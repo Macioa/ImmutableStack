@@ -79,6 +79,12 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
     Write-Output "!!! Please install Docker Desktop manually on Windows: https://www.docker.com/products/docker-desktop/ !!!"
 }
 
+# Install pnpm for generated UI projects
+if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+    Write-Output "Installing pnpm..."
+    Invoke-Native "mise" @("exec", "--", "npm", "install", "-g", "pnpm")
+}
+
 # Install Hex and Phoenix
 Write-Output "Installing Hex and Phoenix..."
 Invoke-Native "mise" @("exec", "--", "mix", "local.hex", "--force")

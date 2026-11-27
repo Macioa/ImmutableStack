@@ -5,7 +5,7 @@ import { ImmutableGenerator, GenTypes } from "@/commands/immutable_gen";
 import { getGenerator } from "./generator";
 import { getTypeEquivalents, readAllTypes } from "./typedict";
 import { getNamesFromSingularSnakeCase as getNames } from "@/utils/string";
-import { log, sleep } from "@/utils/logger";
+import { log, pause } from "@/utils/logger";
 
 type GenData = {
   generator: ImmutableGenerator;
@@ -51,7 +51,7 @@ const readGenFile = async (filePath: string): Promise<GenData> => {
   genLists.forEach(([name, array]) =>
     log({ level: 3, color: "YELLOW" }, `${name}:`, array)
   );
-  await sleep(2);
+  await pause(2);
 
   const genTypes = readAllTypes(fileContent, typeDict);
   await log({ level: 3, color: "BLUE" }, "TypeDict: \n", genTypes);

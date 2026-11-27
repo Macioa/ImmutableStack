@@ -27,15 +27,15 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
       ...newScripts,
       "dev": Object.keys(existingPackageJson.scripts)
         .filter(key => key.startsWith('dev:') && key !== 'dev')
-        .map(key => `npm run ${key}`)
+        .map(key => `pnpm run ${key}`)
         .join(' & '),
       "build": Object.keys(existingPackageJson.scripts)
         .filter(key => key.startsWith('build:') && key !== 'build')
-        .map(key => `npm run ${key}`)
+        .map(key => `pnpm run ${key}`)
         .join(' && '),
       "test": Object.keys(existingPackageJson.scripts)
         .filter(key => key.startsWith('test:') && key !== 'test')
-        .map(key => `npm run ${key}`)
+        .map(key => `pnpm run ${key}`)
         .join(' && '),
     };
     
@@ -63,11 +63,11 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
       private: true,
       scripts: {
         [`dev:${uiName}`]: `cd ${AppNameSnake}_${uiName} && vite`,
-        "dev": `npm run dev:${uiName}`,
+        "dev": `pnpm run dev:${uiName}`,
         [`build:${uiName}`]: `cd ${AppNameSnake}_${uiName} && tsc -b && vite build`,
-        "build": `npm run build:${uiName}`,
+        "build": `pnpm run build:${uiName}`,
         [`test:${uiName}`]: `cd ${AppNameSnake}_${uiName} && vitest run`,
-        "test": `npm run test:${uiName}`
+        "test": `pnpm run test:${uiName}`
       },
       dependencies: {
         "@reduxjs/toolkit": "^2.15.0",

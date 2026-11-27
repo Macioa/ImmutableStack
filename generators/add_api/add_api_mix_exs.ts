@@ -44,7 +44,7 @@ const add_api_mix_exs = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCame
       {:phoenix_live_dashboard, "~> 0.9.1"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 1.0"},
       {:${AppNameSnake}, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.5"}

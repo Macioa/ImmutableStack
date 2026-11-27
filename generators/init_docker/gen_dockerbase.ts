@@ -11,7 +11,7 @@ const gen_docker_base = async ({ UmbrellaDir }: AppData) => {
 #   compiled:  full umbrella and UI, ready to run or release
 
 FROM elixir:1.20-alpine AS toolchain
-RUN apk add --no-cache build-base git npm nodejs inotify-tools bash postgresql-dev
+RUN apk add --no-cache build-base git npm nodejs inotify-tools bash postgresql-dev && npm install -g pnpm
 RUN mix local.hex --force && \
     mix local.rebar --force && \
     mix archive.install hex phx_new 1.8.17 --force
@@ -20,7 +20,7 @@ WORKDIR /app
 # Keeps only dependency manifests so source edits do not invalidate the deps layer
 FROM alpine:3.20 AS manifests
 COPY apps /apps
-RUN find /apps -type f ! -name mix.exs ! -name package.json ! -name package-lock.json -delete
+RUN find /apps -type f ! -name mix.exs ! -name package.json ! -name pnpm-lock.yaml ! -name pnpm-workspace.yaml -delete
 
 FROM toolchain AS deps
 ARG MIX_ENV=docker

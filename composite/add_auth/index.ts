@@ -66,16 +66,17 @@ import {
   add_auth_to_all_uis,
 } from "../../injectors/add_auth";
 import { log } from "../../utils/logger";
+import { timed } from "../../utils/profile";
 
 const add_auth = async (apiAppData: ApiAppData) => {
   const { AppNameSnake, ApiNameSnake } = apiAppData;
 
   log({ level: 2, color: "BLUE" }, `\nGenerating base API for ${AppNameSnake}_${ApiNameSnake}...`);
-  const base = await add_api(apiAppData);
+  const base = await timed("base api", () => add_api(apiAppData));
 
   log({ level: 2, color: "BLUE" }, "\nAdding authentication modules...");
 
-  const authGenerators = await Promise.all([
+  const authGenerators = await timed("auth generators", () => Promise.all([
     add_auth_accounts_context(apiAppData),
     add_auth_user_schema(apiAppData),
     add_auth_user_token(apiAppData),
@@ -122,14 +123,14 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_user_response(apiAppData),
     add_auth_user_state(apiAppData),
     add_auth_user_state_test(apiAppData),
-  ]);
+  ]));
 
   log({ level: 2, color: "BLUE" }, "\nApplying authentication configuration updates...");
 
   // Config injectors format files that load the new deps, so fetch them first
-  const uiDependencies = await add_auth_ui_dependencies(apiAppData);
-  const mixDependency = await add_auth_mix_dependency(apiAppData);
-  const authInjectors = await Promise.all([
+  const uiDependencies = await timed("auth ui deps install", () => add_auth_ui_dependencies(apiAppData));
+  const mixDependency = await timed("auth mix deps install", () => add_auth_mix_dependency(apiAppData));
+  const authInjectors = await timed("auth config injectors", () => Promise.all([
     uiDependencies,
     mixDependency,
     add_auth_test_config(apiAppData),
@@ -141,24 +142,24 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_docker_compose(apiAppData),
     add_auth_custom_compiler(apiAppData),
     add_auth_keys(apiAppData),
-  ]);
+  ]));
 
   log({ level: 2, color: "BLUE" }, "\nAdding access control plug...");
 
-  const authPlug = await add_auth_plug(apiAppData);
+  const authPlug = await timed("auth plug", () => add_auth_plug(apiAppData));
 
   log({ level: 2, color: "BLUE" }, "\nRequiring auth tokens for the web API and sockets...");
 
-  const webApiAuth = [
+  const webApiAuth = await timed("web api auth", async () => [
     await add_auth_api_auth_plug(apiAppData),
     await add_auth_web_api_auth(apiAppData),
-  ].flat(2);
+  ].flat(2));
 
   log({ level: 2, color: "GREEN" }, "\nAuth enhancements applied successfully.");
 
   log({ level: 2, color: "BLUE" }, "\nAdding sign in to every UI...");
 
-  const uiWiring = await add_auth_to_all_uis(apiAppData);
+  const uiWiring = await timed("auth ui wiring", () => add_auth_to_all_uis(apiAppData));
 
   return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug, ...webApiAuth, ...uiWiring];
 };

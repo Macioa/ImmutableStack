@@ -8,16 +8,22 @@ import { join } from "@/utils/path";
 import { execute as exec } from "@/runners";
 import { log, setLogLevel } from "@/utils/logger";
 import { applyPinnedVersions } from "@/utils/versions";
+import { parseFlags, positionalArgs } from "@/utils/flags";
+import { run_command, start_quick_mode } from "@/utils/quick";
+import { timed } from "@/utils/profile";
+import { DEFAULT_CACHE_DIR, uses_dep_cache } from "@/utils/dep_cache";
 
 setLogLevel(5);
 applyPinnedVersions(__dirname);
 
-const args = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const { quick } = parseFlags(argv);
+const args = positionalArgs(argv);
 
 async function main() {
   if (args.length < 1) {
     console.error(
-      "Usage: immutable -add_ui <ui_name>\n\nExample: immutable -add_ui admin"
+      "Usage: immutable -add_ui <ui_name> [-quick]\n\nExample: immutable -add_ui admin"
     );
     process.exit(1);
   }
@@ -28,7 +34,7 @@ async function main() {
     .replace(/[^a-z0-9_]/g, "");
 
   const AppData = await getAppData();
-  
+
   if (!AppData) {
     console.error(
       "Error: Could not find mix.exs in current directory.\n" +
@@ -38,34 +44,47 @@ async function main() {
   }
 
   const { AppNameSnake, UmbrellaDir } = AppData;
+  start_quick_mode(AppNameSnake, "add_ui", { quick });
+  // Projects initialized with -cache reuse the cache for assets and create-vite
+  const cached = uses_dep_cache(AppData);
 
   log(
     { level: 1, color: "GREEN" },
     `\n\n Adding new UI: ${AppNameSnake}_${uiName}\n\n`
   );
 
-  const _react = await init_react_app_for_add_ui(AppData, uiName);
-  const _assets = await fetch_assets(AppData, uiName);
-  const _build_tools = await build_tool_agnostic_init_tasks_for_add_ui(AppData, uiName);
-  const _gitignore = await gen_gitignore_react(AppData, uiName);
-  
-  log(
-    { level: 2, color: "BLUE" },
-    `\n\n Installing React dependencies from centralized apps/package.json...\n\n`
-  );
-  
-  const _deps = await exec(
-    {
-      command: `npm install`,
-      dir: `${UmbrellaDir}/apps`,
-    },
-    "add_ui"
-  );
+  await run_command(async () => {
+    const _react = await timed("scaffold + configure ui", () =>
+      init_react_app_for_add_ui(AppData, uiName, { offline: cached })
+    );
+    const _assets = await timed("assets", () =>
+      fetch_assets(AppData, uiName, { cacheDir: cached ? DEFAULT_CACHE_DIR : undefined })
+    );
+    const _build_tools = await timed("ui build tools", () => build_tool_agnostic_init_tasks_for_add_ui(AppData, uiName));
+    const _gitignore = await gen_gitignore_react(AppData, uiName);
 
-  // Projects that already ran add_auth get the sign in menu in the new UI too
-  const _auth = has_auth_ui(AppData)
-    ? await add_auth_to_ui(join(AppData.AppDir, `${AppNameSnake}_${uiName}`))
-    : [];
+    log(
+      { level: 2, color: "BLUE" },
+      `\n\n Installing React dependencies from centralized apps/package.json...\n\n`
+    );
+
+    const _deps = await timed("pnpm install", () =>
+      exec(
+        {
+          command: `pnpm install`,
+          dir: `${UmbrellaDir}/apps`,
+        },
+        "add_ui"
+      )
+    );
+
+    // Projects that already ran add_auth get the sign in menu in the new UI too
+    const _auth = await timed("auth ui wiring", async () =>
+      has_auth_ui(AppData)
+        ? await add_auth_to_ui(join(AppData.AppDir, `${AppNameSnake}_${uiName}`))
+        : []
+    );
+  });
 
   log(
     { level: 2, color: "GREEN" },
@@ -74,4 +93,3 @@ async function main() {
 }
 
 main().catch(console.error);
-
