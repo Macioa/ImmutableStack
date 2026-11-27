@@ -100,10 +100,36 @@ const add_auth_accounts_context = async ({
 
   """
   def register_user(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:account, User.registration_changeset(%User{}, attrs))
+    |> claim_first_account()
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{account: user}} -> {:ok, user}
+      {:error, :account, changeset, _changes} -> {:error, changeset}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
   end
+
+  @doc """
+  Appends the first-account claim to a multi whose \`:account\` step inserts a user.
+
+  The first account becomes the admin holding the "invitations" tag. With
+  \`config :ithibati, initial_claim: :operator_code\` (prod) only a sign-up that
+  carries the operator's proof claims; elsewhere the first sign-up of any kind does.
+  """
+  def claim_first_account(multi, authorization \\\\ nil) do
+    if Ithibati.Identity.Instance.needs_setup?() and (authorization || not operator_claim?()) do
+      multi
+      |> Ithibati.Identity.Instance.claim(authorization: authorization)
+      |> Ecto.Multi.insert(:admin, &%UserAccess{user_id: &1.account.id, tag_id: "invitations"})
+    else
+      multi
+    end
+  end
+
+  @doc "Whether the first account needs the operator code from the setup task."
+  def operator_claim?, do: Application.get_env(:ithibati, :initial_claim, :open) == :operator_code
 
   @doc """
   Returns an %Ecto.Changeset{} for tracking user changes.
@@ -245,26 +271,25 @@ const add_auth_accounts_context = async ({
   @doc """
   Generates a session token.
   """
-  def generate_user_session_token(user) do
-    {token, user_token} = UserToken.build_session_token(user)
-    Repo.insert!(user_token)
-    token
-  end
+  def generate_user_session_token(user), do: Ithibati.Identity.Sessions.generate_session_token(user)
 
   @doc """
   Gets the user with the given signed token.
   """
-  def get_user_by_session_token(token) do
-    {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
-  end
+  def get_user_by_session_token(token), do: Ithibati.Identity.Sessions.get_user_by_session_token(token)
 
   @doc """
   Deletes the signed token with the given context.
   """
-  def delete_user_session_token(token) do
-    Repo.delete_all(UserToken.by_token_and_context_query(token, "session"))
-    :ok
+  def delete_user_session_token(token), do: Ithibati.Identity.Sessions.delete_session_token(token)
+
+  @doc """
+  Revokes every session of the user and disconnects their sockets.
+  """
+  def revoke_all_user_sessions(user) do
+    user
+    |> Ithibati.Identity.Sessions.revoke_all()
+    |> then(&Ithibati.Web.Gate.disconnect_sessions(${ApiNameCamel}.Endpoint, &1))
   end
 
   ## Confirmation
@@ -519,6 +544,11 @@ const add_auth_user_schema = async ({
   const filename = "user.ex";
   const content = `defmodule ${ApiNameCamel}.Accounts.User do
   use Ecto.Schema
+  use Ithibati.Schema.User,
+    identifier: :email,
+    format: Ithibati.Schema.Identifier.email_format(),
+    unique_index: false
+
   import Ecto.Changeset
 
   alias ${ApiNameCamel}.Accounts.{Account, UserAccess}
@@ -539,7 +569,7 @@ const add_auth_user_schema = async ({
         }
 
   schema "users" do
-    field :email, :string
+    ithibati_account()
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true

@@ -32,7 +32,15 @@ export { add_auth_docker_init_db } from "./add_auth_docker_init_db";
 export { add_auth_router } from "./add_auth_router";
 export { add_auth_plug } from "./add_auth_plug";
 export { add_auth_api_auth_plug } from "./add_auth_api_auth_plug";
-export { add_auth_migration, add_auth_oauth_tokens_migration, add_auth_oauth_states_migration, add_auth_accounts_migration, add_auth_access_control_migration } from "./add_auth_migration";
+export {
+  add_auth_migration,
+  add_auth_oauth_tokens_migration,
+  add_auth_oauth_states_migration,
+  add_auth_accounts_migration,
+  add_auth_access_control_migration,
+  add_auth_ithibati_migration,
+  add_auth_invitations_migration,
+} from "./add_auth_migration";
 export { add_auth_oauth_controller } from "./add_auth_oauth_controller";
 export { add_auth_oauth_adapter, add_auth_oauth_provider_behaviour } from "./add_auth_oauth_adapter";
 export { add_auth_oauth_providers } from "./add_auth_oauth_providers";
@@ -53,3 +61,27 @@ export {
 
 export { add_auth_oauth_buttons } from "./add_auth_oauth_buttons";
 export { add_auth_modal, add_auth_styles } from "./add_auth_modal";
+export {
+  add_auth_passkey_handler,
+  add_auth_invitation_schema,
+  add_auth_passkey_json_controller,
+  add_auth_recovery_code_json_controller,
+  add_auth_invitation_json_controller,
+  add_auth_setup_json_controller,
+  add_auth_setup_code_task,
+  add_auth_credo,
+  add_auth_ithibati_helpers,
+  add_auth_sessions_test,
+  add_auth_ceremony_test,
+  add_auth_passkey_management_test,
+  add_auth_recovery_codes_test,
+  add_auth_invitations_test,
+  add_auth_operator_guard_test,
+  add_auth_browser_test,
+  add_auth_web_test_helper,
+  add_auth_passkey_requests,
+  add_auth_ithibati_types,
+  add_auth_passkeys_modal,
+  add_auth_invitations_modal,
+  add_auth_recovery_codes,
+} from "./add_auth_passkeys";
