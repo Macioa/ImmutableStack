@@ -8,29 +8,6 @@ else
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Check if asdf is installed
-if brew list asdf >/dev/null 2>&1; then
-    echo "asdf is installed."
-else
-    echo "Installing asdf..."
-    brew install asdf
-fi
-
-# Add asdf to PATH and source its scripts
-if [ -f "$HOME/.asdf/asdf.sh" ]; then
-    . "$HOME/.asdf/asdf.sh"
-    . "$HOME/.asdf/completions/asdf.bash"
-else
-    echo "asdf scripts not found. Please ensure asdf is installed correctly."
-    exit 1
-fi
-
-# Validate that asdf is working
-if ! command -v asdf >/dev/null 2>&1; then
-    echo "asdf installation failed or is not in PATH."
-    exit 1
-fi
-
 # Check if versions.sh is in the same directory and source it
 if [ -f "$(dirname "$0")/versions.sh" ]; then
     echo "Sourcing versions.sh..."
@@ -40,35 +17,34 @@ else
     exit 1
 fi
 
-# Install Erlang using asdf
-if asdf list erlang >/dev/null 2>&1; then
-    echo "Erlang is already installed."
+# Install the pinned asdf release binary ahead of any other asdf on PATH
+export ASDF_DATA_DIR="$HOME/.asdf"
+export PATH="$ASDF_DATA_DIR/bin:$ASDF_DATA_DIR/shims:$PATH"
+if asdf --version 2>/dev/null | grep -qF "$ASDF_VERSION"; then
+    echo "asdf $ASDF_VERSION is installed."
 else
-    echo "Installing Erlang..."
-    asdf plugin-add erlang
-    asdf install erlang $ERLANG_VERSION
-    asdf global erlang $ERLANG_VERSION
+    echo "Installing asdf $ASDF_VERSION..."
+    os=$(uname -s | tr A-Z a-z)
+    arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+    mkdir -p "$ASDF_DATA_DIR/bin"
+    curl -fsSL "https://github.com/asdf-vm/asdf/releases/download/v$ASDF_VERSION/asdf-v$ASDF_VERSION-$os-$arch.tar.gz" | tar -xz -C "$ASDF_DATA_DIR/bin" asdf
+    asdf --version | grep -qF "$ASDF_VERSION" || { echo "asdf $ASDF_VERSION installation failed."; exit 1; }
 fi
 
-# Install Elixir using asdf
-if asdf list elixir >/dev/null 2>&1; then
-    echo "Elixir is already installed."
-else
-    echo "Installing Elixir..."
-    asdf plugin-add elixir
-    asdf install elixir $ELIXIR_VERSION
-    asdf global elixir $ELIXIR_VERSION
-fi
-
-# Install Node.js using asdf
-if asdf list nodejs >/dev/null 2>&1; then
-    echo "Node.js is already installed."
-else
-    echo "Installing Node.js..."
-    asdf plugin-add nodejs
-    asdf install nodejs $nodejs
-    asdf global nodejs $nodejs
-fi
+# Install each pinned tool unless that exact version is present
+install_tool() {
+    if asdf where "$1" "$2" >/dev/null 2>&1; then
+        echo "$1 $2 is already installed."
+    else
+        echo "Installing $1 $2..."
+        asdf plugin list | grep -qx "$1" || asdf plugin add "$1"
+        asdf install "$1" "$2"
+        asdf set -u "$1" "$2"
+    fi
+}
+install_tool erlang "$ERLANG_VERSION"
+install_tool elixir "$ELIXIR_VERSION"
+install_tool nodejs "$NODE_VERSION"
 
 # Install global npm packages
 echo "Installing global npm packages..."
@@ -77,6 +53,6 @@ npm ci -g create-vite@9.3.4
 # Install Hex and Phoenix
 echo "Installing Hex and Phoenix..."
 mix local.hex --force
-mix archive.install hex phx_new 1.8.17 --force
+mix archive.install hex phx_new $PHOENIX_VERSION --force
 
 echo "Setup complete."
