@@ -47,6 +47,8 @@ import { getAppData } from "../readers/get_app_data";
 import { chunkArray } from "../utils/chunk";
 import { cacheLogCommand } from "../utils/history_cache";
 import { log } from "@/utils/logger";
+import { resolveShell } from "../utils/os_adapter";
+import { getSetting } from "../utils/settings";
 import mixOrDocker from "./nomix";
 
 type Execution = {
@@ -88,6 +90,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
     ...ExecutionDefaults.options,
     ...options,
   };
+  const shell = resolveShell(await getSetting("shell"));
 
   if (prereq) {
     const prereqDir = prereq.dir || dir;
@@ -100,7 +103,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
       const executedDir = pathResolve(prereqDir);
       mkdirSync(executedDir, { recursive: true });
       const [cmd, ...args] = prereqCommand.split(" ");
-      const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
+      const child = spawn(cmd, args, { cwd: executedDir, shell, env });
       
       child.on("close", (exitcode) => resolve(exitcode || 0));
       child.on("error", (error) => {
@@ -124,7 +127,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
           await new Promise<void>((resolve, reject) => {
             const executedDir = pathResolve(prereqDir);
             const [cmd, ...args] = recoverCommand.split(" ");
-            const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
+            const child = spawn(cmd, args, { cwd: executedDir, shell, env });
             
             child.on("close", (exitcode) => {
               if (exitcode && exitcode !== 0) {
@@ -172,7 +175,7 @@ const execute = async (execution: Execution, caller: string | null = null) => {
       const executedDir = pathResolve(dir);
       mkdirSync(executedDir, { recursive: true });
       const [cmd, ...args] = command.split(" ");
-      const child = spawn(cmd, args, { cwd: executedDir, shell: true, env });
+      const child = spawn(cmd, args, { cwd: executedDir, shell, env });
 
       child.stdout.on("data", (data) => {
         log({ level: 5 }, data.toString());

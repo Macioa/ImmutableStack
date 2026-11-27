@@ -1,5 +1,5 @@
 import fs from "fs";
-import { format } from "../utils/format";
+import { format, isPendingFormat } from "../utils/format";
 import { cacheLogByPath as cacheLog } from "../utils/history_cache";
 import { log } from "@/utils/logger";
 
@@ -11,16 +11,34 @@ enum InjectType {
   REPLACE = "REPLACE",
 }
 
+// formatFirst: format a file still queued by deferred formatting before matching,
+// for injections whose regex expects formatted code
 type FileInjection = {
   file: string;
   injections: Injection[];
+  formatFirst?: boolean;
+};
+
+// Debug (FORMAT_PROBE=1): reports injections whose regex misses a still-unformatted file,
+// which need formatFirst, then formats the file so the run continues
+const probeFormatNeed = async (file: string, injections: Injection[], caller: string | null) => {
+  if (!isPendingFormat(file)) return;
+  const raw = fs.readFileSync(file, "utf8");
+  const misses = injections.filter(
+    ([, regex, content]) => typeof content != "function" && !new RegExp(regex.source, regex.flags).test(raw)
+  );
+  if (!misses.length) return;
+  console.log(`NEEDS_FORMAT_FIRST ${caller} ${file}`);
+  await format(file, { force: true });
 };
 
 const inject_file = async (
-  { file, injections }: FileInjection,
+  { file, injections, formatFirst = false }: FileInjection,
   caller: string | null = null
 ) => {
   try {
+    if (process.env.FORMAT_PROBE) await probeFormatNeed(file, injections, caller);
+    if (formatFirst && isPendingFormat(file)) await format(file, { force: true });
     if (!!caller) log({ level: 5, color: "TAN" }, caller);
     log({ level: 5 }, `Injecting into ${file} ...`);
 
@@ -38,7 +56,12 @@ const inject_file = async (
               typeof new_content == "function"
                 ? new_content(new_file)
                 : new_file.replace(regex, new_content);
-            if (!!new_content && (replaced == new_file || replaced == "")) {
+            if (typeof new_content == "function") {
+              // For function-based replacements, always accept the result
+              log({ level: 8 }, `Applied function replacement in ${file}`);
+              new_file = replaced;
+            } else if (!!new_content && (replaced == new_file || replaced == "")) {
+              // Only check for pattern not found for string-based replacements
               error(regex, file, reject);
               return;
             } else {

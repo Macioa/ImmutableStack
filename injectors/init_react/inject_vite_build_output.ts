@@ -2,15 +2,17 @@ import path from "path";
 import { inject_file, Injection, InjectType } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
-const inject_vite_build_output = async ({ AppNameSnake, UiDir }: AppData) => {
+const inject_vite_build_output = async ({ AppNameSnake, AppDir }: AppData, uiName: string = 'ui') => {
+  const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
   const file = path.join(UiDir, "vite.config.ts");
   const injections: Injection[] = [
     [
       InjectType.AFTER,
       /export\s+default\s+defineConfig\(\{/,
       `\n
+  base: "/${uiName}/",
   build: {
-    outDir: '../${AppNameSnake}_web/priv/static', // Output the build to priv/static/assets
+    outDir: '../${AppNameSnake}_web/priv/static/${uiName}', // Output the build to priv/static/${uiName}/assets
     assetsDir: 'assets', 
   },
 `,

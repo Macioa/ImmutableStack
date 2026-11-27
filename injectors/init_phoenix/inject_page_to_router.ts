@@ -5,8 +5,9 @@ import { AppData } from "../../readers/get_app_data";
 const inject_page_to_router = async ({
   AppNameSnake,
   AppNameCamel,
-  WebDir,
-}: AppData) => {
+  AppDir,
+}: AppData, webName: string = 'web') => {
+  const WebDir = path.join(AppDir, `${AppNameSnake}_${webName}`);
   const file = path.join(WebDir, `lib/${AppNameSnake}_web/router.ex`);
   const injections: Injection[] = [
     [

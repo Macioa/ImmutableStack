@@ -7,7 +7,8 @@ const gen_docker_ignore = async ({ UmbrellaDir }: AppData) => {
   const content = `_build
 deps
 node_modules
-*/node_modules
+**/node_modules
+**/_build
 docker`;
 
   return generateFile({ filename, dir, content }, "gen_docker_ignore");

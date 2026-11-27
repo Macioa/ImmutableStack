@@ -28,7 +28,7 @@ This is an Immutable Stack project - Elixir/Phoenix backend with React/TypeScrip
 - **Frontend**: React/TypeScript with Vite
 - **Database**: PostgreSQL
 - **Containerization**: Docker
-- **Package Management**: Mix (Elixir), npm (Node.js)
+- **Package Management**: Mix (Elixir), pnpm (Node.js)
 
 ## Code Style
 - Elixir: Follow standard Elixir formatting
@@ -39,11 +39,11 @@ This is an Immutable Stack project - Elixir/Phoenix backend with React/TypeScrip
 ## Testing
 - Run tests with \`make test\` [[memory:5779166]]
 - Phoenix tests in \`test/\` directories
-- React tests with Jest
+- React tests with Vitest
 
 ## Commands
 - \`mix phx.server\` - Start Phoenix server
-- \`npm run dev\` - Start React development server
+- \`pnpm run dev\` - Start React development server
 - \`docker-compose up\` - Start development environment`;
 
   return generateFile({ filename, dir, content }, "gen_cursorrules");

@@ -1,4 +1,5 @@
 import { join } from "path";
+import { devCorsConfig } from "@/utils/cors";
 import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { generateFile } from "../index";
 
@@ -26,7 +27,7 @@ config :${AppNameSnake}, ${AppNameCamel}.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :${AppNameSnake}, CORSPlug, origin: "*"
+${devCorsConfig(AppNameSnake)}
 
 config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
@@ -61,7 +62,7 @@ config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-# Enable dev routes for dashboard and mailbox
+# Enable dev routes for dashboard
 config :${AppNameSnake}_web, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
@@ -69,9 +70,6 @@ config :logger, :console, format: "[$level] $message\n"
 
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
-
-# Disable swoosh api client as it is only required for production adapters.
-config :swoosh, :api_client, false
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

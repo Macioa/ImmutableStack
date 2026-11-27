@@ -1,3 +1,4 @@
+import { gen_claude_md } from "./gen_claude_md";
 import { gen_cursorrules } from "./gen_cursorrules";
 import { gen_cursorrules_phoenix } from "./gen_cursorrules_phoenix";
 import { gen_cursorrules_react } from "./gen_cursorrules_react";
@@ -10,21 +11,23 @@ import { gen_readme_react } from "./gen_readme_react";
 import { gen_dev_config_env } from "./gen_devcfgenv";
 import { gen_docker_config_env } from "./gen_dockercfgenv";
 
-const gen_all_configs = async (appdata: any) =>
+const gen_all_configs = async (appdata: any, uiName: string = 'ui') =>
   Promise.all([
     gen_gitignore(appdata),
     gen_gitignore_phoenix(appdata),
-    gen_gitignore_react(appdata),
+    gen_gitignore_react(appdata, uiName),
+    gen_claude_md(appdata),
     gen_cursorrules(appdata),
     gen_cursorrules_phoenix(appdata),
-    gen_cursorrules_react(appdata),
+    gen_cursorrules_react(appdata, uiName),
     gen_readme(appdata),
     gen_readme_phoenix(appdata),
-    gen_readme_react(appdata),
+    gen_readme_react(appdata, uiName),
   ]);
 
 export {
   gen_all_configs,
+  gen_claude_md,
   gen_cursorrules,
   gen_cursorrules_phoenix,
   gen_cursorrules_react,

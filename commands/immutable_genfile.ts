@@ -8,8 +8,13 @@ import fs from "fs";
 import { join } from "@/utils/path";
 import { getNamesFromSingularSnakeCase as getNames } from "@/utils/string";
 import { log } from "@/utils/logger";
+import { getAppData } from "@/readers/get_app_data";
+import { parseFlags, positionalArgs } from "@/utils/flags";
+import { start_quick_mode } from "@/utils/quick";
 
-const [, , genName] = process.argv;
+const argv = process.argv.slice(2);
+const { quick } = parseFlags(argv);
+const [genName] = positionalArgs(argv);
 const file = join(process.cwd(), `.genfile_${genName}.ts`);
 
 if (!genName) {
@@ -17,9 +22,12 @@ if (!genName) {
   process.exit(1);
 }
 
-const main = () => (fs.existsSync(file) ? update_genfile() : new_genfile());
+const main = async () => {
+  start_quick_mode((await getAppData())?.AppNameSnake || "app", "genfile", { quick });
+  return fs.existsSync(file) ? update_genfile() : await new_genfile();
+};
 
-const new_genfile = () => {
+const new_genfile = async () => {
   const {
     singleUpperCamel,
     singleLowerCamel,
@@ -27,6 +35,8 @@ const new_genfile = () => {
     pluralLowerCamel,
     pluralSnake,
   } = getNames(genName) || {};
+  const appData = await getAppData();
+  const defaultUiPath = appData?.UiDirs?.[0] || "";
   const tsContent = `
 /*
                     *****************************
@@ -77,6 +87,7 @@ interface TsType extends GenType<{
 */
 const Immutable: ImmutableGenerator = {
   name: "${genName}",
+  ui_path: "${defaultUiPath}",
   generate: {
     // BACK END
     http_controller: {
@@ -232,6 +243,7 @@ type GenType<T extends AllowedTypes> = T;
 
 interface ImmutableGenerator {
   name: string;
+  ui_path: string;
   generate: {
     requests?: ImmutableRequests;
     stateSlice?: ImmutableStateSlice;
@@ -293,7 +305,7 @@ const update_genfile = () => {
   const fileContent = fs.readFileSync(file, "utf8");
   let updatedContent = fileContent;
   const interfaces = fileContent.match(
-    /interface \w+.*?extends GenType<.*?> \{\}/gs
+    /interface \w+\s+extends GenType<.*?> \{\}/gs
   );
   const parsed = interfaces?.map((str: string) => parse_interface(str));
   const [_, global_def] =
@@ -304,8 +316,8 @@ const update_genfile = () => {
         let res = "";
         interfaces?.[i].replace(
           /interface\s(\w+).*?extends\sGenType<\{(.*?)\}?> \{\}/gs,
-          (name, _attr, _str) => {
-            res = `interface ${name} extends GenType<{${global_def}}> {}`;
+          (_match, name) => {
+            res = `interface ${name} extends GenType<{\n${global_def}\n}> {}`;
             return res;
           }
         );
@@ -328,8 +340,6 @@ const update_genfile = () => {
   log({ level: 1, color: "BLUE" }, `    in ${file}\n\n`);
 };
 
-main();
-
 // Utils
 
 const parse_interface = (str: string): [string, string, string] => {
@@ -337,3 +347,5 @@ const parse_interface = (str: string): [string, string, string] => {
   const attr = str.match(/\w+\:\s\w+/gs)?.join("\n") || "";
   return [name, attr, str];
 };
+
+main().catch(console.error);

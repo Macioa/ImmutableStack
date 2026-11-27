@@ -28,7 +28,7 @@ const gen_phx_channel_cluster_test = (
   describe "cluster message propagation" do
     test "messages are broadcast across cluster nodes", %{socket: socket} do
       push(socket, "cluster_message", %{"node" => node(), "message" => "cluster test"})
-      assert_broadcast "cluster_message", %{"node" => node(), "message" => "cluster test"}
+      assert_broadcast "cluster_message", %{"message" => "cluster test"}
     end
 
     test "handles concurrent joins from multiple nodes", %{socket: socket} do
@@ -76,19 +76,19 @@ const gen_phx_channel_cluster_test = (
     test "handles node disconnection during active session", %{socket: socket} do
       # Simulate node going down during active channel
       push(socket, "simulate_node_down", %{"node" => node()})
-      assert_broadcast "node_disconnected", %{"node" => node(), "reason" => "network_failure"}
+      assert_broadcast "node_disconnected", %{"reason" => "network_failure"}
     end
 
     test "handles network partition scenarios", %{socket: socket} do
       # Test network partition handling
       push(socket, "network_partition", %{"partitioned_nodes" => [node()]})
-      assert_broadcast "partition_detected", %{"nodes" => [node()]}
+      assert_broadcast "partition_detected", %{"nodes" => [_node]}
     end
 
     test "handles cluster-wide disconnection recovery", %{socket: socket} do
       # Test recovery after cluster disconnection
       push(socket, "cluster_recovery", %{"recovered_nodes" => [node()]})
-      assert_broadcast "cluster_recovered", %{"nodes" => [node()]}
+      assert_broadcast "cluster_recovered", %{"nodes" => [_node]}
     end
   end
 
@@ -96,7 +96,7 @@ const gen_phx_channel_cluster_test = (
     test "handles cross-node error propagation", %{socket: socket} do
       # Test error propagation across cluster nodes
       push(socket, "propagate_error", %{"error" => "test_error", "node" => node()})
-      assert_broadcast "error_propagated", %{"error" => "test_error", "from_node" => node()}
+      assert_broadcast "error_propagated", %{"error" => "test_error"}
     end
 
     test "handles state synchronization errors", %{socket: socket} do

@@ -46,8 +46,8 @@ if asdf list erlang >/dev/null 2>&1; then
 else
     echo "Installing Erlang..."
     asdf plugin-add erlang
-    asdf install erlang $erlang
-    asdf global erlang $erlang
+    asdf install erlang $ERLANG_VERSION
+    asdf global erlang $ERLANG_VERSION
 fi
 
 # Install Elixir using asdf
@@ -56,8 +56,8 @@ if asdf list elixir >/dev/null 2>&1; then
 else
     echo "Installing Elixir..."
     asdf plugin-add elixir
-    asdf install elixir $elixir
-    asdf global elixir $elixir
+    asdf install elixir $ELIXIR_VERSION
+    asdf global elixir $ELIXIR_VERSION
 fi
 
 # Install Node.js using asdf
@@ -72,11 +72,11 @@ fi
 
 # Install global npm packages
 echo "Installing global npm packages..."
-npm ci -g create-vite@4.5.1
+npm ci -g create-vite@9.3.4
 
 # Install Hex and Phoenix
 echo "Installing Hex and Phoenix..."
 mix local.hex --force
-mix archive.install hex phx_new 1.7.14 --force
+mix archive.install hex phx_new 1.8.17 --force
 
 echo "Setup complete."

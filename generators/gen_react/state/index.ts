@@ -134,7 +134,7 @@ ${get_selectors(generator)
   const content = `
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import Lorem from "../utils/lorem";
+${factory ? `import Lorem from "../utils/lorem";` : ""}
 
 ${tstype ? `\n${type}\n` : ""}
 ${appstate ? `\n${state}\n` : ""}

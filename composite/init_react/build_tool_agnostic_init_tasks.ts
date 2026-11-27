@@ -1,36 +1,47 @@
+import { gen_apps_oxfmt_config } from "../../generators/init_react/gen_apps_oxfmt_config";
+import { gen_apps_pnpm_workspace } from "../../generators/init_react/gen_apps_pnpm_workspace";
 import { gen_demo_component_styles } from "../../generators/gen_react/demo_components/gen_demo_component_styles";
 import { gen_index_html } from "../../generators/init_react/gen_index.html";
 import {
-  gen_jest_config,
-  gen_jest_setup,
-} from "../../generators/init_react/gen_jest_configs";
+  gen_vitest_config,
+  gen_vitest_setup,
+  gen_smoke_test,
+} from "../../generators/init_react/gen_vitest_configs";
 import { gen_lorem_utils } from "../../generators/init_react/gen_lorem_utils";
 import { gen_request_lib } from "../../generators/init_react/gen_request_lib";
 import { gen_socket_context } from "../../generators/init_react/gen_socket_context";
 import { gen_store } from "../../generators/init_react/gen_store";
+import { gen_apps_package_json } from "../../generators/init_react/gen_apps_package_json";
 import { inject_package_scripts } from "../../injectors/init_react/inject_package_scripts";
 import { inject_react_deps } from "../../injectors/init_react/inject_react_deps";
 import { inject_redux_provider } from "../../injectors/init_react/inject_redux_provider";
 import { inject_socket_provider } from "../../injectors/init_react/inject_socket_provider";
+import { inject_ui_package_minimal } from "../../injectors/init_react/inject_ui_package_minimal";
 import { AppData } from "../../readers/get_app_data";
 
-const build_tool_agnostic_init_tasks = async (appdata: AppData) => {
+const build_tool_agnostic_init_tasks = async (appdata: AppData, uiName: string = 'ui') => {
+  // Formatter config first, so formatting during the tasks below can read it
+  const config = await gen_apps_oxfmt_config(appdata);
   const tasks = await Promise.all([
-    gen_store(appdata),
-    await inject_redux_provider(appdata),
-    inject_socket_provider(appdata),
+    gen_apps_package_json(appdata),
+    gen_apps_pnpm_workspace(appdata),
+    inject_ui_package_minimal(appdata, uiName),
+    gen_store(appdata, uiName),
+    await inject_redux_provider(appdata, uiName),
+    inject_socket_provider(appdata, uiName),
     gen_lorem_utils(appdata),
     gen_request_lib(appdata),
-    inject_package_scripts(appdata),
-    inject_react_deps(appdata),
-    gen_jest_config(appdata),
-    gen_jest_setup(appdata),
+    inject_package_scripts(appdata, uiName),
+    inject_react_deps(appdata, uiName),
+    gen_vitest_config(appdata, uiName),
+    gen_vitest_setup(appdata, uiName),
+    gen_smoke_test(appdata, uiName),
     gen_socket_context(appdata),
-    gen_index_html(appdata),
+    gen_index_html(appdata, uiName),
     gen_demo_component_styles(appdata),
   ]).catch(console.error);
 
-  return [tasks].flat();
+  return [config, tasks].flat();
 };
 
 export { build_tool_agnostic_init_tasks };

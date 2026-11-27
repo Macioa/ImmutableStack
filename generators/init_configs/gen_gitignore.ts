@@ -14,8 +14,11 @@ erl_crash.dump
 *.ez
 /tmp/
 
+# Graphify knowledge graph
+graphify-out/
+
 # Node.js/React (for UI apps)
-node_modules/
+node_modules
 dist/
 dist-ssr/
 *.local
@@ -44,8 +47,14 @@ lerna-debug.log*
 docker/pgdata/
 *.tar
 
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
 # Environment files
 .env
+!docker/.env
 .env.local
 .env.development.local
 .env.test.local
@@ -62,7 +71,6 @@ ehthumbs.db
 Desktop.ini
 
 # Package manager files
-package-lock.json
 yarn.lock
 pnpm-lock.yaml`;
 

@@ -63,7 +63,7 @@ defmodule ${AppNameCamel}.Utils.DynamicQuery do
   Build query with parsed params.
   """
   def apply_filter({field, operator, value}, query) do
-    field_atom = String.to_atom(field)
+    field_atom = String.to_existing_atom(field)
 
     dynamic_clause =
       case operator do
@@ -95,7 +95,7 @@ defmodule ${AppNameCamel}.Utils.DynamicQuery do
 
   # Validate type based on the schema's field types
   defp validate_param_type(key, operator, value, field_types) do
-    expected_type = Map.get(field_types, String.to_atom(key))
+    expected_type = Enum.find_value(field_types, fn {name, type} -> Atom.to_string(name) == key && type end)
 
     case {expected_type, parse_value(value, expected_type)} do
       {nil, _} -> {:error, "Unknown field #{key}"}
