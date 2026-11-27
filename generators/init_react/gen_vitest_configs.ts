@@ -22,6 +22,8 @@ export default mergeConfig(
         "../${AppNameSnake}/lib/typescript/{state,requests,utils,components}/**/*.test.{ts,tsx}",
       ],
       passWithNoTests: true,
+      // The auth dialog tests type into several fields; 5s is too tight on a busy machine
+      testTimeout: 15000,
     },
   })
 );

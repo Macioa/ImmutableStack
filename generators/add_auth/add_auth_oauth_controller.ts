@@ -14,7 +14,7 @@ const add_auth_oauth_controller = async ({
   const content = `defmodule ${ApiNameCamel}.OAuthController do
   use ${ApiNameCamel}, :controller
 
-  alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.Accounts.OAuthAccounts
   alias ${ApiNameCamel}.OAuth.Adapter
   alias ${ApiNameCamel}.UserAuth
 
@@ -49,6 +49,7 @@ const add_auth_oauth_controller = async ({
       conn
       |> maybe_put_session(:oauth_redirect_to, redirect_to)
       |> maybe_put_session(:oauth_popup, is_popup && true)
+      |> put_session(:oauth_link, conn.params["link"])
 
     case Adapter.authorization_url(spec, redirect_uri) do
       {:ok, url} ->
@@ -129,16 +130,17 @@ const add_auth_oauth_controller = async ({
 
     is_popup =
       get_session(conn, :oauth_popup) == true ||
-      conn.params["popup"] == "true" ||
-      conn.query_params["popup"] == "true"
+        conn.params["popup"] == "true" ||
+        conn.query_params["popup"] == "true"
 
     result =
       with :ok <- Adapter.validate_state(spec, state) |> log_step("validate_state"),
-           {:ok, token_data} <- Adapter.exchange_code(spec, code, state, redirect_uri) |> log_step("exchange_code"),
-           {:ok, user_info} <- Adapter.get_user_info(spec, token_data["access_token"]) |> log_step("get_user_info"),
-           {:ok, user} <- get_or_create_user(spec.name, user_info) |> log_step("get_or_create_user"),
-           {:ok, _oauth_token} <- store_oauth_token(user, spec.name, token_data, user_info) |> log_step("store_oauth_token") do
-        {:ok, user}
+           {:ok, token_data} <-
+             Adapter.exchange_code(spec, code, state, redirect_uri) |> log_step("exchange_code"),
+           {:ok, user_info} <-
+             Adapter.get_user_info(spec, token_data["access_token"]) |> log_step("get_user_info"),
+           :ok <- require_provider_id(user_info) do
+        resolve(conn, spec, user_info, token_data)
       else
         :error ->
           Logger.error("OAuth callback failed: Invalid or expired OAuth state")
@@ -150,6 +152,24 @@ const add_auth_oauth_controller = async ({
       end
 
     case result do
+      {:pending, pending, email} ->
+        popup_message(conn, %{
+          type: "oauth_signup",
+          pending: pending,
+          email: email,
+          provider: spec.label,
+          verify: OAuthAccounts.email_verification_required?()
+        })
+
+      {:linked, _user} ->
+        popup_message(conn, %{type: "oauth_linked", provider: spec.label})
+
+      {:error, :linked_to_another_user} ->
+        popup_message(conn, %{
+          type: "oauth_error",
+          error: "That #{spec.label} account is already linked to another user."
+        })
+
       {:ok, user} ->
         redirect_to = get_session(conn, :oauth_redirect_to)
 
@@ -173,18 +193,19 @@ const add_auth_oauth_controller = async ({
 
         is_popup_final =
           is_popup ||
-          get_session(conn, :oauth_popup) == true ||
-          conn.params["popup"] == "true" ||
-          conn.query_params["popup"] == "true" ||
-          (redirect_to && String.contains?(redirect_to, "localhost:5173"))
+            get_session(conn, :oauth_popup) == true ||
+            conn.params["popup"] == "true" ||
+            conn.query_params["popup"] == "true" ||
+            (redirect_to && String.contains?(redirect_to, "localhost:5173"))
 
         if is_popup_final do
-          ui_origin = if redirect_to do
-            uri = URI.parse(redirect_to)
-            "#{uri.scheme}://#{uri.host}#{if uri.port, do: ":#{uri.port}", else: ""}"
-          else
-            ${ApiNameCamel}.Endpoint.url()
-          end
+          ui_origin =
+            if redirect_to do
+              uri = URI.parse(redirect_to)
+              "#{uri.scheme}://#{uri.host}#{if uri.port, do: ":#{uri.port}", else: ""}"
+            else
+              ${ApiNameCamel}.Endpoint.url()
+            end
 
           conn
           |> put_resp_content_type("text/html")
@@ -377,13 +398,15 @@ const add_auth_oauth_controller = async ({
           </html>
           """)
         else
-          redirect_to = get_session(conn, :user_return_to) ||
-                        get_session(conn, :oauth_redirect_to) ||
-                        conn.params["redirect_to"] ||
-                        conn.query_params["redirect_to"]
+          redirect_to =
+            get_session(conn, :user_return_to) ||
+              get_session(conn, :oauth_redirect_to) ||
+              conn.params["redirect_to"] ||
+              conn.query_params["redirect_to"]
 
           if redirect_to do
-            if String.starts_with?(redirect_to, "http://") or String.starts_with?(redirect_to, "https://") do
+            if String.starts_with?(redirect_to, "http://") or
+                 String.starts_with?(redirect_to, "https://") do
               redirect(conn, external: redirect_to)
             else
               redirect(conn, to: redirect_to)
@@ -459,7 +482,10 @@ const add_auth_oauth_controller = async ({
 
   defp maybe_put_session(conn, _key, nil), do: conn
   defp maybe_put_session(conn, _key, false), do: conn
-  defp maybe_put_session(conn, key, value) when is_binary(value), do: put_session(conn, key, value)
+
+  defp maybe_put_session(conn, key, value) when is_binary(value),
+    do: put_session(conn, key, value)
+
   defp maybe_put_session(conn, key, true), do: put_session(conn, key, true)
   defp maybe_put_session(conn, _key, _value), do: conn
 
@@ -483,78 +509,65 @@ const add_auth_oauth_controller = async ({
     :error
   end
 
-  defp get_or_create_user(provider, user_info) do
-    provider_user_id = user_info["id"] || user_info["sub"] || ""
+  defp require_provider_id(user_info) do
+    if OAuthAccounts.provider_user_id(user_info) == "",
+      do: {:error, "Provider user ID not provided by OAuth provider"},
+      else: :ok
+  end
 
-    if provider_user_id == "" do
-      Logger.error("OAuth user info missing provider_user_id: #{inspect(user_info)}")
-      {:error, "Provider user ID not provided by OAuth provider"}
-    else
-      # First, try to find user by provider + provider_user_id
-      case Accounts.get_user_by_oauth_provider(provider, provider_user_id) do
-        nil ->
-          # User doesn't exist for this provider, check if user exists by email
-          email = user_info["email"] || ""
+  # Linking from the account page, signing in to a linked account, or a new sign-up that
+  # still needs the person to choose the account's email.
+  defp resolve(conn, spec, user_info, token_data) do
+    provider_user_id = OAuthAccounts.provider_user_id(user_info)
 
-          if email == "" do
-            Logger.error("OAuth user info missing email: #{inspect(user_info)}")
-            {:error, "Email not provided by OAuth provider"}
-          else
-            # Create unique email by appending provider: user@example.com -> user+provider@example.com
-            unique_email = make_provider_unique_email(email, provider)
+    case {OAuthAccounts.link_user(get_session(conn, :oauth_link)),
+          OAuthAccounts.user_for(spec.name, provider_user_id)} do
+      {{:ok, user}, _linked} ->
+        with {:ok, _token} <- OAuthAccounts.link(user, spec.name, user_info, token_data),
+             do: {:linked, user}
 
-            # Check if user with this email already exists
-            case Accounts.get_user_by_email(unique_email) do
-              nil ->
-                # User doesn't exist, create a new account
-                Accounts.register_user(%{
-                  email: unique_email,
-                  password: generate_random_password()
-                })
+      {:error, nil} ->
+        {:pending, OAuthAccounts.pending(spec.name, user_info, token_data),
+         OAuthAccounts.provider_email(user_info)}
 
-              existing_user ->
-                # User exists but doesn't have OAuth token for this provider yet
-                # Return the existing user - the OAuth token will be linked in store_oauth_token
-                {:ok, existing_user}
-            end
-          end
-
-        user ->
-          # User exists for this provider, return it
-          {:ok, user}
-      end
+      {:error, user} ->
+        with {:ok, _token} <- OAuthAccounts.link(user, spec.name, user_info, token_data),
+             do: {:ok, user}
     end
   end
 
-  defp make_provider_unique_email(email, provider) do
-    provider_string = to_string(provider)
-    case String.split(email, "@") do
-      [local_part, domain] -> "#{local_part}+#{provider_string}@#{domain}"
-      _ -> "#{email}+#{provider_string}"
-    end
+  # Hands a result to the window that opened the popup, then closes it
+  defp popup_message(conn, payload) do
+    origin = ui_origin(get_session(conn, :oauth_redirect_to), conn)
+
+    conn
+    |> delete_session(:oauth_link)
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, """
+    <!DOCTYPE html>
+    <html>
+    <head><title>Continue in the app</title></head>
+    <body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#0d0d1a;color:#e6fbff;font-family:sans-serif">
+      <p>Continue in the app window...</p>
+      <script>
+        if (window.opener) window.opener.postMessage(#{Jason.encode!(payload, escape: :html_safe)}, #{Jason.encode!(origin, escape: :html_safe)});
+        setTimeout(function () { window.close(); }, 300);
+      </script>
+    </body>
+    </html>
+    """)
   end
 
-  defp store_oauth_token(user, provider, token_data, user_info) do
-    expires_at =
-      case token_data["expires_in"] do
-        nil -> nil
-        expires_in -> DateTime.utc_now() |> DateTime.add(expires_in, :second) |> DateTime.truncate(:second)
-      end
+  defp ui_origin(nil, conn), do: ${ApiNameCamel}.UIUrl.origin(conn)
 
-    provider_user_id = user_info["id"] || user_info["sub"] || ""
-
-    attrs = %{
-      access_token: token_data["access_token"],
-      refresh_token: token_data["refresh_token"],
-      expires_at: expires_at,
-      provider_user_id: provider_user_id
-    }
-
-    Accounts.upsert_oauth_token(user, provider, attrs)
+  defp ui_origin(redirect_to, _conn) do
+    %URI{scheme: scheme, host: host, port: port} = URI.parse(redirect_to)
+    "#{scheme}://#{host}:#{port}"
   end
 
   defp oauth_callback_url(provider, params \\\\ %{}) do
     base_url = "#{${ApiNameCamel}.Endpoint.url()}/oauth/#{provider}/callback"
+
     if map_size(params) > 0 do
       "#{base_url}?#{URI.encode_query(params)}"
     else
@@ -562,10 +575,8 @@ const add_auth_oauth_controller = async ({
     end
   end
 
-  defp generate_random_password do
-    :crypto.strong_rand_bytes(32) |> Base.encode64()
-  end
-end`;
+end
+`;
 
   return generateFile({ dir, filename, content }, "add_auth_oauth_controller");
 };

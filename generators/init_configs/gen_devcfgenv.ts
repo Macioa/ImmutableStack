@@ -1,3 +1,4 @@
+import { allowEnvKeys } from "@/generators/init_configs/gen_keys";
 import { envConfigDir } from "@/utils/config_paths";
 import { ImmutableGenerator } from "@/commands/immutable_gen";
 import { generateFile } from "@/generators/index";
@@ -70,7 +71,7 @@ config :${AppNameSnake}_web, ${AppNameCamel}Web.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-# Enable dev routes for dashboard and mailbox
+# Enable dev routes for dashboard
 config :${AppNameSnake}_web, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
@@ -79,13 +80,10 @@ config :logger, :console, format: "[$level] $message\n"
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-# Disable swoosh api client as it is only required for production adapters.
-config :swoosh, :api_client, false
-
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
-`;
+${allowEnvKeys(AppNameSnake, "dev")}`;
 
   return generateFile(
     {

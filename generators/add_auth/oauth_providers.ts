@@ -1,4 +1,4 @@
-// Single source of truth for OAuth providers: drives provider adapters and keys.exs docs
+// Single source of truth for OAuth providers: drives provider adapters and external_service_keys/oauth.exs docs
 
 // text may span lines; redirect adds the provider's redirect URI after the link
 type OAuthStep = { text: string; url: string; redirect?: boolean };

@@ -33,16 +33,19 @@ const add_auth_passkey_handler = async ({ AppDir, AppNameSnake, AppNameCamel, Ap
 
   def registration_subject(_conn, %{"token" => token} = params) do
     case Invitations.fetch(token) do
-      nil -> {:error, :invitation_unknown}
-      invitation -> if Invitations.open?(invitation), do: new_email(params), else: {:ok, invitation.email}
+      nil ->
+        {:error, :invitation_unknown}
+
+      invitation ->
+        if Invitations.open?(invitation), do: new_email(params), else: {:ok, invitation.email}
     end
   end
 
   def registration_subject(conn, params) do
     if Accounts.operator_claim?() and Instance.needs_setup?() and
          not Instance.authorized?(get_session(conn, :initial_claim_authorization)),
-      do: {:error, :setup_authorization_required},
-      else: new_email(params)
+       do: {:error, :setup_authorization_required},
+       else: new_email(params)
   end
 
   defp new_email(%{"email" => email}) do
@@ -70,17 +73,32 @@ const add_auth_passkey_handler = async ({ AppDir, AppNameSnake, AppNameCamel, Ap
     |> Multi.insert(:account, User.identifier_changeset(%User{}, %{"email" => email}))
     |> accept_invitation(params)
     |> Accounts.claim_first_account(get_session(conn, :initial_claim_authorization))
-    |> Grant.with_key_and_codes(key_attrs)
+    |> Grant.with_key_and_codes(key_attrs, count: ${ApiNameCamel}.Accounts.Recovery.count())
     |> Repo.transaction()
     |> case do
-      {:ok, %{account: user, recovery_codes: codes}} -> {:ok, signed_in(conn, user, %{recovery_codes: codes})}
-      {:error, :account, changeset, _} -> {:error, taken_or_invalid(changeset)}
-      {:error, _step, reason, _changes} -> {:error, reason}
+      {:ok, %{account: user, recovery_codes: codes}} ->
+        {:ok, verify_email_or(conn, user, &signed_in(&1, user, %{recovery_codes: codes}))}
+
+      {:error, :account, changeset, _} ->
+        {:error, taken_or_invalid(changeset)}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
   @impl true
-  def authenticate(conn, user), do: {:ok, signed_in(conn, user)}
+  def authenticate(conn, user), do: {:ok, verify_email_or(conn, user, &signed_in(&1, user))}
+
+  # Under require_2fa an unverified email is verified with an emailed code before any session
+  defp verify_email_or(conn, user, sign_in) do
+    if ${ApiNameCamel}.Accounts.TwoFactor.email_unverified?(user) do
+      ${ApiNameCamel}.Accounts.TwoFactor.deliver_email_code(user)
+      json(conn, %{two_factor: ${ApiNameCamel}.Accounts.TwoFactor.challenge_payload(user)})
+    else
+      sign_in.(conn)
+    end
+  end
 
   @impl true
   def recovered(conn, user, nil), do: authenticate(conn, user)
@@ -109,7 +127,11 @@ const add_auth_passkey_handler = async ({ AppDir, AppNameSnake, AppNameCamel, Ap
   end
 
   defp taken_or_invalid(changeset),
-    do: if(Ithibati.Schema.User.identifier_taken?(changeset), do: :email_taken, else: :invalid_email)
+    do:
+      if(Ithibati.Schema.User.identifier_taken?(changeset),
+        do: :email_taken,
+        else: :invalid_email
+      )
 end
 `,
     },
@@ -181,11 +203,14 @@ const add_auth_recovery_code_json_controller = async ({ AppDir, AppNameSnake, Ap
   use ${ApiNameCamel}, :controller
 
   alias Ithibati.Identity.RecoveryCodes
+  alias ${ApiNameCamel}.Accounts.Recovery
 
-  def show(conn, _params), do: json(conn, %{remaining: RecoveryCodes.remaining(conn.assigns.current_user)})
+  def show(conn, _params),
+    do: json(conn, %{remaining: RecoveryCodes.remaining(conn.assigns.current_user)})
 
   # Invalidates the old batch; the new codes are shown once and never again.
-  def create(conn, _params), do: json(conn, %{recovery_codes: RecoveryCodes.regenerate(conn.assigns.current_user)})
+  def create(conn, _params),
+    do: json(conn, %{recovery_codes: Recovery.issue(conn.assigns.current_user)})
 end
 `,
     },
@@ -201,7 +226,7 @@ const add_auth_invitation_json_controller = async ({ AppDir, AppNameSnake, AppNa
   use ${ApiNameCamel}, :controller
 
   alias Ithibati.Identity.Invitations
-  alias ${ApiNameCamel}.Accounts.Invitation
+  alias ${ApiNameCamel}.Accounts.{Invitation, UserNotifier}
   alias ${AppNameCamel}.AuthRepo, as: Repo
 
   def index(conn, _params), do: json(conn, %{data: Enum.map(Invitations.pending(), &show/1)})
@@ -212,7 +237,10 @@ const add_auth_invitation_json_controller = async ({ AppDir, AppNameSnake, AppNa
     |> Invitation.changeset(params, addressed: Map.has_key?(params, "email"))
     |> Repo.insert()
     |> case do
-      {:ok, invitation} -> json(conn, %{data: Map.put(show(invitation), :token, invitation.token)})
+      {:ok, invitation} ->
+        email_invitation(conn, invitation)
+        json(conn, %{data: Map.put(show(invitation), :token, invitation.token)})
+
       {:error, changeset} -> conn |> put_status(:unprocessable_entity) |> json(%{errors: errors(changeset)})
     end
   end
@@ -221,6 +249,18 @@ const add_auth_invitation_json_controller = async ({ AppDir, AppNameSnake, AppNa
     Invitation |> Repo.get!(id) |> Invitations.withdraw()
     json(conn, %{status: "withdrawn"})
   end
+
+  # An invitation addressed to someone is also emailed to them
+  defp email_invitation(_conn, %Invitation{email: nil}), do: :ok
+
+  defp email_invitation(conn, %Invitation{email: email, note: note, token: token}),
+    do:
+      UserNotifier.deliver_invitation(
+        email,
+        ${ApiNameCamel}.UIUrl.link(conn, "invite", token),
+        conn.assigns.current_user.email,
+        note
+      )
 
   defp show(invitation), do: Map.take(invitation, [:id, :email, :note, :expires_at])
 
@@ -1156,31 +1196,105 @@ const add_auth_recovery_codes = async ({ LibDir }: ApiAppData) =>
     {
       dir: join(LibDir || "", `lib/typescript/components/auth`),
       filename: "RecoveryCodes.tsx",
-      content: `import { Modal, Typography } from "antd";
+      content: `import { useState } from "react";
+import { createRoot } from "react-dom/client";
+import { Button, Space, Typography, message } from "antd";
+import { CopyOutlined, DownloadOutlined } from "@ant-design/icons";
+import { AuthModal } from "./AuthModal";
 
+const download = (codes: string[]) => {
+  const url = URL.createObjectURL(
+    new Blob([codes.join("\\n") + "\\n"], { type: "text/plain" }),
+  );
+  const link = Object.assign(document.createElement("a"), {
+    href: url,
+    download: "recovery-codes.txt",
+  });
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const copy = (codes: string[]) =>
+  navigator.clipboard
+    .writeText(codes.join("\\n"))
+    .then(() => message.success("Recovery codes copied"));
+
+// Codes in a two-column grid of tiles, with copy and download
 export const RecoveryCodeList = ({ codes }: { codes: string[] }) => (
-  <>
-    <pre data-testid="recovery-codes">{codes.join("\\n")}</pre>
-    <Typography.Text copyable={{ text: codes.join("\\n") }}>Copy codes</Typography.Text>
-  </>
+  <div className="recovery-codes">
+    <ol className="recovery-codes-grid" data-testid="recovery-codes">
+      {codes.map((code) => (
+        <li
+          key={code}
+          title="Click to copy this code"
+          onClick={() =>
+            navigator.clipboard
+              .writeText(code)
+              .then(() => message.success("Code copied"))
+          }
+        >
+          {code}
+        </li>
+      ))}
+    </ol>
+    <Space wrap>
+      <Button icon={<CopyOutlined />} onClick={() => copy(codes)}>
+        Copy
+      </Button>
+      <Button icon={<DownloadOutlined />} onClick={() => download(codes)}>
+        Download
+      </Button>
+    </Space>
+  </div>
 );
 
-// Codes are only ever shown once, right after they are issued.
-export const showRecoveryCodes = (codes?: string[]) =>
-  codes?.length &&
-  Modal.info({
-    title: "Save your recovery codes",
-    width: 480,
-    content: (
-      <div>
-        <p>
-          Each code signs you in once if you lose your passkeys or password. They will not be shown again. You can
-          generate new ones under Account → Security → Recovery codes.
-        </p>
-        <RecoveryCodeList codes={codes} />
-      </div>
-    ),
-  });
+const RecoveryCodesModal = ({
+  codes,
+  onClose,
+}: {
+  codes: string[];
+  onClose: () => void;
+}) => {
+  const [open, setOpen] = useState(true);
+  const close = () => {
+    setOpen(false);
+    onClose();
+  };
+
+  return (
+    <AuthModal title="Recovery codes" visible={open} onCancel={close}>
+      <Typography.Paragraph type="secondary">
+        Each code signs you in once if you lose your passkeys or password. They
+        won't be shown again; you can make new ones under Account → Security →
+        Recovery codes.
+      </Typography.Paragraph>
+      <RecoveryCodeList codes={codes} />
+      <Button
+        type="primary"
+        block
+        onClick={close}
+        className="recovery-codes-done"
+      >
+        I've saved them
+      </Button>
+    </AuthModal>
+  );
+};
+
+// Codes are only ever shown once, right after they are issued. Rendered in its own root
+// so callers can show it from a request callback, with the same theme as the auth modals.
+export const showRecoveryCodes = (codes?: string[]) => {
+  if (!codes?.length) return;
+  const host = document.body.appendChild(document.createElement("div"));
+  const root = createRoot(host);
+  // Unmount after the close animation
+  const onClose = () =>
+    setTimeout(() => {
+      root.unmount();
+      host.remove();
+    }, 300);
+  root.render(<RecoveryCodesModal codes={codes} onClose={onClose} />);
+};
 `,
     },
     "add_auth_recovery_codes"

@@ -951,6 +951,372 @@ end`;
   return generateFile({ dir, filename, content }, "add_auth_user_token");
 };
 
+
+// Themed HTML and plain-text bodies for every auth email
+const add_auth_email_template = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile(
+    {
+      dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`),
+      filename: "email_template.ex",
+      content: `defmodule ${ApiNameCamel}.Accounts.EmailTemplate do
+  @moduledoc """
+  The HTML and plain-text bodies for every auth email, in the app's theme: navy
+  surfaces, a cyan-to-purple accent and a glowing title. Email clients ignore
+  stylesheets, so every style is inline and the layout is tables.
+
+  Content is a map:
+    * \`:heading\` - the title
+    * \`:lines\` - paragraphs above the action
+    * \`:action\` - \`{label, url}\` for a button, or nil
+    * \`:code\` - a one-time code shown large, or nil
+    * \`:footer\` - the small print under the card
+  """
+
+  @navy "#0d0d1a"
+  @surface "#1a1a2e"
+  @card "#16213e"
+  @cyan "#61dafb"
+  @purple "#b300ff"
+  @text "#e6fbff"
+  @muted "#9fb3c8"
+  @font "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+
+  def text(app, content) do
+    [
+      content.heading,
+      "",
+      Enum.join(content[:lines] || [], "\\n\\n"),
+      text_action(content[:action]),
+      text_code(content[:code]),
+      "",
+      content[:footer],
+      "",
+      "- #{app}"
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("\\n")
+  end
+
+  defp text_action({label, url}), do: "\\n#{label}:\\n#{url}"
+  defp text_action(_none), do: nil
+  defp text_code(nil), do: nil
+  defp text_code(code), do: "\\n#{code}"
+
+  def html(app, content) do
+    """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="dark">
+      <title>#{escape(content.heading)}</title>
+    </head>
+    <body style="margin:0;padding:0;background:#{@navy};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#{@navy};padding:32px 12px;">
+        <tr><td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+            <tr><td style="height:3px;background:#{@cyan};background-image:linear-gradient(90deg,#{@cyan},#ff4500,#{@purple});border-radius:16px 16px 0 0;"></td></tr>
+            <tr><td style="background:#{@card};background-image:linear-gradient(135deg,#{@surface} 0%,#{@card} 100%);border:1px solid rgba(97,218,251,0.35);border-top:0;border-radius:0 0 16px 16px;padding:36px 36px 32px;font-family:#{@font};color:#{@text};">
+              <p style="margin:0 0 24px;text-align:center;font-size:12px;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:#{@cyan};">#{escape(app)}</p>
+              <h1 style="margin:0 0 20px;text-align:center;font-size:22px;font-weight:600;color:#{@text};text-shadow:0 0 12px rgba(97,218,251,0.6);">#{escape(content.heading)}</h1>
+              #{paragraphs(content[:lines] || [])}
+              #{code_block(content[:code])}
+              #{button(content[:action])}
+            </td></tr>
+            <tr><td style="padding:20px 12px 0;text-align:center;font-family:#{@font};font-size:12px;line-height:18px;color:#{@muted};">
+              #{escape(content[:footer] || "")}
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+    """
+  end
+
+  defp paragraphs(lines),
+    do:
+      Enum.map_join(
+        lines,
+        &~s(<p style="margin:0 0 16px;font-size:15px;line-height:24px;color:#{@text};">#{escape(&1)}</p>)
+      )
+
+  defp code_block(nil), do: ""
+
+  defp code_block(code),
+    do: """
+    <p style="margin:8px 0 24px;text-align:center;">
+      <span style="display:inline-block;padding:14px 28px;border:1px solid #{@cyan};border-radius:10px;background:#{@navy};font-family:Consolas,Menlo,monospace;font-size:30px;font-weight:700;letter-spacing:0.35em;color:#{@cyan};">#{escape(code)}</span>
+    </p>
+    """
+
+  defp button(nil), do: ""
+
+  defp button({label, url}),
+    do: """
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:12px auto 24px;">
+      <tr><td style="border-radius:10px;background:#{@cyan};background-image:linear-gradient(90deg,#{@cyan},#{@purple});">
+        <a href="#{escape(url)}" style="display:inline-block;padding:12px 28px;font-family:#{@font};font-size:15px;font-weight:600;color:#{@navy};text-decoration:none;">#{escape(label)}</a>
+      </td></tr>
+    </table>
+    <p style="margin:0;font-size:12px;line-height:18px;color:#{@muted};word-break:break-all;">Or paste this link into your browser:<br><a href="#{escape(url)}" style="color:#{@cyan};">#{escape(url)}</a></p>
+    """
+
+  defp escape(text), do: text |> to_string() |> Plug.HTML.html_escape()
+end
+`,
+    },
+    "add_auth_email_template"
+  );
+
+
+// Changing email, verified with a code while require_2fa is on
+const add_auth_email_change = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "email_change.ex", content: `defmodule ${ApiNameCamel}.Accounts.EmailChange do
+  @moduledoc """
+  Changing a signed-in user's email. Every account has one. While the server requires
+  two-factor (\`require_2fa\`), a new email is only saved once the code sent to it comes
+  back; otherwise it changes right away.
+  """
+  import Ecto.Query, warn: false
+
+  alias ${ApiNameCamel}.Accounts.{TwoFactor, User, UserNotifier, UserToken}
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  @context "change_email"
+  @code_minutes 10
+
+  def verification_required?, do: TwoFactor.server_required?()
+
+  @doc "Saves the new email, or emails a code to it first. Returns {:ok, user} or {:ok, :verify}."
+  def request(%User{} = user, email) do
+    changeset = User.email_changeset(user, %{email: email})
+
+    cond do
+      not changeset.valid? -> {:error, changeset}
+      verification_required?() -> send_code(user, changeset.changes.email)
+      true -> Repo.update(changeset)
+    end
+  end
+
+  defp send_code(user, email) do
+    code = TwoFactor.new_code()
+    Repo.delete_all(UserToken.by_user_and_contexts_query(user, [@context]))
+
+    Repo.insert!(%UserToken{
+      token: TwoFactor.hash(code),
+      context: @context,
+      sent_to: email,
+      user_id: user.id
+    })
+
+    UserNotifier.deliver_email_verification_code(email, code)
+    {:ok, :verify}
+  end
+
+  @doc "Saves a new email once the code sent to it is entered. The email counts as confirmed."
+  def confirm(%User{} = user, email, code) do
+    from(t in UserToken,
+      where:
+        t.user_id == ^user.id and t.context == @context and t.sent_to == ^email and
+          t.token == ^TwoFactor.hash(code) and t.inserted_at > ago(@code_minutes, "minute")
+    )
+    |> Repo.delete_all()
+    |> case do
+      {1, _} ->
+        user
+        |> User.email_changeset(%{email: email})
+        |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
+        |> Repo.update()
+
+      _ ->
+        {:error, :invalid_code}
+    end
+  end
+end
+` }, "add_auth_email_change");
+
+// OAuth accounts: link many, sign up with a chosen email
+const add_auth_oauth_accounts = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "oauth_accounts.ex", content: `defmodule ${ApiNameCamel}.Accounts.OAuthAccounts do
+  @moduledoc """
+  OAuth accounts linked to users. A user can link any number of them, several from the
+  same provider too; each provider account belongs to one user.
+
+  Signing up with OAuth does not create the user straight away. The provider's details
+  wait in an encrypted \`pending\` token while the person picks the account's email, which
+  does not have to match the provider's. While \`require_2fa\` is on, that email is
+  verified with a code first. The code is derived from the token and the email, so
+  nothing is stored before the account exists.
+  """
+  import Ecto.Query, warn: false
+
+  alias ${ApiNameCamel}.Accounts
+  alias ${ApiNameCamel}.Accounts.{OAuthToken, TwoFactor, User, UserNotifier}
+  alias ${AppNameCamel}.AuthRepo, as: Repo
+
+  @pending_salt "oauth_signup"
+  @pending_seconds 900
+  @link_salt "oauth_link"
+  @link_seconds 300
+
+  ## Linked accounts
+
+  def list(%User{id: id}),
+    do: Repo.all(from(t in OAuthToken, where: t.user_id == ^id, order_by: t.inserted_at))
+
+  @doc "The user a provider account is linked to, or nil."
+  def user_for(provider, provider_user_id) do
+    from(t in OAuthToken,
+      where: t.provider == ^to_string(provider) and t.provider_user_id == ^to_string(provider_user_id),
+      preload: :user
+    )
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      token -> token.user
+    end
+  end
+
+  @doc "Links a provider account to the user, or refreshes its tokens when it is already theirs."
+  def link(%User{id: user_id}, provider, profile, token_data) do
+    attrs = attrs(provider, profile, token_data)
+
+    case Repo.get_by(OAuthToken, provider: attrs.provider, provider_user_id: attrs.provider_user_id) do
+      nil -> %OAuthToken{user_id: user_id} |> OAuthToken.changeset(attrs) |> Repo.insert()
+      %OAuthToken{user_id: ^user_id} = token -> token |> OAuthToken.changeset(attrs) |> Repo.update()
+      _theirs -> {:error, :linked_to_another_user}
+    end
+  end
+
+  def unlink(%User{id: user_id}, id) do
+    case Repo.get_by(OAuthToken, id: id, user_id: user_id) do
+      nil -> {:error, :not_found}
+      token -> Repo.delete(token)
+    end
+  end
+
+  @doc "A short-lived token the account page passes to the OAuth popup to link instead of sign in."
+  def link_token(%User{id: id}), do: Phoenix.Token.sign(${ApiNameCamel}.Endpoint, @link_salt, id)
+
+  def link_user(token) when is_binary(token) do
+    with {:ok, id} <- Phoenix.Token.verify(${ApiNameCamel}.Endpoint, @link_salt, token, max_age: @link_seconds),
+         %User{} = user <- Repo.get(User, id) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  def link_user(_token), do: :error
+
+  ## Sign-up
+
+  def pending(provider, profile, token_data),
+    do: Phoenix.Token.encrypt(${ApiNameCamel}.Endpoint, @pending_salt, attrs(provider, profile, token_data))
+
+  def pending_details(pending) do
+    case Phoenix.Token.decrypt(${ApiNameCamel}.Endpoint, @pending_salt, pending, max_age: @pending_seconds) do
+      {:ok, attrs} -> {:ok, attrs}
+      _ -> {:error, :expired}
+    end
+  end
+
+  def email_verification_required?, do: TwoFactor.server_required?()
+
+  @doc "Emails the code that verifies the sign-up email."
+  def send_signup_code(pending, email) do
+    with {:ok, _attrs} <- pending_details(pending) do
+      UserNotifier.deliver_email_verification_code(email, signup_code(pending, email))
+      :ok
+    end
+  end
+
+  @doc "Creates the user with the chosen email and links the provider account."
+  def complete_signup(pending, email, code \\\\ nil) do
+    with {:ok, attrs} <- pending_details(pending),
+         :ok <- check_code(pending, email, code) do
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:account, signup_changeset(email))
+      |> Accounts.claim_first_account()
+      |> Ecto.Multi.insert(:oauth, &OAuthToken.changeset(%OAuthToken{user_id: &1.account.id}, attrs))
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{account: user}} -> {:ok, user}
+        {:error, _step, %Ecto.Changeset{} = changeset, _changes} -> {:error, changeset}
+        {:error, _step, reason, _changes} -> {:error, reason}
+      end
+    end
+  end
+
+  # OAuth accounts have no password until the user sets one
+  defp signup_changeset(email) do
+    changeset = User.email_changeset(%User{}, %{email: email})
+
+    if email_verification_required?(),
+      do: Ecto.Changeset.put_change(changeset, :confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second)),
+      else: changeset
+  end
+
+  defp check_code(pending, email, code) do
+    cond do
+      not email_verification_required?() -> :ok
+      Plug.Crypto.secure_compare(to_string(code), signup_code(pending, email)) -> :ok
+      true -> {:error, :invalid_code}
+    end
+  end
+
+  defp signup_code(pending, email) do
+    <<n::unsigned-32, _rest::binary>> =
+      :crypto.mac(:hmac, :sha256, ${ApiNameCamel}.Endpoint.config(:secret_key_base), pending <> "|" <> String.downcase(email))
+
+    n |> rem(1_000_000) |> Integer.to_string() |> String.pad_leading(6, "0")
+  end
+
+  ## Helpers
+
+  def provider_user_id(profile), do: to_string(profile["id"] || profile["sub"] || "")
+
+  # Providers that never share an email get an undeliverable placeholder; it is not worth showing
+  def provider_email(%{"email" => email}) when is_binary(email),
+    do: if(String.ends_with?(email, ".oauth.invalid"), do: nil, else: email)
+
+  def provider_email(_profile), do: nil
+
+  defp attrs(provider, profile, token_data),
+    do: %{
+      provider: to_string(provider),
+      provider_user_id: provider_user_id(profile),
+      provider_email: provider_email(profile),
+      access_token: token_data["access_token"],
+      refresh_token: token_data["refresh_token"],
+      expires_at: expires_at(token_data["expires_in"])
+    }
+
+  defp expires_at(nil), do: nil
+
+  defp expires_at(seconds),
+    do: DateTime.utc_now() |> DateTime.add(seconds, :second) |> DateTime.truncate(:second)
+end
+` }, "add_auth_oauth_accounts");
+
+// Recovery codes in the configured batch size (config :app, recovery_code_count)
+const add_auth_recovery = async ({ AppDir, AppNameCamel, AppNameSnake, ApiNameSnake, ApiNameCamel }: ApiAppData) =>
+  generateFile({ dir: join(AppDir || "", `${AppNameSnake}_${ApiNameSnake}/lib/${AppNameSnake}_${ApiNameSnake}/accounts`), filename: "recovery.ex", content: `defmodule ${ApiNameCamel}.Accounts.Recovery do
+  @moduledoc """
+  Issues recovery codes in the configured batch size:
+  \`config :${AppNameSnake}, recovery_code_count: 12\` (config/config.exs).
+  """
+  alias Ithibati.Identity.RecoveryCodes
+
+  def count, do: Application.get_env(:${AppNameSnake}, :recovery_code_count, 12)
+
+  @doc "A fresh batch for the user; earlier codes stop working."
+  def issue(user), do: RecoveryCodes.regenerate(user, count: count())
+end
+` }, "add_auth_recovery");
+
 const add_auth_user_notifier = async ({
   AppDir,
   AppNameSnake,
@@ -963,102 +1329,93 @@ const add_auth_user_notifier = async ({
   const filename = "user_notifier.ex";
   const displayName = ApiNameCamel.replace(/Web$/, "");
   const content = `defmodule ${ApiNameCamel}.Accounts.UserNotifier do
+  @moduledoc "Every email the auth app sends, as themed HTML with a plain-text part."
   import Swoosh.Email
 
+  alias ${ApiNameCamel}.Accounts.EmailTemplate
   alias ${AppNameCamel}.Mailer
 
-  # Delivers the email using the application mailer.
-  defp deliver(recipient, subject, body) do
+  # From external_service_keys/email.exs (from_name, from_address), via runtime.exs
+  defp sender,
+    do: Application.get_env(:${AppNameSnake}, :email, [])[:from] || {"${AppNameCamel}", "contact@example.com"}
+
+  defp deliver(recipient, subject, content) do
+    {app, _address} = from = sender()
+
     email =
       new()
       |> to(recipient)
-      |> from({"${displayName}", "contact@example.com"})
+      |> from(from)
       |> subject(subject)
-      |> text_body(body)
+      |> text_body(EmailTemplate.text(app, content))
+      |> html_body(EmailTemplate.html(app, content))
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
-    end
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
   end
 
-  @doc """
-  Deliver instructions to confirm account.
-  """
-  def deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
+  @doc "Deliver instructions to confirm account."
+  def deliver_confirmation_instructions(user, url),
+    do:
+      deliver(user.email, "Confirm your account", %{
+        heading: "Confirm your account",
+        lines: ["Welcome! Confirm #{user.email} to finish setting up your account."],
+        action: {"Confirm account", url},
+        footer: "If you didn't create an account, you can ignore this email."
+      })
 
-    ==============================
+  @doc "Deliver instructions to reset a user password."
+  def deliver_reset_password_instructions(user, url),
+    do:
+      deliver(user.email, "Reset your password", %{
+        heading: "Reset your password",
+        lines: ["We got a request to reset the password for #{user.email}."],
+        action: {"Choose a new password", url},
+        footer: "If you didn't ask for this, you can ignore this email. Your password stays the same."
+      })
 
-    Hi #{user.email},
+  @doc "Deliver a two-factor sign-in code."
+  def deliver_two_factor_code(user, code),
+    do:
+      deliver(user.email, "Your sign-in code", %{
+        heading: "Your sign-in code",
+        lines: ["Enter this code to finish signing in. It expires in 10 minutes."],
+        code: code,
+        footer: "If you didn't try to sign in, change your password now."
+      })
 
-    You can confirm your account by visiting the URL below:
+  @doc "Deliver instructions to update a user email."
+  def deliver_update_email_instructions(user, url),
+    do:
+      deliver(user.email, "Confirm your new email", %{
+        heading: "Confirm your new email",
+        lines: ["Confirm this address to make it the email on your account."],
+        action: {"Confirm new email", url},
+        footer: "If you didn't ask for this change, you can ignore this email."
+      })
 
-    #{url}
+  @doc "Deliver a code that verifies an email address before it is used."
+  def deliver_email_verification_code(email, code),
+    do:
+      deliver(email, "Verify your email", %{
+        heading: "Verify your email",
+        lines: ["Enter this code to confirm this address for your account. It expires in 10 minutes."],
+        code: code,
+        footer: "If you didn't ask for this, you can ignore this email."
+      })
 
-    If you didn't create an account with us, please ignore this.
-
-    ==============================
-    """)
-  end
-
-  @doc """
-  Deliver instructions to reset a user password.
-  """
-  def deliver_reset_password_instructions(user, url) do
-    deliver(user.email, "Reset password instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can reset your password by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
-  end
-
-  @doc """
-  Deliver a two-factor sign-in code.
-  """
-  def deliver_two_factor_code(user, code) do
-    deliver(user.email, "Your sign-in code", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    Your sign-in code is: #{code}
-
-    It expires in 10 minutes. If you didn't try to sign in, change your password.
-
-    ==============================
-    """)
-  end
-
-  @doc """
-  Deliver instructions to update a user email.
-  """
-  def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can change your email by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
-  end
-end`;
+  @doc "Deliver an invitation to create an account."
+  def deliver_invitation(email, url, inviter_email, note),
+    do:
+      deliver(email, "You're invited", %{
+        heading: "You're invited",
+        lines:
+          ["#{inviter_email} invited you to create an account."] ++
+            if(note in [nil, ""], do: [], else: ["\\"#{note}\\""]),
+        action: {"Create your account", url},
+        footer: "If you weren't expecting this, you can ignore this email."
+      })
+end
+`;
 
   return generateFile({ dir, filename, content }, "add_auth_user_notifier");
 };
@@ -1131,6 +1488,7 @@ const add_auth_oauth_token = async ({
           refresh_token: String.t() | nil,
           expires_at: DateTime.t() | nil,
           provider_user_id: String.t() | nil,
+          provider_email: String.t() | nil,
           user: User.t() | Ecto.Association.NotLoaded.t() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -1142,6 +1500,7 @@ const add_auth_oauth_token = async ({
     field(:refresh_token, :string)
     field(:expires_at, :utc_datetime)
     field(:provider_user_id, :string)
+    field(:provider_email, :string)
     belongs_to(:user, User)
 
     timestamps(type: :utc_datetime)
@@ -1150,12 +1509,22 @@ const add_auth_oauth_token = async ({
   @doc false
   def changeset(oauth_token, attrs) do
     oauth_token
-    |> cast(attrs, [:provider, :access_token, :refresh_token, :expires_at, :provider_user_id, :user_id])
-    |> validate_required([:provider, :access_token, :user_id])
+    |> cast(attrs, [
+      :provider,
+      :access_token,
+      :refresh_token,
+      :expires_at,
+      :provider_user_id,
+      :provider_email,
+      :user_id
+    ])
+    |> validate_required([:provider, :provider_user_id, :access_token, :user_id])
     |> validate_length(:provider, max: 50)
-    |> unique_constraint([:user_id, :provider])
+    # One provider account belongs to one user; a user may link many, even from one provider
+    |> unique_constraint([:provider, :provider_user_id])
   end
-end`;
+end
+`;
 
   return generateFile({ dir, filename, content }, "add_auth_oauth_token");
 };
@@ -1557,6 +1926,10 @@ export {
   add_auth_user_schema,
   add_auth_user_token,
   add_auth_user_notifier,
+  add_auth_email_template,
+  add_auth_email_change,
+  add_auth_recovery,
+  add_auth_oauth_accounts,
   add_auth_oauth_state,
   add_auth_oauth_token,
   add_auth_account_schema,

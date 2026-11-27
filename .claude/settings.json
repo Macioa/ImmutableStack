@@ -2,6 +2,16 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Bash|PowerShell|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/graph_first.js\" check",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Bash|Grep",
         "hooks": [
           {
@@ -17,6 +27,17 @@
           {
             "type": "command",
             "command": "C:/Users/Tsell/.local/bin/graphify.EXE hook-guard read",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/graph_first.js\" reset",
             "timeout": 10
           }
         ]
