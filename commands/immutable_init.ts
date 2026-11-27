@@ -23,7 +23,7 @@ import { initGitRepository, addGitSubmodules } from "@/utils/git";
 import { join } from "@/utils/path";
 import { applyPinnedVersions } from "@/utils/versions";
 import { parseFlags } from "@/utils/flags";
-import { DEFAULT_CACHE_DIR, link_dep_cache, save_build_cache, seed_build_cache } from "@/utils/dep_cache";
+import { DEFAULT_CACHE_DIR, link_dep_cache } from "@/utils/dep_cache";
 
 setLogLevel(5);
 
@@ -101,15 +101,8 @@ async function main() {
   if (cache) link_dep_cache(AppData);
 
   writeLog(UmbrellaDir, `init_project_${projectName}`);
-  // The project's own apps compile on the first mix phx.server
+  // Compiling is left to the first mix phx.server
   const _deps = await timed("deps (mix + pnpm)", () => install_all_deps(AppData, { offline: cache }));
-  // Cached dep builds are copied in; deps.loadpaths compiles only missing or stale deps,
-  // which are then saved for later projects
-  const _builds = cache ? await timed("dep builds (cache)", async () => {
-    seed_build_cache(AppData);
-    await exec({ command: "mix deps.loadpaths", dir: UmbrellaDir }, "init_proj");
-    return save_build_cache(AppData);
-  }) : [];
 
   const _cleanup = await exec(
     {
