@@ -5,6 +5,10 @@ import {
   add_auth_user_schema,
   add_auth_user_token,
   add_auth_user_notifier,
+  add_auth_email_template,
+  add_auth_email_change,
+  add_auth_recovery,
+  add_auth_oauth_accounts,
   add_auth_user_confirmation_controller,
   add_auth_user_registration_controller,
   add_auth_user_reset_password_controller,
@@ -12,6 +16,10 @@ import {
   add_auth_user_settings_controller,
   add_auth_user_json,
   add_auth_user_registration_json_controller,
+  add_auth_user_confirmation_json_controller,
+  add_auth_ui_url,
+  add_auth_account_email_json_controller,
+  add_auth_oauth_account_json_controller,
   add_auth_user_session_json_controller,
   add_auth_user_settings_json_controller,
   add_auth_changeset_json,
@@ -92,6 +100,10 @@ import {
   add_auth_security_json_controller,
   add_auth_two_factor_json_controller,
   add_auth_account_security_test,
+  add_auth_account_identity_test,
+  add_auth_email_panel,
+  add_auth_connected_accounts_panel,
+  add_auth_oauth_signup_modal,
   add_auth_two_factor_migration,
   add_auth_recovery_codes,
   add_auth_ithibati_migration,
@@ -109,6 +121,8 @@ import {
   add_auth_custom_compiler,
   add_auth_web_api_auth,
   add_auth_keys,
+  add_auth_email,
+  add_auth_require_2fa,
   add_auth_ui_dependencies,
   add_auth_to_all_uis,
 } from "../../injectors/add_auth";
@@ -128,6 +142,10 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_user_schema(apiAppData),
     add_auth_user_token(apiAppData),
     add_auth_user_notifier(apiAppData),
+    add_auth_email_template(apiAppData),
+    add_auth_email_change(apiAppData),
+    add_auth_recovery(apiAppData),
+    add_auth_oauth_accounts(apiAppData),
     add_auth_user_auth(apiAppData),
     add_auth_router(apiAppData),
     add_auth_user_confirmation_controller(apiAppData),
@@ -137,6 +155,10 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_user_settings_controller(apiAppData),
     add_auth_user_json(apiAppData),
     add_auth_user_registration_json_controller(apiAppData),
+    add_auth_user_confirmation_json_controller(apiAppData),
+    add_auth_ui_url(apiAppData),
+    add_auth_account_email_json_controller(apiAppData),
+    add_auth_oauth_account_json_controller(apiAppData),
     add_auth_user_session_json_controller(apiAppData),
     add_auth_user_settings_json_controller(apiAppData),
     add_auth_changeset_json(apiAppData),
@@ -218,6 +240,10 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_security_json_controller(apiAppData),
     add_auth_two_factor_json_controller(apiAppData),
     add_auth_account_security_test(apiAppData),
+    add_auth_account_identity_test(apiAppData),
+    add_auth_email_panel(apiAppData),
+    add_auth_connected_accounts_panel(apiAppData),
+    add_auth_oauth_signup_modal(apiAppData),
     add_auth_two_factor_migration(apiAppData),
   ]));
 
@@ -240,6 +266,11 @@ const add_auth = async (apiAppData: ApiAppData) => {
     add_auth_keys(apiAppData),
   ]));
 
+  log({ level: 2, color: "BLUE" }, "\nAdding email (Swoosh, Mailpit in dev)...");
+
+  const email = await timed("auth email", () => add_auth_email(apiAppData));
+  const require2fa = await timed("auth require_2fa config", () => add_auth_require_2fa(apiAppData));
+
   log({ level: 2, color: "BLUE" }, "\nAdding access control plug...");
 
   const authPlug = await timed("auth plug", () => add_auth_plug(apiAppData));
@@ -257,7 +288,7 @@ const add_auth = async (apiAppData: ApiAppData) => {
 
   const uiWiring = await timed("auth ui wiring", () => add_auth_to_all_uis(apiAppData));
 
-  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...authPlug, ...webApiAuth, ...uiWiring];
+  return [...base, ...authGenerators.flat(), ...authInjectors.flat(), ...email.flat(2), ...require2fa.flat(), ...authPlug, ...webApiAuth, ...uiWiring];
 };
 
 export { add_auth };

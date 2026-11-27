@@ -122,12 +122,15 @@ const add_auth_oauth_tokens_migration = async ({
       add :refresh_token, :text
       add :expires_at, :utc_datetime
       add :provider_user_id, :string
+      add :provider_email, :string
 
       timestamps(type: :utc_datetime)
     end
 
     create index(:oauth_tokens, [:user_id])
-    create unique_index(:oauth_tokens, [:user_id, :provider])
+    # A user may link many OAuth accounts, several from one provider too; each provider
+    # account belongs to one user.
+    create unique_index(:oauth_tokens, [:provider, :provider_user_id])
     create index(:oauth_tokens, [:provider_user_id])
   end
 end`;

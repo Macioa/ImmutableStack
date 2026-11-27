@@ -37,7 +37,10 @@ const add_auth_config_root = async ({ UmbrellaDir, AppNameSnake, AppNameCamel, A
       (content: string) =>
         content.includes("config :ithibati,")
           ? content
-          : content.replace(/config :logger, :default_formatter,/, (logger) => `# Passkeys, recovery codes, invitations and revocable sessions (ithibati)
+          : content.replace(/config :logger, :default_formatter,/, (logger) => `# Recovery codes issued per batch (sign-up, OAuth sign-up, Account → Recovery codes)
+config :${AppNameSnake}, recovery_code_count: 12
+
+# Passkeys, recovery codes, invitations and revocable sessions (ithibati)
 config :ithibati,
   repo: ${AppNameCamel}.AuthRepo,
   user_schema: ${ApiNameCamel}.Accounts.User,
