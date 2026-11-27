@@ -1,11 +1,16 @@
 import { AppData } from "../../readers/get_app_data";
+import { join } from "../../utils/path";
 import { generateFile } from "../index";
 
-const gen_claude_md = async ({ UmbrellaDir }: AppData) => {
-  const dir = UmbrellaDir || "";
-  const filename = "CLAUDE.md";
-  const content = `@.cursorrules
-@AGENTS.md
+// Single source of agent rules. AgentSync links it to CLAUDE.md, AGENTS.md and each agent's file.
+const gen_agents_md = async ({ UmbrellaDir }: AppData) => {
+  const dir = join(UmbrellaDir || "", ".agents");
+  const filename = "AGENTS.md";
+  const content = `# Agent Instructions
+
+This file is the single source of agent rules. Edit \`.agents/AGENTS.md\`, then run \`pnpm run agents\` (AgentSync) to relink it to each agent's file.
+
+Read and follow the code style and structure rules in \`.cursorrules\` and in each app's \`.cursorrules\`.
 
 ## graphify
 
@@ -16,10 +21,10 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run \`graphify update .\` to keep the graph current (AST-only, no API cost).
-- If graphify is not installed, install it with \`uv tool install graphifyy\` (or \`pipx install graphifyy\`), then run \`graphify claude install\` and \`graphify update .\`.
+- If graphify is not installed, install it with \`uv tool install graphifyy\` (or \`pipx install graphifyy\`), then run \`graphify <agent> install\` for your agent and \`graphify update .\`.
 `;
 
-  return generateFile({ filename, dir, content }, "gen_claude_md");
+  return generateFile({ filename, dir, content }, "gen_agents_md");
 };
 
-export { gen_claude_md };
+export { gen_agents_md };

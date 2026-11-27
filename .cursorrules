@@ -103,6 +103,7 @@ Commands to run:
       immutable -install                                # Install core (required)
       immutable -devkit                                 # Install external dev tools (optional)
       immutable -init _my_proj_name                     # Initialize a new project
+      immutable -init _my_proj_name -agents claude,cursor  # ...with agent rules linked by AgentSync (default: claude)
       immutable -genfile _my_genname                    # Create a generator file
       immutable -gen _my_genfile_path                   # Run generator with generator file
       immutable -gen_channel _my_channel_name           # Create a channel
