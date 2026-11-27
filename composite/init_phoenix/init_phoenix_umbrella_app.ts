@@ -14,6 +14,7 @@ import { inject_cluster_to_application } from "../../injectors/init_phoenix/inje
 import { inject_deps_get_aliases_to_mix_exs } from "../../injectors/init_phoenix/inject_deps_get_aliases_to_mix_exs";
 import { inject_dev_config } from "../../injectors/init_phoenix/inject_dev_config";
 import { inject_dynamic_port_config } from "../../injectors/init_phoenix/inject_dynamic_port_config";
+import { inject_env_config_folders } from "../../injectors/init_phoenix/inject_env_config_folders";
 import { inject_lib_source_paths } from "../../injectors/init_phoenix/inject_lib_source_paths";
 import { inject_phoenix_deps } from "../../injectors/init_phoenix/inject_phoenix_deps";
 import { inject_scrinever } from "../../injectors/init_phoenix/inject_scrinever_to_repo";
@@ -41,6 +42,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
     },
     "init_phoenix_umbrella_app"
   );
+  const envConfigs = await inject_env_config_folders(appdata);
   const declarations = await inject_app_declarations(appdata);
   const tasks = await Promise.all([
     inject_phoenix_deps(appdata, webName),
@@ -73,6 +75,7 @@ const init_phoenix_umbrella_app = async (appdata: AppData, uiName: string = 'ui'
 
   return [
     init,
+    envConfigs,
     declarations,
     tasks,
     configure,

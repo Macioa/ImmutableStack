@@ -1,9 +1,11 @@
-import { join } from "@/utils/path";
+import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType } from "..";
 import { ApiAppData } from "@/generators/add_api";
+import { db } from "@/utils/database";
 
-const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }: ApiAppData) => {
-  const file = join(UmbrellaDir, "config/dev.exs");
+const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel, Database }: ApiAppData) => {
+  const connection = db(Database).connection(`${AppNameSnake}_auth_db`);
+  const file = envConfigFile(UmbrellaDir, "dev");
   const apiAppName = `${AppNameSnake}_auth`;
 
   const injections: Injection[] = [
@@ -20,31 +22,13 @@ const add_auth_dev_config = async ({ UmbrellaDir, AppNameSnake, AppNameCamel }: 
           ),
           `$1
 config :${AppNameSnake}, ${AppNameCamel}.AuthRepo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "${AppNameSnake}_auth_db",
+  ${connection}
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 `
         );
       },
-    ],
-    [
-      InjectType.AFTER,
-      new RegExp(`config :${apiAppName}, AuthWeb\\.Endpoint,[\\s\\S]*?watchers: \\[\\]`),
-      `\n# OAuth configuration for development
-# Set these in your environment or uncomment and set directly here for testing
-config :${apiAppName}, :oauth,
-  google: [
-    client_id: System.get_env("GOOGLE_CLIENT_ID") || "",
-    client_secret: System.get_env("GOOGLE_CLIENT_SECRET") || ""
-  ],
-  microsoft: [
-    client_id: System.get_env("MICROSOFT_CLIENT_ID") || "",
-    client_secret: System.get_env("MICROSOFT_CLIENT_SECRET") || ""
-  ]\n`
     ],
   ];
 

@@ -399,8 +399,8 @@ const add_auth_accounts_context = async ({
   @doc """
   Creates an OAuth state for CSRF protection.
   """
-  def create_oauth_state(provider, state) when provider in [:google, :microsoft] do
-    provider_string = Atom.to_string(provider)
+  def create_oauth_state(provider, state) do
+    provider_string = to_string(provider)
     expires_at = DateTime.utc_now() |> DateTime.add(10, :minute) |> DateTime.truncate(:second)
 
     %OAuthState{}
@@ -416,8 +416,8 @@ const add_auth_accounts_context = async ({
   Validates and consumes an OAuth state.
   Returns :ok if valid, :error if invalid or expired.
   """
-  def validate_oauth_state(state, provider) when provider in [:google, :microsoft] do
-    provider_string = Atom.to_string(provider)
+  def validate_oauth_state(state, provider) do
+    provider_string = to_string(provider)
     now = DateTime.utc_now()
 
     case Repo.get_by(OAuthState, state: state, provider: provider_string) do
@@ -448,11 +448,11 @@ const add_auth_accounts_context = async ({
   @doc """
   Stores or updates an OAuth token for a user.
   """
-  def upsert_oauth_token(user, provider, attrs) when provider in [:google, :microsoft] do
+  def upsert_oauth_token(user, provider, attrs) do
     if is_nil(user.id) do
       {:error, "User ID is nil - user must be saved before storing OAuth token"}
     else
-      provider_string = Atom.to_string(provider)
+      provider_string = to_string(provider)
 
       case Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string) do
         nil ->
@@ -471,8 +471,8 @@ const add_auth_accounts_context = async ({
   @doc """
   Gets an OAuth token for a user and provider.
   """
-  def get_oauth_token(user, provider) when provider in [:google, :microsoft] do
-    provider_string = Atom.to_string(provider)
+  def get_oauth_token(user, provider) do
+    provider_string = to_string(provider)
     Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string)
   end
 
@@ -480,8 +480,8 @@ const add_auth_accounts_context = async ({
   Gets a user by OAuth provider and provider user ID.
   Returns the user if found, nil otherwise.
   """
-  def get_user_by_oauth_provider(provider, provider_user_id) when provider in [:google, :microsoft] do
-    provider_string = Atom.to_string(provider)
+  def get_user_by_oauth_provider(provider, provider_user_id) do
+    provider_string = to_string(provider)
 
     from(ot in OAuthToken,
       where: ot.provider == ^provider_string and ot.provider_user_id == ^provider_user_id,
@@ -494,8 +494,8 @@ const add_auth_accounts_context = async ({
   @doc """
   Deletes an OAuth token for a user and provider.
   """
-  def delete_oauth_token(user, provider) when provider in [:google, :microsoft] do
-    provider_string = Atom.to_string(provider)
+  def delete_oauth_token(user, provider) do
+    provider_string = to_string(provider)
 
     case Repo.get_by(OAuthToken, user_id: user.id, provider: provider_string) do
       nil -> {:ok, nil}
@@ -1026,7 +1026,7 @@ const add_auth_oauth_state = async ({
     oauth_state
     |> cast(attrs, [:state, :provider, :expires_at])
     |> validate_required([:state, :provider, :expires_at])
-    |> validate_inclusion(:provider, ["google", "microsoft"])
+    |> validate_length(:provider, max: 50)
     |> unique_constraint(:state)
   end
 end`;
@@ -1081,7 +1081,7 @@ const add_auth_oauth_token = async ({
     oauth_token
     |> cast(attrs, [:provider, :access_token, :refresh_token, :expires_at, :provider_user_id, :user_id])
     |> validate_required([:provider, :access_token, :user_id])
-    |> validate_inclusion(:provider, ["google", "microsoft"])
+    |> validate_length(:provider, max: 50)
     |> unique_constraint([:user_id, :provider])
   end
 end`;

@@ -12,14 +12,13 @@ defmodule ${AppNameCamel}.Plugs.ValidateBinaryId do
 
   def init(opts) do
     case Keyword.get(opts, :fallback) do
+      nil ->
+        {:error, :validate_requires_fallback_controller}
       controller ->
         case Code.ensure_loaded?(controller) do
           true -> opts
           _ -> {:error, :validate_fallback_controller_not_loaded}
         end
-
-      _ ->
-        {:error, :validate_requires_fallback_controller}
     end
   end
 

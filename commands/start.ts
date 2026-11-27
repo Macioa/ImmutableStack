@@ -101,7 +101,7 @@ const ensureDocker = () =>
 const installPhoenix = (versions: Versions) => {
   log({ level: 3, color: "GREEN" }, "Installing Hex and Phoenix...");
   return runInOrder(
-    ["mix local.hex --force", "mix archive.install hex phx_new 1.7.14 --force"],
+    ["mix local.hex --force", "mix archive.install hex phx_new 1.8.17 --force"],
     { ...env, ...asdfEnv(versions) }
   );
 };

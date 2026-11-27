@@ -2,7 +2,9 @@ import { fetch_assets } from "@/assets";
 import { gen_gitignore_react } from "@/generators/init_configs/gen_gitignore_react";
 import { build_tool_agnostic_init_tasks_for_add_ui } from "@/composite/add_ui/build_tool_agnostic_init_tasks_for_add_ui";
 import { init_react_app_for_add_ui } from "@/composite/add_ui/init_react_app_for_add_ui";
+import { add_auth_to_ui, has_auth_ui } from "@/injectors/add_auth";
 import { getAppData } from "@/readers/get_app_data";
+import { join } from "@/utils/path";
 import { execute as exec } from "@/runners";
 import { log, setLogLevel } from "@/utils/logger";
 import { applyPinnedVersions } from "@/utils/versions";
@@ -59,6 +61,11 @@ async function main() {
     },
     "add_ui"
   );
+
+  // Projects that already ran add_auth get the sign in menu in the new UI too
+  const _auth = has_auth_ui(AppData)
+    ? await add_auth_to_ui(join(AppData.AppDir, `${AppNameSnake}_${uiName}`))
+    : [];
 
   log(
     { level: 2, color: "GREEN" },

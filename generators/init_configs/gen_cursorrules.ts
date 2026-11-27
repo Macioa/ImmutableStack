@@ -39,7 +39,7 @@ This is an Immutable Stack project - Elixir/Phoenix backend with React/TypeScrip
 ## Testing
 - Run tests with \`make test\` [[memory:5779166]]
 - Phoenix tests in \`test/\` directories
-- React tests with Jest
+- React tests with Vitest
 
 ## Commands
 - \`mix phx.server\` - Start Phoenix server

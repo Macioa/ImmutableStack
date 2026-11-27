@@ -1,9 +1,9 @@
-import path from "path";
+import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType as T } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
 const inject_dynamic_port_config = async ({ UmbrellaDir, AppNameSnake }: AppData) => {
-  const file = path.join(UmbrellaDir || ".", "config/dev.exs");
+  const file = envConfigFile(UmbrellaDir, "dev");
   const injections: Injection[] = [
     [
       T.REPLACE,

@@ -11,11 +11,11 @@ const inject_viteconfig = async (AppNameSnake: string, UiDir: string) => {
       `\n
   resolve: {
     alias: {
-      '@utils': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/utils'),
-      '@state': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/state'),
-      '@requests': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/requests'),
-      '@components': path.resolve(__dirname, '../${AppNameSnake}/lib/typescript/components'),
-      '@test': path.resolve(__dirname, 'src/test')
+      '@utils': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/utils'),
+      '@state': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/state'),
+      '@requests': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/requests'),
+      '@components': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/components'),
+      '@test': path.resolve(import.meta.dirname, 'src/test')
     }
   },
 `,
@@ -34,14 +34,18 @@ const inject_tsconfig = async (AppNameSnake: string, UiDir: string) => {
       InjectType.AFTER,
       /"compilerOptions":\s+\{/,
       `\n
-  "baseUrl": "../../",
   "paths": {
-    "@utils/*": ["apps/${AppNameSnake}/lib/typescript/utils/*"],
-    "@state/*": ["apps/${AppNameSnake}/lib/typescript/state/*"],
-    "@requests/*": ["apps/${AppNameSnake}/lib/typescript/requests/*"],
-    "@components/*": ["apps/${AppNameSnake}/lib/typescript/components/*"]
+    "@utils/*": ["../${AppNameSnake}/lib/typescript/utils/*"],
+    "@state/*": ["../${AppNameSnake}/lib/typescript/state/*"],
+    "@requests/*": ["../${AppNameSnake}/lib/typescript/requests/*"],
+    "@components/*": ["../${AppNameSnake}/lib/typescript/components/*"]
   },
 `,
+    ],
+    [
+      InjectType.REPLACE,
+      /"types":\s*\["vite\/client"\]/,
+      `"types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"]`,
     ],
   ];
 

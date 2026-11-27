@@ -1,10 +1,10 @@
-import path from "path";
+import { envConfigFile } from "@/utils/config_paths";
 import { inject_file, Injection, InjectType } from "..";
 import { AppData } from "../../readers/get_app_data";
 import { devCorsConfig } from "../../utils/cors";
 
 const inject_dev_config = async ({ AppNameSnake, UmbrellaDir }: AppData) => {
-  const file = path.join(UmbrellaDir, `config/dev.exs`);
+  const file = envConfigFile(UmbrellaDir, "dev");
   const injections: Injection[] = [
     [
       InjectType.BEFORE,

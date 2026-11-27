@@ -5,6 +5,7 @@
 */
 import { fetch_assets } from "@/assets";
 import { init_docker } from "@/composite/init_docker";
+import { init_graphify } from "@/composite/init_graphify";
 import { init_phoenix_umbrella_app } from "@/composite/init_phoenix/init_phoenix_umbrella_app";
 import { build_tool_agnostic_init_tasks } from "@/composite/init_react/build_tool_agnostic_init_tasks";
 import { init_react_app_with_vite } from "@/composite/init_react/init_react_app_with_vite";
@@ -18,15 +19,17 @@ import { promptGitDomain } from "@/prompts/git";
 import { initGitRepository, addGitSubmodules } from "@/utils/git";
 import { join } from "@/utils/path";
 import { applyPinnedVersions } from "@/utils/versions";
+import { parseFlags } from "@/utils/flags";
 
 setLogLevel(5);
 
 const args = process.argv.slice(2);
+const { db } = parseFlags(args);
 
 async function main() {
   if (args.length < 1) {
     console.error(
-      "Usage: node init_proj.js <project_name>\n   Or: immutable -init <project_name>"
+      "Usage: node init_proj.js <project_name> [-sqlite]\n   Or: immutable -init <project_name> [-sqlite]"
     );
     process.exit(1);
   }
@@ -37,7 +40,7 @@ async function main() {
     .replace(/[\s-]/g, "_")
     .replace(/[^a-z0-9_]/g, "");
 
-  const AppData = await appDataFromAppnNameSnake(projectName, false);
+  const AppData = await appDataFromAppnNameSnake(projectName, false, db);
   setAppData(AppData);
   const { AppNameSnake, UmbrellaDir } = AppData;
 
@@ -91,6 +94,8 @@ async function main() {
     },
     "init_proj"
   );
+
+  const _graphify = await init_graphify(AppData);
 
   log(
     { level: 1, color: "GREEN" },

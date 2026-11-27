@@ -72,11 +72,11 @@ fi
 
 # Install global npm packages
 echo "Installing global npm packages..."
-npm ci -g create-vite@4.5.1
+npm ci -g create-vite@9.3.4
 
 # Install Hex and Phoenix
 echo "Installing Hex and Phoenix..."
 mix local.hex --force
-mix archive.install hex phx_new 1.7.14 --force
+mix archive.install hex phx_new 1.8.17 --force
 
 echo "Setup complete."

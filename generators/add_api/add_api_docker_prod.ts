@@ -14,7 +14,7 @@ const add_api_docker_prod = async ({ UmbrellaDir, AppNameSnake, ApiNameSnake }: 
   const portEnv = apiNumber === "1" ? "PORT" : `PORT${apiNumber}`;
   
   const content = `# Stage 1: Build Elixir/Phoenix
-FROM elixir:1.18-alpine AS builder
+FROM elixir:1.20-alpine AS builder
 
 # Install OS dependencies
 RUN apk add --no-cache build-base git npm nodejs postgresql-dev

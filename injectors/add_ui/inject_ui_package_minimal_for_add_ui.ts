@@ -22,11 +22,11 @@ const inject_ui_package_minimal_for_add_ui = async (appdata: AppData, uiName: st
     version: "0.0.0",
     type: "module",
     scripts: {
-      "test": "jest",
+      "test": "vitest run",
       "postinstall": linkNodeModulesScript(`../${AppNameSnake}/lib/typescript`, appsNodeModulesPath),
       "dev": "vite",
       "build": "tsc -b && vite build",
-      "lint": "eslint .",
+      "lint": "oxlint",
       "format": "prettier --write .",
       "preview": "vite preview"
     }

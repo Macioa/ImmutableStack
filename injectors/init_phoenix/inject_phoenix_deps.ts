@@ -1,6 +1,7 @@
 import path from "path";
 import { inject_file, Injection, InjectType as T } from "../index";
 import { AppData } from "../../readers/get_app_data";
+import { db } from "../../utils/database";
 
 const inject_web_app_deps = async ({ AppDir, AppNameSnake }: AppData, webName: string = 'web') => {
   const WebDir = path.join(AppDir, `${AppNameSnake}_${webName}`);
@@ -9,8 +10,9 @@ const inject_web_app_deps = async ({ AppDir, AppNameSnake }: AppData, webName: s
     [
       T.AFTER,
       /defp\sdeps\sdo\s*\n{0,5}\s*\[/,
-      `\n      {:cors_plug, "~> 2.0"},\n`,
+      `\n      {:cors_plug, "~> 3.0"},\n`,
     ],
+    [T.REPLACE, /\{:phoenix_live_dashboard, "[^"]*"\}/, `{:phoenix_live_dashboard, "~> 0.9.1"}`],
   ];
 
   return inject_file({ file, injections }, "inject_web_app_deps");
@@ -23,22 +25,25 @@ const inject_umbrella_deps = async ({ UmbrellaDir }: AppData) => {
   return inject_file({ file, injections }, "inject_app_deps");
 };
 
-const inject_app_deps = async ({ LibDir }: AppData) => {
+const inject_app_deps = async ({ LibDir, Database }: AppData) => {
+  const { deps } = db(Database);
   const file = path.join(LibDir, "mix.exs");
   const injections: Injection[] = [
     [
       T.AFTER,
       /defp\sdeps\sdo\s*\n{0,5}\s*\[/,
       `\n      {:scrivener, "~> 2.7"},
-      {:scrivener_ecto, "~> 3.0"},
-      {:phoenix, "~> 1.7.14"},
+      {:scrivener_ecto, "~> 3.1"},
+      {:phoenix, "~> 1.8.17"},
       {:jason, "~> 1.2"},
-      {:phoenix_pubsub, "~> 2.1"},
-      {:ecto_sql, "~> 3.13"},
-      {:postgrex, ">= 0.0.0"},
-      {:swoosh, "~> 1.16"},
-      {:req, "~> 0.5"},\n`,
+      {:phoenix_pubsub, "~> 2.4"},
+      {:ecto_sql, "~> 3.14"},
+      {:postgrex, ">= 0.0.0"},${deps}
+      {:swoosh, "~> 1.30"},
+      {:req, "~> 0.7"},
+`,
     ],
+    [T.REPLACE, /\{:dns_cluster, "[^"]*"\}/, `{:dns_cluster, "~> 0.3.1"}`],
   ];
 
   return inject_file({ file, injections }, "inject_app_deps");

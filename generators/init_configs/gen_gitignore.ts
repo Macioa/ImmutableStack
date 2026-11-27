@@ -14,6 +14,9 @@ erl_crash.dump
 *.ez
 /tmp/
 
+# Graphify knowledge graph
+graphify-out/
+
 # Node.js/React (for UI apps)
 node_modules
 dist/
@@ -43,6 +46,11 @@ lerna-debug.log*
 # Docker
 docker/pgdata/
 *.tar
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
 
 # Environment files
 .env

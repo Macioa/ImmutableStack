@@ -26,7 +26,7 @@ const add_auth_mix_dependency = async ({
 
   content = content.replace(
     corsPlugRegex,
-    `{:pbkdf2_elixir, "~> 2.0"},\n      {:cors_plug, "~> 2.0"},`
+    `{:pbkdf2_elixir, "~> 3.0"},\n      {:cors_plug, "~> 3.0"},`
   );
 
   writeFileSync(file, content, "utf8");

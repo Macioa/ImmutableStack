@@ -18,7 +18,7 @@ const add_api_mix_exs = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCame
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -38,10 +38,10 @@ const add_api_mix_exs = async ({ AppDir, AppNameSnake, ApiNameSnake, ApiNameCame
 
   defp deps do
     [
-      {:cors_plug, "~> 2.0"},
-      {:phoenix, "~> 1.7.14"},
-      {:phoenix_ecto, "~> 4.5"},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:cors_plug, "~> 3.0"},
+      {:phoenix, "~> 1.8.17"},
+      {:phoenix_ecto, "~> 4.7"},
+      {:phoenix_live_dashboard, "~> 0.9.1"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
