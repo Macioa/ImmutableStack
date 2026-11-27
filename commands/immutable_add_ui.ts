@@ -81,7 +81,7 @@ async function main() {
     // Projects that already ran add_auth get the sign in menu in the new UI too
     const _auth = await timed("auth ui wiring", async () =>
       has_auth_ui(AppData)
-        ? await add_auth_to_ui(join(AppData.AppDir, `${AppNameSnake}_${uiName}`))
+        ? await add_auth_to_ui(join(AppData.AppDir, `${AppNameSnake}_${uiName}`), AppData)
         : []
     );
   });
