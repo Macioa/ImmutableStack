@@ -41,7 +41,12 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
     
     const updatedPackageJson = {
       ...existingPackageJson,
-      scripts: updatedScripts
+      scripts: updatedScripts,
+      // Every UI's main.tsx imports the display font fallback
+      dependencies: {
+        "@fontsource/cinzel": "^5.3.0",
+        ...existingPackageJson.dependencies,
+      },
     };
 
     await writeFile(file, JSON.stringify(updatedPackageJson, null, 2));
@@ -70,6 +75,7 @@ const gen_update_apps_package_json = async (appdata: AppData, uiName: string) =>
         "test": `pnpm run test:${uiName}`
       },
       dependencies: {
+        "@fontsource/cinzel": "^5.3.0",
         "@reduxjs/toolkit": "^2.15.0",
         "@types/react-redux": "^7.1.35",
         "deepmerge": "^4.3.1",

@@ -25,6 +25,7 @@ const gen_apps_package_json = async (appdata: AppData) => {
       "test": `pnpm run test:ui`
     },
     dependencies: {
+      "@fontsource/cinzel": "^5.3.0",
       "@reduxjs/toolkit": "^2.15.0",
       "@types/react-redux": "^7.1.35",
       "deepmerge": "^4.3.1",
