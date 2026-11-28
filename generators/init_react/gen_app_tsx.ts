@@ -9,6 +9,8 @@ const gen_app_tsx = async ({ AppNameSnake, AppDir }: AppData, uiName: string = '
   const dir = join(UiDir, "/src/");
   const content = `import reactLogo from "./assets/react.svg";
 import immutablelogo from "./assets/logo3.webp";
+// Shared --imm-* tokens and primitives; the page styles depend on them
+import "@components/styles.css";
 import "./App.css";
 
 // Feature panels go in <main>: <section className="panel"> with an <h2 className="panel-title">
