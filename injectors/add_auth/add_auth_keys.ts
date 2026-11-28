@@ -3,7 +3,7 @@ import { join } from "@/utils/path";
 import { inject_file, InjectType } from "..";
 import { generateFile } from "@/generators/index";
 import { ApiAppData } from "@/generators/add_api";
-import { OAUTH_PROVIDERS, OAuthProvider, OAuthStep } from "@/generators/add_auth/oauth_providers";
+import { OAUTH_PROVIDERS, OAuthProvider, OAuthStep, PrivacyRating } from "@/generators/add_auth/oauth_providers";
 import { keysFile, KeyGroup } from "@/generators/init_configs/gen_keys";
 import { CONFIG_ENVS, ConfigEnv, envKeyFile, envKeysDir } from "@/utils/config_paths";
 
@@ -45,10 +45,37 @@ const providerGroup = (base: string) => ({ key, label, purpose, steps }: OAuthPr
   ],
 });
 
+const RATING_LABELS: Record<PrivacyRating, string> = { good: "Good", warn: "Caution", bad: "Poor" };
+
+const TABLE_HEADER = ["Provider", "Privacy", "Shares with this app", "Main concern"];
+
+const privacyRow = ({ label, privacy: { rating, shares, concerns } }: OAuthProvider) => [
+  label,
+  RATING_LABELS[rating],
+  shares,
+  concerns[0],
+];
+
+const padRow = (widths: number[]) => (cells: string[]) =>
+  `# | ${cells.map((cell, i) => cell.padEnd(widths[i])).join(" | ")} |`;
+
+// Aligned comment table of what each provider shares and its main privacy concern
+const privacyTable = (providers: OAuthProvider[]) => {
+  const rows = [TABLE_HEADER, ...providers.map(privacyRow)];
+  const widths = TABLE_HEADER.map((_, i) => Math.max(...rows.map((row) => row[i].length)));
+  const rule = `# |${widths.map((w) => "-".repeat(w + 2)).join("|")}|`;
+  const [header, ...body] = rows.map(padRow(widths));
+  return [header, rule, ...body].join("\n");
+};
+
 const oauthIntro = (base: string) => `
 # Each provider's button only shows once both its client ID and secret are set.
 # Register this redirect URI with every provider you enable:
 #   ${redirectUri(base, "<provider>")}
+#
+# Provider privacy (Good: sign-in basics only; Caution: extra data or tracking;
+# Poor: ad tracking or wider access than sign in needs):
+${privacyTable(OAUTH_PROVIDERS)}
 `;
 
 const oauthContent = (AppNameSnake: string, env: ConfigEnv, base: string) =>

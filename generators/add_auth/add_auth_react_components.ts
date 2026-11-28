@@ -899,7 +899,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
       </Form>
       )}
 
-      {!pending && <OAuthButtons onSelect={handleOAuthLogin} />}
+      {!pending && <OAuthButtons onSelect={handleOAuthLogin} showPrivacy />}
     </AuthModal>
   );
 };
