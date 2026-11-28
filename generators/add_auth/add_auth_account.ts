@@ -1177,7 +1177,7 @@ const add_auth_account_styles = async ({ LibDir }: ApiAppData) =>
   width: 220px;
   flex-shrink: 0;
   background: transparent;
-  border-inline-end: 1px solid rgba(97, 218, 251, 0.2) !important;
+  border-inline-end: 1px solid var(--imm-line) !important;
 }
 
 .account-panel {
@@ -1192,6 +1192,7 @@ const add_auth_account_styles = async ({ LibDir }: ApiAppData) =>
 
 .account-toggle {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: center;
   margin-bottom: 16px;
@@ -1207,19 +1208,21 @@ const add_auth_account_styles = async ({ LibDir }: ApiAppData) =>
 .account-codes {
   margin: 16px 0;
   padding: 16px 18px 4px;
-  border: 1px solid rgba(97, 218, 251, 0.25);
-  border-radius: 12px;
-  background: rgba(13, 13, 26, 0.35);
+  border: 1px solid var(--imm-line);
+  border-radius: var(--imm-radius);
+  background: var(--imm-surface-sunken);
 }
 
 @media (max-width: 640px) {
   .account-layout {
     flex-direction: column;
+    min-height: 0;
   }
 
   .account-nav.ant-menu-inline {
     width: 100%;
     border-inline-end: none !important;
+    border-bottom: 1px solid var(--imm-line);
   }
 
   .account-panel {
@@ -2360,6 +2363,7 @@ import {
   type OAuthAccount,
 } from "../../../requests/Account";
 import {
+  AUTH_URL,
   initiateOAuth,
   requestOAuthProviders,
   type OAuthProvider,
@@ -2367,9 +2371,7 @@ import {
 import { OAuthButtons } from "../OAuthButtons";
 import { PanelHeader, attempt, type PanelProps } from "./panel";
 
-const AUTH_ORIGIN = new URL(
-  (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:4001",
-).origin;
+const AUTH_ORIGIN = new URL(AUTH_URL).origin;
 
 // OAuth accounts linked to this user: several are allowed, even from one provider.
 export const ConnectedAccountsPanel: React.FC<PanelProps> = () => {

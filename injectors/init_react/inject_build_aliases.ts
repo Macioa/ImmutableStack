@@ -10,6 +10,9 @@ const inject_viteconfig = async (AppNameSnake: string, UiDir: string) => {
       /export\s+default\s+defineConfig\(\{[\s\n]+plugins\:\s+\[react\(\)\]\,/,
       `\n
   resolve: {
+    // One React and antd for the app and the shared lib/typescript code (Windows can reach
+    // a package by two paths that differ only in drive-letter case)
+    dedupe: ['react', 'react-dom', 'antd'],
     alias: {
       '@utils': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/utils'),
       '@state': path.resolve(import.meta.dirname, '../${AppNameSnake}/lib/typescript/state'),

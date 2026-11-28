@@ -9,8 +9,18 @@ const gen_index_html = async ({ AppNameCaps, AppNameSnake, AppDir }: AppData, ui
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/react.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#242424" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="${AppNameCaps} - built on the Immutable Stack: Elixir, Phoenix, React and Redux"
+    />
     <title>${AppNameCaps} - Immutable Project</title>
   </head>
   <body>

@@ -5,10 +5,16 @@ import { AppData } from "@/readers/get_app_data";
 import path from "path";
 
 const url_path =
-  "https://raw.githubusercontent.com/macioa/immutablestack/alpha/assets/";
-const files = ["logo3.png"];
-const urls = files.map((name) => ({
+  "https://raw.githubusercontent.com/macioa/immutablestack/beta/assets/";
+// Each asset and the UI folder it lands in
+const files = [
+  { name: "logo3.webp", dir: "src/assets" },
+  { name: "favicon.png", dir: "public" },
+  { name: "apple-touch-icon.png", dir: "public" },
+];
+const urls = files.map(({ name, dir }) => ({
   name,
+  dir,
   url: new URL(name, url_path).toString(),
 }));
 
@@ -41,10 +47,9 @@ async function fetch_assets(
   { cacheDir }: { cacheDir?: string } = {}
 ) {
   const UiDir = path.join(AppDir, `${AppNameSnake}_${uiName}`);
-  const outDir = join(UiDir, "./src/assets/");
-  await fs.promises.mkdir(outDir, { recursive: true });
-
-  const fetches = urls.map(async ({ name, url }) => {
+  const fetches = urls.map(async ({ name, dir, url }) => {
+    const outDir = join(UiDir, dir);
+    await fs.promises.mkdir(outDir, { recursive: true });
     const file = join(outDir, name);
     await (cacheDir ? fromCache(url, name, file, cacheDir) : download(url, file));
     return name;

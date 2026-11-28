@@ -52,7 +52,8 @@ const add_auth_ui_store = (uiDir: string) =>
     "add_auth_ui_store"
   );
 
-// Account icon with sign in / register in the top right of the UI's main page
+// Account icon with sign in / register in the top right of the UI's main page.
+// It brings antd and the auth dialogs, so it loads after first paint.
 const add_auth_ui_app = (uiDir: string) =>
   inject_once(
     join(uiDir, "src/App.tsx"),
@@ -61,9 +62,18 @@ const add_auth_ui_app = (uiDir: string) =>
       [
         InjectType.AFTER,
         /import \{ PhoenixSocketProvider \} from "@utils\/PhoenixSocketContext";/,
-        `\nimport { UserMenu } from "@components/UserMenu";`,
+        `\nimport { lazy, Suspense } from "react";`,
       ],
-      [InjectType.AFTER, /<Provider store=\{\w+\}>/, `\n<UserMenu style={{ position: "fixed", top: 16, right: 16 }} />`],
+      [
+        InjectType.AFTER,
+        /import ['"]\.\/App\.css['"];?/,
+        `\n\n// The account menu brings antd and the auth dialogs; load it after first paint\nconst UserMenu = lazy(() =>\n  import("@components/UserMenu").then(({ UserMenu }) => ({ default: UserMenu })),\n);`,
+      ],
+      [
+        InjectType.AFTER,
+        /<Provider store=\{\w+\}>/,
+        `\n<Suspense fallback={<span className="user-menu user-menu-placeholder" />}>\n  <UserMenu />\n</Suspense>`,
+      ],
     ],
     "add_auth_ui_app"
   );

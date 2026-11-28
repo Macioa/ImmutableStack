@@ -261,8 +261,9 @@ dep or route.
 
 ## generators/add_auth/add_auth_typescript.ts
 
-- **Exports:** `add_auth_user_requests`, `add_auth_user_response`, `add_auth_user_state`, `add_auth_user_state_test`, `initialUserStoreStateState`, `UserReducer`, `selectUserdata`, `selectToken`, `requestCurrentUser`, `updateUser`, `loginUser`, `registerUser`, `logoutUser`, `initiateOAuth`, `requestOAuthProviders`, `setUserdata`, `setToken`
+- **Exports:** `AUTH_URL`, `authAPI`, `requestCurrentUser`, `updateUser`, `loginUser`, `registerUser`, `logoutUser`, `initiateOAuth`, `requestOAuthProviders`, `add_auth_user_requests`, `add_auth_user_response`, `add_auth_user_state`, `add_auth_user_state_test`, `initialUserStoreStateState`, `UserReducer`, `selectUserdata`, `selectToken`, `setUserdata`, `setToken`
 - **Writes:** `User.test.tsx`, `User.tsx`, `UserResponse.tsx`
+- **Elixir modules:** `Request.API`
 
 ## generators/add_auth/add_auth_user_auth.ts
 
@@ -456,7 +457,7 @@ dep or route.
 
 - **Exports:** `gen_full_demo_component`
 - **Writes:** `index.tsx`
-- **Elixir modules:** `React.FormEvent`
+- **Elixir modules:** `React.FormEvent`, `Request.API`
 
 ## generators/gen_react/demo_components/gen_list_demo_component.ts
 
@@ -754,6 +755,11 @@ dep or route.
 - **Exports:** `gen_index_html`
 - **Writes:** `index.html`
 
+## generators/init_react/gen_index_css.ts
+
+- **Exports:** `gen_index_css`
+- **Writes:** `index.css`
+
 ## generators/init_react/gen_lorem_utils.ts
 
 - **Exports:** `gen_lorem_utils`
@@ -766,7 +772,7 @@ dep or route.
 
 ## generators/init_react/gen_request_lib.ts
 
-- **Exports:** `initialRequestsState`, `requestReducer`, `isLoading`, `Request`, `gen_request_lib`, `readToken`, `storeToken`
+- **Exports:** `gen_request_lib`, `initialRequestsState`, `requestReducer`, `isLoading`, `Request`, `readToken`, `storeToken`, `withSlash`, `API_URL`
 - **Writes:** `index.tsx`
 
 ## generators/init_react/gen_socket_context.ts
@@ -784,6 +790,10 @@ dep or route.
 
 - **Exports:** `gen_vitest_config`, `gen_vitest_setup`, `gen_smoke_test`
 - **Writes:** `smoke.test.tsx`, `vitest.config.ts`, `vitest.setup.ts`
+
+## generators/init_react/remove_vite_template_assets.ts
+
+- **Exports:** `remove_vite_template_assets`
 
 ## injectors/add_api/index.ts
 
@@ -1072,6 +1082,10 @@ dep or route.
 ## injectors/init_react/inject_build_aliases.ts
 
 - **Exports:** `inject_viteconfig`, `inject_tsconfig`, `inject_build_aliases`
+
+## injectors/init_react/inject_display_font.ts
+
+- **Exports:** `inject_display_font`
 
 ## injectors/init_react/inject_package_scripts.ts
 

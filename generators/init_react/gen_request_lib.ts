@@ -2,20 +2,26 @@ import { join } from "../../utils/path";
 import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
+// Request.API is the one path for UI requests: the requests store tracks each
+// call, it resolves the full typed response body, and failures reject with the server error.
 const gen_request_lib = async ({ LibDir }: AppData) => {
   const dir = join(LibDir, "lib/typescript/requests");
-  const literalErrorString =
-    "`${FULL_URL} request failed: ${res?.status}\\n${res?.statusText}`";
   const content = `
 import type { Dispatch } from "redux";
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import merge from "deepmerge";
 
-const API_URL = (import.meta as any).env["VITE_UI_API_URL"] || "http://localhost:4000/api/"
+const env = (import.meta as any).env || {};
+
+// Base URLs end in "/" so relative routes resolve under them
+const withSlash = (url: string) => url.replace(/\\/?$/, "/");
+const API_URL = withSlash(
+  env["VITE_UI_API_URL"] || "http://localhost:4000/api/",
+);
 
 interface GenericAppState {
-  RequestsStore: RequestsStoreState;
+  requestsStore: RequestsStoreState;
   [key: string]: any;
 }
 
@@ -41,7 +47,7 @@ const requestSlice = createSlice({
   reducers: {
     addRequest(
       state: RequestsStoreState,
-      { payload }: PayloadAction<AppRequest>
+      { payload }: PayloadAction<AppRequest>,
     ) {
       state.activeRequests = {
         ...state.activeRequests,
@@ -50,7 +56,7 @@ const requestSlice = createSlice({
     },
     completeRequest(
       state: RequestsStoreState,
-      { payload }: PayloadAction<string>
+      { payload }: PayloadAction<string>,
     ) {
       delete state.activeRequests[payload];
     },
@@ -68,7 +74,12 @@ type requestAPIinterface = {
   route: string;
   options?: RequestInit;
   callback?: Function;
+  // Defaults to the app API; another app's requests pass its URL
+  baseUrl?: string;
 };
+
+type RequestError = Error & { status?: number; data?: any };
+
 const TOKEN_KEY = "immutable_auth_token";
 
 // Persists the login token for API requests and socket connections
@@ -101,59 +112,79 @@ const defaultOptions = {
   },
 };
 
-const API = async (details: requestAPIinterface, dispatch: Dispatch) => {
-  const { name, route, options, callback } = details;
-  const FULL_URL = new URL(route, API_URL)
-  const req = new Promise<any>(async (resolve, reject) => {
+const requestOptions = (options: RequestInit = {}): RequestInit =>
+  merge(
+    {
+      ...defaultOptions,
+      headers: { ...defaultOptions.headers, ...authHeaders() },
+    },
+    options,
+  );
 
-    const handleError = (err: string, rej: Function) => {
-      console.error(err);
-      rej(err);
-      dispatch(completeRequest(name));
-    };
-    const handleSuccess = (data: any, res: Function) => {
-      if (callback) callback(data);
-      res(data);
-      dispatch(completeRequest(name));
-    };
+// Validation errors arrive as { field: [messages] }; show the first as "field message"
+const fieldError = (errors?: Record<string, string[]>) =>
+  errors &&
+  Object.entries(errors)
+    .map(([field, [first]]) => \`\${field.replace(/_/g, " ")} \${first}\`)
+    .shift();
 
+const parseBody = (res: Response) =>
+  res.text().then((text) => {
     try {
-      const reqOptions = merge(
-        { ...defaultOptions, headers: { ...defaultOptions.headers, ...authHeaders() } },
-        options || {},
-      );
-
-      const res = await fetch(FULL_URL, reqOptions)
-        .catch((err) => handleError(String(err), reject));
-
-      if (!res?.ok)
-        handleError(
-          ${literalErrorString},
-          reject
-        );
-
-      handleSuccess(await res?.json(), resolve);
-    } catch (error) {
-      handleError(String(error), reject);
+      return text ? JSON.parse(text) : {};
+    } catch {
+      return text;
     }
   });
 
-  dispatch(addRequest({ name, details, request: req }));
-  return (await req).data;
+const requestError = (res: Response, data: any): RequestError =>
+  Object.assign(
+    new Error(
+      data?.error ||
+        fieldError(data?.errors) ||
+        \`\${res.status} \${res.statusText}\`,
+    ),
+    { status: res.status, data },
+  );
+
+const checked = (res: Response) =>
+  parseBody(res).then((data) => {
+    if (!res.ok) throw requestError(res, data);
+    return data;
+  });
+
+// Every request runs through here so the requests store can track it.
+// Resolves the full response body, which the generated *Response types describe.
+const API = <T = any,>(details: requestAPIinterface, dispatch?: Dispatch) => {
+  const { name, route, options, callback, baseUrl = API_URL } = details;
+  const request: Promise<T> = fetch(
+    new URL(route, baseUrl),
+    requestOptions(options),
+  )
+    .then(checked)
+    .then((data) => {
+      if (callback) callback(data);
+      return data;
+    })
+    .finally(() => dispatch?.(completeRequest(name)));
+
+  dispatch?.(addRequest({ name, details, request }));
+  return request;
 };
 
 const Request = { API };
 
-export { readToken, storeToken };
+export { readToken, storeToken, withSlash, API_URL };
 
 export const { addRequest, completeRequest } = requestSlice.actions;
-export type { AppRequest, RequestsStoreState, requestAPIinterface, GenericAppState };
-export {
-  initialRequestsState,
-  requestReducer,
-  isLoading,
-  Request,
+export type {
+  AppRequest,
+  RequestsStoreState,
+  requestAPIinterface,
+  RequestError,
+  GenericAppState,
 };
+export { initialRequestsState, requestReducer, isLoading, Request };
 export default requestSlice;
 `;
 

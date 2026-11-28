@@ -44,7 +44,7 @@ import type { Dispatch } from "redux";
 import { Request } from "./index";
 import { set${singleUpperCamel}, set${pluralUpperCamel} } from "../state/${singleUpperCamel}";
 import type { ${singleUpperCamel} } from "../state/${singleUpperCamel}";
-import type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response, Partial${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
+import type { ${singleUpperCamel}Response, Count${singleUpperCamel}Response } from "./${singleUpperCamel}Response";`;
 
   const exports = `export { request${singleUpperCamel}, request${pluralUpperCamel}, create${singleUpperCamel}, update${singleUpperCamel}, delete${singleUpperCamel} };
 `;
@@ -90,6 +90,9 @@ const gen_request_create = ({
         method: "POST",
         body: JSON.stringify(${singleLowerCamel}),
       },
+      // Only a single entity is selected; a batch request answers with an array
+      callback: (res: any) =>
+        Array.isArray(res.data) ? null : dispatch(set${singleUpperCamel}(res.data)),
     }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_update = ({
@@ -105,8 +108,10 @@ const gen_request_update = ({
         method: "PUT",
         body: JSON.stringify(${singleLowerCamel}),
       },
-      callback: (_data: any) => null,
-    }, dispatch) as Promise<Partial${singleUpperCamel}Response>;`;
+      // Only a single entity is selected; a batch request answers with an array
+      callback: (res: any) =>
+        Array.isArray(res.data) ? null : dispatch(set${singleUpperCamel}(res.data)),
+    }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_delete = ({ singleUpperCamel, singleSnake }: StringOnlyMap) =>
   `const delete${singleUpperCamel} = (id: string, dispatch: Dispatch) => 

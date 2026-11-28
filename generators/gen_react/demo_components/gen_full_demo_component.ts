@@ -21,50 +21,83 @@ const gen_full_demo_component = async (
     `lib/typescript/components/${singleLowerCamel}/`
   );
 
-  const content = `import React from "react";
-import { useSelector } from "react-redux";
+  const content = `import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import type { Dispatch } from "redux";
-import { pipe } from "mincurrypipe";
 import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
 import { select${singleUpperCamel}, select${pluralUpperCamel}, set${singleUpperCamel} } from "../../state/${singleUpperCamel}";
-import { request${pluralUpperCamel}, update${singleUpperCamel} } from "../../requests/${singleLowerCamel}";
+import { create${singleUpperCamel}, delete${singleUpperCamel}, request${pluralUpperCamel} } from "../../requests/${singleUpperCamel}";
+import { isLoading } from "../../requests";
+import type { GenericAppState } from "../../requests";
 import { Create${singleUpperCamel} } from "./create";
 import { ${pluralUpperCamel} } from "./list";
 import { ${singleUpperCamel} } from "./show";
+import "../styles.css";
 
 export const prevtDef = (e: React.FormEvent<HTMLFormElement>) =>
   e.preventDefault();
 
+// Requests run through Request.API: their callbacks update the ${singleUpperCamel} slice,
+// and the requests store tracks them for the loading state.
 export const ${singleUpperCamel}Demo = () => {
+  const dispatch = useDispatch<Dispatch>();
   const ${singleLowerCamel} = useSelector(select${singleUpperCamel});
   const ${pluralLowerCamel} = useSelector(select${pluralUpperCamel});
+  const loading = useSelector((s: GenericAppState) =>
+    isLoading(s, "fetch${pluralUpperCamel}"),
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  const run = (request: Promise<unknown>) =>
+    request
+      .then(() => setError(null))
+      .then(() => request${pluralUpperCamel}(dispatch))
+      .catch((e: Error) => setError(e.message));
+
+  const onCreate = (
+    e: React.FormEvent<HTMLFormElement>,
+    f: ${singleUpperCamel}T | null,
+    d: Dispatch,
+  ) => {
+    prevtDef(e);
+    if (f) run(create${singleUpperCamel}(f, d));
+  };
+
+  const onDelete = ({ id }: ${singleUpperCamel}T) => run(delete${singleUpperCamel}(String(id), dispatch));
 
   return (
-    <div>
-      <h1>${singleUpperCamel} Demo</h1>
-      <p>This is a demo of ${singleLowerCamel} components.</p>
-      <h2>Selected ${singleUpperCamel}</h2>
-      <${singleUpperCamel} ${singleLowerCamel}={${singleLowerCamel}} />
-      <Create${singleUpperCamel}
-        onSubmit={(
-          e: React.FormEvent<HTMLFormElement>,
-          f: ${singleUpperCamel}T | null,
-          d: Dispatch,
-        ) =>
-          pipe(
-            prevtDef(e),
-            () => f && update${singleUpperCamel}(f, d),
-            set${singleUpperCamel},
-            d,
-            () => request${pluralUpperCamel}(d),
-          )
-        }
-      />
-      <h2>All ${pluralUpperCamel}</h2>
-      <${pluralUpperCamel} ${pluralLowerCamel}={${pluralLowerCamel}} effect={request${pluralUpperCamel}} />
+    <div className="demo-grid">
+      <Create${singleUpperCamel} onSubmit={onCreate} />
+      <div className="demo-column">
+        <h3 className="section-label">Selected ${singleUpperCamel}</h3>
+        <${singleUpperCamel} ${singleLowerCamel}={${singleLowerCamel}} />
+        <div className="section-row">
+          <h3 className="section-label">
+            All ${pluralUpperCamel} {loading && <span className="muted">loading…</span>}
+          </h3>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Reload ${pluralUpperCamel}"
+            onClick={() => run(Promise.resolve())}
+          >
+            ↻
+          </button>
+        </div>
+        {error && <p className="error-text">{error}</p>}
+        <${pluralUpperCamel}
+          ${pluralLowerCamel}={${pluralLowerCamel}}
+          effect={(d) =>
+            request${pluralUpperCamel}(d).catch((e: Error) => setError(e.message))
+          }
+          onSelect={(t) => dispatch(set${singleUpperCamel}(t))}
+          onDelete={onDelete}
+        />
+      </div>
     </div>
   );
-};`;
+};
+`;
 
   return generateFile(
     { dir: filedir, filename: `index.tsx`, content },

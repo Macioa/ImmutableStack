@@ -3,7 +3,6 @@ import { generateFile } from "../index";
 import { AppData } from "../../readers/get_app_data";
 
 const gen_vite_supervisor = async ({
-  AppNameSnake,
   AppNameCamel,
   LibDir,
 }: AppData, uiName: string = 'ui') => {
@@ -145,7 +144,7 @@ defmodule ${AppNameCamel}.ViteDevSupervisor do
         if existing = Process.whereis(atom_name), do: cleanup_port(atom_name, existing)
 
         port =
-          ${AppNameCamel}.OSAdapter.open_npm(["run", "dev", "--prefix", "apps/${AppNameSnake}_#{ui_name}/"])
+          ${AppNameCamel}.OSAdapter.open_npm(["--dir", "apps", "run", "dev:#{ui_name}"])
 
         Process.register(port, atom_name)
         Process.link(port)
