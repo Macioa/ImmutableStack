@@ -5,6 +5,7 @@
 */
 import { fetch_assets } from "@/assets";
 import { install_all_deps } from "@/composite/init_deps";
+import { init_agents } from "@/composite/init_agents";
 import { init_docker } from "@/composite/init_docker";
 import { init_graphify } from "@/composite/init_graphify";
 import { init_phoenix_umbrella_app, scaffold_phoenix_umbrella } from "@/composite/init_phoenix/init_phoenix_umbrella_app";
@@ -21,25 +22,27 @@ import { flushFormat, setDeferredFormat } from "@/utils/format";
 import { promptGitDomain } from "@/prompts/git";
 import { initGitRepository, addGitSubmodules } from "@/utils/git";
 import { join } from "@/utils/path";
-import { applyPinnedVersions } from "@/utils/versions";
-import { parseFlags } from "@/utils/flags";
-import { DEFAULT_CACHE_DIR, link_dep_cache, save_build_cache, seed_build_cache } from "@/utils/dep_cache";
+import { applyPinnedVersions, readVersions } from "@/utils/versions";
+import { parseFlags, positionalArgs } from "@/utils/flags";
+import { DEFAULT_CACHE_DIR, link_dep_cache } from "@/utils/dep_cache";
 
 setLogLevel(5);
 
 const args = process.argv.slice(2);
-const { db, cache, quick } = parseFlags(args);
+const { db, cache, quick, agents } = parseFlags(args);
+const [projectArg] = positionalArgs(args);
 
 async function main() {
-  if (args.length < 1) {
+  if (!projectArg) {
     console.error(
-      "Usage: node init_proj.js <project_name> [-sqlite] [-cache] [-quick]\n   Or: immutable -init <project_name> [-sqlite] [-cache] [-quick]"
+      "Usage: node init_proj.js <project_name> [-sqlite] [-cache] [-quick] [-agents claude,cursor,...]\n   Or: immutable -init <project_name> [-sqlite] [-cache] [-quick] [-agents claude,cursor,...]"
     );
     process.exit(1);
   }
   applyPinnedVersions(__dirname);
+  const { AGENTSYNC_VERSION } = readVersions(__dirname);
 
-  let projectName = args[0]
+  let projectName = projectArg
     .toLowerCase()
     .replace(/[\s-]/g, "_")
     .replace(/[^a-z0-9_]/g, "");
@@ -101,15 +104,8 @@ async function main() {
   if (cache) link_dep_cache(AppData);
 
   writeLog(UmbrellaDir, `init_project_${projectName}`);
-  // The project's own apps compile on the first mix phx.server
+  // Compiling is left to the first mix phx.server
   const _deps = await timed("deps (mix + pnpm)", () => install_all_deps(AppData, { offline: cache }));
-  // Cached dep builds are copied in; deps.loadpaths compiles only missing or stale deps,
-  // which are then saved for later projects
-  const _builds = cache ? await timed("dep builds (cache)", async () => {
-    seed_build_cache(AppData);
-    await exec({ command: "mix deps.loadpaths", dir: UmbrellaDir }, "init_proj");
-    return save_build_cache(AppData);
-  }) : [];
 
   const _cleanup = await exec(
     {
@@ -119,7 +115,9 @@ async function main() {
     "init_proj"
   );
 
-  const _graphify = await timed("graphify (background)", () => init_graphify(AppData, { background: true }));
+  // Links agent rules before graphify writes its sections through those links
+  const _agents = await timed("agents (agentsync)", () => init_agents(AppData, { agents, version: AGENTSYNC_VERSION }));
+  const _graphify = await timed("graphify (background)", () => init_graphify(AppData, { background: true, agents }));
 
   log(
     { level: 1, color: "GREEN" },
@@ -139,4 +137,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

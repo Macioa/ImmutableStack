@@ -76,8 +76,9 @@ const detectEnvironment = (): Record<string, string> => {
   return { os: detectOS(), ...(shell ? { shell } : {}) };
 };
 
+// Windows needs a valid Git Bash; elsewhere any saved shell must still exist
 const environmentIsStale = ({ os, shell }: Environment) =>
-  !os || (isWindows && !(shell && existsSync(shell)));
+  !os || (isWindows ? !(shell && existsSync(shell)) : !!shell && !existsSync(shell));
 
 const resolveShell = (shell?: string): string | true => {
   if (shell || !isWindows) return shell || true;

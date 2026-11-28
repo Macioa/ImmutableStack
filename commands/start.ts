@@ -3,18 +3,17 @@ import * as os from "os";
 import { log, setLogLevel } from "@/utils/logger";
 import { readSettings } from "@/utils/settings";
 import { execute as exec } from "@/runners";
-import { installApp, installPackage, isWindows, resolveShell, runPowerShellFile } from "@/utils/os_adapter";
-import { asdfEnv, readVersions } from "@/utils/versions";
+import { installApp, isWindows, resolveShell, runPowerShellFile } from "@/utils/os_adapter";
+import { readVersions } from "@/utils/versions";
 import type { Versions } from "@/utils/versions";
 setLogLevel(5);
 
 const home = os.homedir();
-const asdfDir = path.join(home, ".asdf");
-const asdfShims = path.join(home, ".asdf", "shims");
+const miseBin = path.join(home, ".local", "bin");
+const miseShims = path.join(home, ".local", "share", "mise", "shims");
 const env = {
   ...process.env,
-  PATH: `${asdfShims}:${process.env.PATH}`,
-  ASDF_DIR: asdfDir,
+  PATH: `${miseBin}:${miseShims}:${process.env.PATH}`,
 };
 
 // Homebrew (macOS only)
@@ -27,7 +26,7 @@ const env = {
 //     await exec({command: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"', dir: home}, "start_script");
 //   }
 // }
-const run = (command: string, runEnv?: NodeJS.ProcessEnv) =>
+const run = (command: string, runEnv: NodeJS.ProcessEnv = env) =>
   exec({ command, dir: home, env: runEnv }, "start_script");
 
 const runInOrder = (commands: string[], runEnv?: NodeJS.ProcessEnv) =>
@@ -62,30 +61,33 @@ const storeEnvironment = async () => {
   if (isWindows) log({ level: 3, color: "GREEN" }, `Detected Git Bash: ${resolveShell(shell)}`);
 };
 
-const ensureAsdf = () =>
-  ensureInstalled({
-    check: "asdf --version",
-    install: [installPackage("asdf")],
-    found: "asdf is installed.",
-    installing: "Installing asdf...",
-  });
+// The pinned mise goes in ~/.local/bin, ahead of any other mise on PATH
+const miseIs = (version: string) => `mise --version | grep -qF "${version}"`;
 
-const ensureAsdfTool = ([plugin, version]: [string, string]) =>
+const ensureMise = ({ MISE_VERSION }: Versions) =>
   ensureInstalled({
-    check: `asdf list ${plugin}`,
+    check: miseIs(MISE_VERSION),
     install: [
-      `asdf plugin-add ${plugin}`,
-      `asdf install ${plugin} ${version}`,
-      `asdf global ${plugin} ${version}`,
+      `curl -fsSL https://mise.run | MISE_VERSION="v${MISE_VERSION}" MISE_INSTALL_PATH="${path.join(miseBin, "mise")}" sh`,
+      miseIs(MISE_VERSION),
     ],
-    found: `${plugin} is already installed.`,
+    found: `mise ${MISE_VERSION} is installed.`,
+    installing: `Installing mise ${MISE_VERSION}...`,
   });
 
-const ensureAsdfTools = ({ ERLANG_VERSION, ELIXIR_VERSION, nodejs }: Versions) =>
-  ([["erlang", ERLANG_VERSION], ["elixir", ELIXIR_VERSION], ["nodejs", nodejs]] as [string, string][])
-    .filter(([, version]) => version)
+// mise uses precompiled Erlang and Elixir where available
+const ensureMiseTool = ([tool, version]: [string, string]) =>
+  ensureInstalled({
+    check: `mise where ${tool}@${version}`,
+    install: [`mise use --global ${tool}@${version}`],
+    found: `${tool} ${version} is already installed.`,
+    installing: `Installing ${tool} ${version}...`,
+  });
+
+const ensureMiseTools = ({ ERLANG_VERSION, ELIXIR_VERSION, NODE_VERSION }: Versions) =>
+  ([["erlang", ERLANG_VERSION], ["elixir", ELIXIR_VERSION], ["node", NODE_VERSION]] as [string, string][])
     .reduce<Promise<unknown>>(
-      (previous, tool) => previous.then(() => ensureAsdfTool(tool)),
+      (previous, tool) => previous.then(() => ensureMiseTool(tool)),
       Promise.resolve()
     );
 
@@ -101,8 +103,7 @@ const ensureDocker = () =>
 const installPhoenix = (versions: Versions) => {
   log({ level: 3, color: "GREEN" }, "Installing Hex and Phoenix...");
   return runInOrder(
-    ["mix local.hex --force", "mix archive.install hex phx_new 1.8.17 --force"],
-    { ...env, ...asdfEnv(versions) }
+    ["mix local.hex --force", "mix local.rebar --force", `mix archive.install hex phx_new ${versions.PHOENIX_VERSION} --force`]
   );
 };
 
@@ -114,15 +115,15 @@ const ensurePnpm = () =>
     installing: "Installing pnpm...",
   });
 
-// Windows uses mise instead of asdf
+// Windows installs mise through winget in PowerShell
 const setupWindows = () =>
-  run(runPowerShellFile(path.join(__dirname, "start_windows.ps1")));
+  run(runPowerShellFile(path.join(__dirname, "start_windows.ps1")), process.env);
 
 const setupUnix = async () => {
-  await ensureAsdf();
   log({ level: 3, color: "GREEN" }, "Sourcing versions.sh...");
   const versions = readVersions(__dirname);
-  await ensureAsdfTools(versions);
+  await ensureMise(versions);
+  await ensureMiseTools(versions);
   await ensureDocker();
   await ensurePnpm();
   await installPhoenix(versions);
@@ -136,4 +137,5 @@ const main = async () => {
 
 main().catch((error) => {
   console.error("Error:", error);
+  process.exit(1);
 });

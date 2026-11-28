@@ -1,0 +1,85 @@
+name: Environment tests
+
+# Installs the toolchain with the Immutable installer, then runs init and add_auth (sqlite, -cache, -quick)
+on:
+  pull_request:
+    branches: [beta]
+
+jobs:
+  init-and-auth:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build Immutable
+        run: npm ci && npm run build
+
+      # The Windows installer needs winget to install mise
+      - name: Runner info
+        run: |
+          uname -a
+          if [ -n "$LOCALAPPDATA" ]; then winget --version || echo "winget not found"; fi
+
+      - name: Install toolchain
+        run: node .build/start.js
+
+      # mise and its shims for the steps that follow
+      - name: Add mise shims to PATH
+        if: always()
+        run: |
+          if [ -n "$LOCALAPPDATA" ]; then echo "$LOCALAPPDATA/mise/shims" >> "$GITHUB_PATH"; else
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
+          fi
+
+      # Shows what the installer left on PATH, including whether Erlang was precompiled
+      - name: Toolchain versions
+        if: always()
+        run: |
+          mise --version || true
+          mise ls || true
+          mise doctor || true
+          erl -noshell -eval 'io:format("OTP ~s~n", [erlang:system_info(otp_release)]), halt().' || true
+          elixir --version || true
+          node --version || true
+          pnpm --version || true
+
+      # Empty answer to the git domain prompt skips the remote
+      - name: Init
+        working-directory: ${{ runner.temp }}
+        run: echo "" | node "$GITHUB_WORKSPACE/.build/init_proj.js" envtest -sqlite -cache -quick
+
+      - name: Add auth
+        working-directory: ${{ runner.temp }}/envtest_umbrella
+        run: echo "" | node "$GITHUB_WORKSPACE/.build/add_auth.js" -quick
+
+      # -cache and -quick write the full logs to files instead of the console
+      - name: Show log tails
+        if: always()
+        run: |
+          for f in "$HOME"/.immutable_dep_cache/logs/*.log; do
+            [ -f "$f" ] || continue
+            echo "::group::$f (last 50 lines)"
+            tail -n 50 "$f"
+            echo "::endgroup::"
+          done
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.os }}
+          path: ~/.immutable_dep_cache/logs/
+          retention-days: 1
+          if-no-files-found: warn

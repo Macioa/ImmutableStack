@@ -15,9 +15,16 @@ const installGraphifyCommand = () =>
     `command -v graphify >/dev/null 2>&1 || uv tool install ${GRAPHIFY_PACKAGE} || pipx install ${GRAPHIFY_PACKAGE} || pip install --user ${GRAPHIFY_PACKAGE}`
   );
 
-const graphifyCommands = () => [
+// AgentSync agent ids whose graphify installer has another name
+const GRAPHIFY_PLATFORMS: Record<string, string> = { copilot: "vscode" };
+
+// graphify writes its rules and hooks for each agent; the rules go through AgentSync's links into .agents/AGENTS.md
+const graphifyInstall = (agent: string) =>
+  soft(`command -v graphify >/dev/null 2>&1 && graphify ${GRAPHIFY_PLATFORMS[agent] || agent} install`);
+
+const graphifyCommands = (agents: string[]) => [
   installGraphifyCommand(),
-  soft(`command -v graphify >/dev/null 2>&1 && graphify claude install`),
+  ...agents.map(graphifyInstall),
   soft(`command -v graphify >/dev/null 2>&1 && graphify update .`),
 ];
 
@@ -28,13 +35,16 @@ const runInBackground = async (dir: string, commands: string[]) => {
   return dir;
 };
 
-const init_graphify = async ({ UmbrellaDir }: AppData, { background = false }: { background?: boolean } = {}) => {
+const init_graphify = async (
+  { UmbrellaDir }: AppData,
+  { background = false, agents = ["claude"] }: { background?: boolean; agents?: string[] } = {}
+) => {
   log({ level: 1, color: "BLUE" }, `\n\n Installing graphify and indexing project${background ? " in the background" : ""}...\n\n`);
-  if (background) return runInBackground(UmbrellaDir, graphifyCommands());
+  if (background) return runInBackground(UmbrellaDir, graphifyCommands(agents));
   return execute(
     {
       dir: UmbrellaDir,
-      command: graphifyCommands(),
+      command: graphifyCommands(agents),
       options: { resolveOnErrorCode: true },
     },
     "init_graphify"

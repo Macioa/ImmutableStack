@@ -9,7 +9,7 @@
     "b_genfile": "esbuild commands/immutable_genfile.ts --bundle --minify --outfile=.build/genfile.js --platform=node",
     "b_init": "esbuild commands/immutable_init.ts --bundle --minify --outfile=.build/init_proj.js --platform=node",
     "b_links": "esbuild commands/immutable_links.ts --bundle --minify --outfile=.build/links.js --platform=node",
-    "b_bash": "node -e \"const fs=require('fs');fs.mkdirSync('.build',{recursive:true});for(const f of ['start_macos.sh','start_windows.ps1','dev_kit_macos.sh','versions.sh','gen_toolkit.sh'])fs.copyFileSync('scripts/'+f,'.build/'+f)\"",
+    "b_bash": "node -e \"const fs=require('fs');fs.mkdirSync('.build',{recursive:true});for(const f of ['start_macos.sh','start_windows.ps1','dev_kit_macos.sh','versions.sh','gen_toolkit.sh']){const s=fs.readFileSync('scripts/'+f,'utf8');fs.writeFileSync('.build/'+f,f.endsWith('.sh')?s.replace(/\\r\\n/g,'\\n'):s)}\"",
     "b_settings": "esbuild commands/immutable_settings.ts --minify --bundle --outfile=.build/settings.js --platform=node",
     "b_repair": "esbuild commands/immutable_repair.ts --minify --bundle --outfile=.build/repair.js --platform=node",
     "b_channel": "esbuild commands/immutable_gen_channel.ts --minify --bundle --outfile=.build/channel.js --platform=node",
