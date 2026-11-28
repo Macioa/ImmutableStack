@@ -74,7 +74,9 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   background:
     var(--imm-surface) padding-box,
     var(--imm-brand) border-box;
-  box-shadow: var(--imm-glow), inset 0 0 14px rgba(179, 0, 255, 0.15);
+  box-shadow:
+    var(--imm-glow),
+    inset 0 0 14px rgba(179, 0, 255, 0.15);
 }
 
 .auth-modal .ant-modal-content {

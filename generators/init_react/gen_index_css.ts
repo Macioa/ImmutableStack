@@ -45,9 +45,21 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 40% at 15% 0%, rgba(97, 218, 251, 0.12), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 90% 10%, rgba(179, 0, 255, 0.12), transparent 70%),
-    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(255, 69, 0, 0.08), transparent 70%);
+    radial-gradient(
+      ellipse 60% 40% at 15% 0%,
+      rgba(97, 218, 251, 0.12),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 90% 10%,
+      rgba(179, 0, 255, 0.12),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 50% 100%,
+      rgba(255, 69, 0, 0.08),
+      transparent 70%
+    );
 }
 
 #root {

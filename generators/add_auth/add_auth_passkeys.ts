@@ -1046,7 +1046,12 @@ const post = (path: string, body: object, dispatch?: Dispatch) =>
     dispatch,
   );
 
-const api = (path: string, method = "GET", body?: object, dispatch?: Dispatch) =>
+const api = (
+  path: string,
+  method = "GET",
+  body?: object,
+  dispatch?: Dispatch,
+) =>
   authAPI(
     {
       name: \`\${method} \${path}\`,
@@ -1071,7 +1076,11 @@ const registerPasskey = (
   dispatch: Dispatch,
   token?: string | null,
 ) =>
-  post("registration/challenge", { email, ...(token ? { token } : {}) }, dispatch)
+  post(
+    "registration/challenge",
+    { email, ...(token ? { token } : {}) },
+    dispatch,
+  )
     .then(register)
     .then((credential) =>
       post(

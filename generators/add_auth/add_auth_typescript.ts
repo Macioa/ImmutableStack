@@ -163,7 +163,8 @@ const initiateOAuth = (
     popup: "true",
     ...(link ? { link } : {}),
   });
-  const oauthUrl = new URL(\`oauth/\${provider}?\${params.toString()}\`, AUTH_URL).href;
+  const oauthUrl = new URL(\`oauth/\${provider}?\${params.toString()}\`, AUTH_URL)
+    .href;
 
   const width = 600;
   const height = 700;

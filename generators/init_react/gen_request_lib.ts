@@ -16,7 +16,9 @@ const env = (import.meta as any).env || {};
 
 // Base URLs end in "/" so relative routes resolve under them
 const withSlash = (url: string) => url.replace(/\\/?$/, "/");
-const API_URL = withSlash(env["VITE_UI_API_URL"] || "http://localhost:4000/api/");
+const API_URL = withSlash(
+  env["VITE_UI_API_URL"] || "http://localhost:4000/api/",
+);
 
 interface GenericAppState {
   requestsStore: RequestsStoreState;
@@ -112,7 +114,10 @@ const defaultOptions = {
 
 const requestOptions = (options: RequestInit = {}): RequestInit =>
   merge(
-    { ...defaultOptions, headers: { ...defaultOptions.headers, ...authHeaders() } },
+    {
+      ...defaultOptions,
+      headers: { ...defaultOptions.headers, ...authHeaders() },
+    },
     options,
   );
 
@@ -135,7 +140,9 @@ const parseBody = (res: Response) =>
 const requestError = (res: Response, data: any): RequestError =>
   Object.assign(
     new Error(
-      data?.error || fieldError(data?.errors) || \`\${res.status} \${res.statusText}\`,
+      data?.error ||
+        fieldError(data?.errors) ||
+        \`\${res.status} \${res.statusText}\`,
     ),
     { status: res.status, data },
   );
@@ -150,7 +157,10 @@ const checked = (res: Response) =>
 // Resolves the full response body, which the generated *Response types describe.
 const API = <T = any,>(details: requestAPIinterface, dispatch?: Dispatch) => {
   const { name, route, options, callback, baseUrl = API_URL } = details;
-  const request: Promise<T> = fetch(new URL(route, baseUrl), requestOptions(options))
+  const request: Promise<T> = fetch(
+    new URL(route, baseUrl),
+    requestOptions(options),
+  )
     .then(checked)
     .then((data) => {
       if (callback) callback(data);

@@ -24,12 +24,31 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
   --imm-line: rgba(97, 218, 251, 0.25);
   --imm-line-strong: rgba(97, 218, 251, 0.5);
 
-  --imm-surface: linear-gradient(135deg, var(--imm-navy) 0%, var(--imm-navy-2) 100%);
+  --imm-surface: linear-gradient(
+    135deg,
+    var(--imm-navy) 0%,
+    var(--imm-navy-2) 100%
+  );
   --imm-surface-sunken: rgba(13, 13, 26, 0.55);
-  --imm-brand: linear-gradient(135deg, var(--imm-cyan), var(--imm-orange), var(--imm-purple));
+  --imm-brand: linear-gradient(
+    135deg,
+    var(--imm-cyan),
+    var(--imm-orange),
+    var(--imm-purple)
+  );
   --imm-accent: linear-gradient(90deg, var(--imm-cyan), var(--imm-purple));
-  --imm-accent-hot: linear-gradient(90deg, var(--imm-purple), var(--imm-orange));
-  --imm-rule: linear-gradient(90deg, transparent, var(--imm-cyan), var(--imm-purple), transparent);
+  --imm-accent-hot: linear-gradient(
+    90deg,
+    var(--imm-purple),
+    var(--imm-orange)
+  );
+  --imm-rule: linear-gradient(
+    90deg,
+    transparent,
+    var(--imm-cyan),
+    var(--imm-purple),
+    transparent
+  );
 
   --imm-glow-sm: 0 0 10px rgba(97, 218, 251, 0.35);
   --imm-glow: 0 0 18px rgba(97, 218, 251, 0.3), 0 0 36px rgba(255, 69, 0, 0.15);
@@ -40,10 +59,12 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
   --imm-radius-lg: 16px;
   --imm-ease: 0.2s ease;
 
-  --imm-font-display: Copperplate, "Copperplate Gothic Bold", "Copperplate Gothic",
-    Cinzel, "Arial Black", serif;
-  --imm-font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+  --imm-font-display:
+    Copperplate, "Copperplate Gothic Bold", "Copperplate Gothic", Cinzel,
+    "Arial Black", serif;
+  --imm-font-body:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
   --imm-font-mono: ui-monospace, Consolas, Menlo, monospace;
 }
 
@@ -128,7 +149,9 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
   color: var(--imm-text);
   font: inherit;
   font-size: 1rem; /* 16px stops iOS zooming into focused inputs */
-  transition: border-color var(--imm-ease), box-shadow var(--imm-ease);
+  transition:
+    border-color var(--imm-ease),
+    box-shadow var(--imm-ease);
 }
 
 .form-container input:focus-visible,
@@ -152,7 +175,9 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
   font: 600 1rem var(--imm-font-body);
   box-shadow: var(--imm-glow-sm);
   cursor: pointer;
-  transition: transform var(--imm-ease), box-shadow var(--imm-ease);
+  transition:
+    transform var(--imm-ease),
+    box-shadow var(--imm-ease);
 }
 
 .form-submit-btn:hover:not(:disabled),
@@ -179,7 +204,9 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
-  transition: color var(--imm-ease), border-color var(--imm-ease);
+  transition:
+    color var(--imm-ease),
+    border-color var(--imm-ease);
 }
 
 .icon-btn:hover,
@@ -213,7 +240,9 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
   border: 1px solid var(--imm-line);
   border-radius: var(--imm-radius-sm);
   background: var(--imm-surface-sunken);
-  transition: border-color var(--imm-ease), box-shadow var(--imm-ease);
+  transition:
+    border-color var(--imm-ease),
+    box-shadow var(--imm-ease);
 }
 
 .styled-list-item:hover,
@@ -403,8 +432,13 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
   background:
     var(--imm-surface) padding-box,
     var(--imm-brand) border-box;
-  box-shadow: var(--imm-glow), inset 0 0 10px rgba(179, 0, 255, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+  box-shadow:
+    var(--imm-glow),
+    inset 0 0 10px rgba(179, 0, 255, 0.2);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .user-menu-trigger:hover .user-menu-avatar.ant-avatar,
@@ -422,7 +456,8 @@ const gen_demo_component_styles = ({ LibDir }: AppData) => {
 }
 
 .user-menu-avatar.signed-in svg {
-  filter: drop-shadow(0 0 4px var(--imm-cyan)) drop-shadow(0 0 8px var(--imm-orange));
+  filter: drop-shadow(0 0 4px var(--imm-cyan))
+    drop-shadow(0 0 8px var(--imm-orange));
 }
 
 /* Same footprint as the avatar while the account menu chunk loads */

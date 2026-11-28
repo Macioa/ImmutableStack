@@ -43,7 +43,9 @@ export const ${singleUpperCamel}Demo = () => {
   const dispatch = useDispatch<Dispatch>();
   const ${singleLowerCamel} = useSelector(select${singleUpperCamel});
   const ${pluralLowerCamel} = useSelector(select${pluralUpperCamel});
-  const loading = useSelector((s: GenericAppState) => isLoading(s, "fetch${pluralUpperCamel}"));
+  const loading = useSelector((s: GenericAppState) =>
+    isLoading(s, "fetch${pluralUpperCamel}"),
+  );
   const [error, setError] = useState<string | null>(null);
 
   const run = (request: Promise<unknown>) =>
@@ -85,7 +87,9 @@ export const ${singleUpperCamel}Demo = () => {
         {error && <p className="error-text">{error}</p>}
         <${pluralUpperCamel}
           ${pluralLowerCamel}={${pluralLowerCamel}}
-          effect={(d) => request${pluralUpperCamel}(d).catch((e: Error) => setError(e.message))}
+          effect={(d) =>
+            request${pluralUpperCamel}(d).catch((e: Error) => setError(e.message))
+          }
           onSelect={(t) => dispatch(set${singleUpperCamel}(t))}
           onDelete={onDelete}
         />

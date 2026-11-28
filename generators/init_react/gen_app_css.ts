@@ -36,7 +36,12 @@ const gen_app_css = async ({ AppNameSnake, AppDir }: AppData, uiName: string = '
   font-size: clamp(2.75rem, 9.5vw, 6.875rem);
   line-height: 1.05;
   letter-spacing: 0.01em;
-  background: linear-gradient(270deg, var(--imm-orange), var(--imm-purple), var(--imm-cyan));
+  background: linear-gradient(
+    270deg,
+    var(--imm-orange),
+    var(--imm-purple),
+    var(--imm-cyan)
+  );
   background-size: 800% 800%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -67,7 +72,9 @@ const gen_app_css = async ({ AppNameSnake, AppDir }: AppData, uiName: string = '
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: filter 0.3s, transform 0.3s;
+  transition:
+    filter 0.3s,
+    transform 0.3s;
 }
 
 /* The React atom sits inside the Immutable mark, offset like the reference */
@@ -103,7 +110,11 @@ const gen_app_css = async ({ AppNameSnake, AppDir }: AppData, uiName: string = '
     position: absolute;
     inset: 22%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(97, 218, 251, 0.45), transparent 70%);
+    background: radial-gradient(
+      circle,
+      rgba(97, 218, 251, 0.45),
+      transparent 70%
+    );
     animation: glow-pulse 5s ease-in-out infinite;
     will-change: opacity, transform;
   }

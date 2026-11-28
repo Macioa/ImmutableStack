@@ -35,7 +35,10 @@ export default function ${singleUpperCamel}ChannelComponent() {
     if (!joined || !channel) return;
     // Keep the last 20 broadcasts
     on("message", ({ body }) =>
-      setMessages((prev) => [...prev.slice(-19), { id: performance.now(), body }]),
+      setMessages((prev) => [
+        ...prev.slice(-19),
+        { id: performance.now(), body },
+      ]),
     );
     return () => off("message");
   }, [joined, channel]);
