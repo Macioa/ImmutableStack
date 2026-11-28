@@ -11,7 +11,8 @@ const add_auth_user_requests = async ({
   const filename = "User.tsx";
   const content = `import type { Dispatch } from "redux";
 import { setUserdata, setToken } from "../state/User";
-import { storeToken } from "./index";
+import { storeToken, withSlash, Request } from "./index";
+import type { requestAPIinterface } from "./index";
 import type { User } from "../state/User";
 import type {
   UserResponse,
@@ -19,56 +20,29 @@ import type {
   PartialUserResponse,
 } from "./UserResponse";
 
-const AUTH_API_URL =
-  (import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}";
+const AUTH_URL = withSlash(
+  (import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}",
+);
 
-const authRequest = async (
+// Auth requests go through the shared request core (tracked in requestsStore) and
+// keep the auth app's session cookie, so they always send credentials
+const authAPI = <T = any,>(details: requestAPIinterface, dispatch?: Dispatch) =>
+  Request.API<T>(
+    {
+      baseUrl: AUTH_URL,
+      ...details,
+      options: { credentials: "include", ...details.options },
+    },
+    dispatch,
+  );
+
+const authRequest = (
   route: string,
-  options: RequestInit = {},
-  _dispatch: Dispatch,
-  _name: string,
+  options: RequestInit,
+  dispatch: Dispatch,
+  name: string,
   callback?: (data: any) => void,
-) => {
-  const url = \`\${AUTH_API_URL}/api/\${route}\`;
-  const defaultHeaders = {
-    "Content-Type": "application/json",
-  };
-  const mergedOptions = {
-    ...options,
-    headers: { ...defaultHeaders, ...(options.headers || {}) },
-    credentials: "include" as RequestCredentials,
-  };
-
-  try {
-    const res = await fetch(url, mergedOptions);
-    let data;
-    const contentType = res.headers.get("content-type");
-    const isJson = contentType && contentType.includes("application/json");
-
-    try {
-      data = isJson ? await res.json() : await res.text();
-    } catch (parseError) {
-      data = await res
-        .text()
-        .catch(() => ({ error: "Failed to parse response" }));
-    }
-
-    if (!res.ok) {
-      const error = new Error(\`\${res.status} \${res.statusText}\`) as any;
-      error.status = res.status;
-      error.data = data;
-      throw error;
-    }
-
-    if (callback) {
-      callback(data);
-    }
-
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
+) => authAPI({ name, route: \`api/\${route}\`, options, callback }, dispatch);
 
 // ** IMMUTABLE User REQUEST_API 2484e23c-edf7-4244-b522-d3cbeb0f57f8 **
 const requestCurrentUser = (dispatch: Dispatch) => {
@@ -172,8 +146,7 @@ type OAuthProvider = { name: string; label: string };
 
 // Only providers with configured keys come back, so an empty list hides OAuth entirely
 const requestOAuthProviders = (): Promise<OAuthProvider[]> =>
-  fetch(\`\${AUTH_API_URL}/api/oauth/providers\`, { credentials: "include" })
-    .then((res) => (res.ok ? res.json() : { data: [] }))
+  authAPI({ name: "fetchOAuthProviders", route: "api/oauth/providers" })
     .then(({ data }) => data || [])
     .catch(() => []);
 
@@ -190,7 +163,7 @@ const initiateOAuth = (
     popup: "true",
     ...(link ? { link } : {}),
   });
-  const oauthUrl = \`\${AUTH_API_URL}/oauth/\${provider}?\${params.toString()}\`;
+  const oauthUrl = new URL(\`oauth/\${provider}?\${params.toString()}\`, AUTH_URL).href;
 
   const width = 600;
   const height = 700;
@@ -229,6 +202,8 @@ const initiateOAuth = (
 // ** IMMUTABLE User REQUEST_API d4e5f6g7-h8i9-0123-def0-123456789012 **
 
 export {
+  AUTH_URL,
+  authAPI,
   requestCurrentUser,
   updateUser,
   loginUser,

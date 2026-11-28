@@ -1032,48 +1032,29 @@ const add_auth_passkey_requests = async ({ LibDir, AppNameSnake, ApiNameSnake }:
 import type { Dispatch } from "redux";
 import { register, authenticate } from "ithibati";
 import { setUserdata, setToken } from "../state/User";
-import { storeToken, readToken } from "./index";
+import { storeToken } from "./index";
+import { authAPI } from "./User";
 
-const AUTH_URL =
-  (import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:4001";
+// Ceremonies keep their challenge in the auth app's session cookie, which authAPI sends.
+const post = (path: string, body: object, dispatch?: Dispatch) =>
+  authAPI(
+    {
+      name: \`auth/\${path}\`,
+      route: \`auth/\${path}\`,
+      options: { method: "POST", body: JSON.stringify(body) },
+    },
+    dispatch,
+  );
 
-// Ceremonies keep their challenge in the auth app's session cookie, so send it.
-const post = (path: string, body: object) =>
-  fetch(\`\${AUTH_URL}/auth/\${path}\`, {
-    method: "POST",
-    headers: headers(),
-    credentials: "include",
-    body: JSON.stringify(body),
-  }).then(parse);
-
-const headers = (): Record<string, string> => {
-  const token = readToken();
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: \`Bearer \${token}\` } : {}),
-  };
-};
-
-// Validation errors arrive as { field: [messages] }; show the first as "field message".
-const fieldError = (errors?: Record<string, string[]>) =>
-  errors &&
-  Object.entries(errors)
-    .map(([field, [first]]) => \`\${field.replace(/_/g, " ")} \${first}\`)
-    .shift();
-
-const parse = async (res: Response) => {
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || fieldError(data.errors) || \`\${res.status}\`);
-  return data;
-};
-
-const api = (path: string, method = "GET", body?: object) =>
-  fetch(\`\${AUTH_URL}/api/\${path}\`, {
-    method,
-    headers: headers(),
-    credentials: "include",
-    body: body && JSON.stringify(body),
-  }).then(parse);
+const api = (path: string, method = "GET", body?: object, dispatch?: Dispatch) =>
+  authAPI(
+    {
+      name: \`\${method} \${path}\`,
+      route: \`api/\${path}\`,
+      options: { method, ...(body ? { body: JSON.stringify(body) } : {}) },
+    },
+    dispatch,
+  );
 
 const signedIn = (dispatch: Dispatch) => (res: any) => {
   if (res.data) dispatch(setUserdata(res.data));
@@ -1090,17 +1071,21 @@ const registerPasskey = (
   dispatch: Dispatch,
   token?: string | null,
 ) =>
-  post("registration/challenge", { email, ...(token ? { token } : {}) })
+  post("registration/challenge", { email, ...(token ? { token } : {}) }, dispatch)
     .then(register)
     .then((credential) =>
-      post("registration", { email, credential, ...(token ? { token } : {}) }),
+      post(
+        "registration",
+        { email, credential, ...(token ? { token } : {}) },
+        dispatch,
+      ),
     )
     .then(signedIn(dispatch));
 
 const signInWithPasskey = (dispatch: Dispatch) =>
-  post("authentication/challenge", {})
+  post("authentication/challenge", {}, dispatch)
     .then(authenticate)
-    .then((credential) => post("authentication", { credential }))
+    .then((credential) => post("authentication", { credential }, dispatch))
     .then(signedIn(dispatch));
 
 type Passkey = {
@@ -1124,7 +1109,7 @@ const deletePasskey = (id: string) => api(\`users/passkeys/\${id}\`, "DELETE");
 
 // Signs in with a single-use code; the last code returns a fresh batch.
 const recoverWithCode = (code: string, dispatch: Dispatch) =>
-  post("recovery", { code }).then(signedIn(dispatch));
+  post("recovery", { code }, dispatch).then(signedIn(dispatch));
 
 const remainingRecoveryCodes = (): Promise<number> =>
   api("users/recovery_codes").then((res) => res.remaining);

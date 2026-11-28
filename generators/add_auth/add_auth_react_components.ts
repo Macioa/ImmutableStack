@@ -7,20 +7,24 @@ const add_auth_user_menu = async ({
   AppNameSnake,
   LibDir,
   ApiNameSnake,
-  ApiPort,
 }: ApiAppData) => {
   const dir = join(LibDir || "", "lib/typescript/components");
   const filename = "UserMenu.tsx";
-  const authApiUrl = `(import.meta as any).env["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}"`;
-  const content = `import React, { useState, useEffect, useRef, useCallback } from "react";
+  const content = `import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { Dispatch } from "redux";
 import { pipe } from "mincurrypipe";
-import { Avatar, ConfigProvider, Dropdown, message, type MenuProps } from "antd";
+import {
+  Avatar,
+  ConfigProvider,
+  Dropdown,
+  message,
+  type MenuProps,
+} from "antd";
 import { confirmAccount } from "../requests/Account";
 import { OAuthSignupModal, type OAuthSignup } from "./auth/OAuthSignupModal";
 import { selectUserdata, setUserdata, setToken } from "../state/User";
-import { logoutUser, requestCurrentUser } from "../requests/User";
+import { AUTH_URL, logoutUser, requestCurrentUser } from "../requests/User";
 import {
   LoginModal,
   RegisterModal,
@@ -30,22 +34,15 @@ import {
 import { authTheme } from "./auth/AuthModal";
 import "./styles.css";
 
-interface NeonUserIconProps {
-  isSignedIn: boolean;
-}
-
-const NeonUserIcon: React.FC<NeonUserIconProps> = ({ isSignedIn }) => (
+// Gradient person glyph; the signed-in glow comes from .user-menu-avatar.signed-in
+const NeonUserIcon: React.FC = () => (
   <svg
     width="24"
     height="24"
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    style={{
-      filter: isSignedIn
-        ? "drop-shadow(0 0 4px #61dafb) drop-shadow(0 0 8px #ff4500)"
-        : "none",
-    }}
+    aria-hidden="true"
   >
     <defs>
       <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -61,9 +58,6 @@ const NeonUserIcon: React.FC<NeonUserIconProps> = ({ isSignedIn }) => (
       fill="url(#neonGradient)"
       stroke="#61dafb"
       strokeWidth="1.5"
-      style={{
-        filter: isSignedIn ? "drop-shadow(0 0 3px #61dafb)" : "none",
-      }}
     />
     <path
       d="M4 20c0-4 3.5-7 8-7s8 3 8 7"
@@ -71,9 +65,6 @@ const NeonUserIcon: React.FC<NeonUserIconProps> = ({ isSignedIn }) => (
       stroke="#ff4500"
       strokeWidth="1.5"
       strokeLinecap="round"
-      style={{
-        filter: isSignedIn ? "drop-shadow(0 0 3px #ff4500)" : "none",
-      }}
     />
   </svg>
 );
@@ -100,9 +91,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
   // A new OAuth account picks its email before it is created (see OAuthSignupModal).
   const [oauthSignup, setOAuthSignup] = useState<OAuthSignup | null>(null);
   useEffect(() => {
-    const authOrigin = new URL(
-      (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:4001",
-    ).origin;
+    const authOrigin = new URL(AUTH_URL).origin;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== authOrigin) return;
       if (event.data?.type === "oauth_signup") {
@@ -122,7 +111,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     window.history.replaceState({}, document.title, window.location.pathname);
     confirmAccount(token)
       .then(() => message.success("Your account is confirmed"))
-      .catch(() => message.error("That confirmation link is invalid or has expired"));
+      .catch(() =>
+        message.error("That confirmation link is invalid or has expired"),
+      );
   }, []);
 
   // An invitation link opens registration straight away.
@@ -130,7 +121,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     if (new URLSearchParams(window.location.search).has("invite"))
       setRegisterModalVisible(true);
   }, []);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSignedIn = !!userdata;
 
   const processOAuthSuccess = useCallback(
@@ -223,9 +213,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
         return;
       }
 
-      const authUrl =
-        (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:${ApiPort || 4001}";
-      const authOrigin = new URL(authUrl).origin;
+      const authOrigin = new URL(AUTH_URL).origin;
       const uiOrigin = window.location.origin;
 
       const isValidOrigin =
@@ -253,32 +241,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     };
   }, [processOAuthSuccess]);
 
+  // The OAuth popup stores its result; another window's write fires "storage" here
   useEffect(() => {
-    if (userdata) {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-      return;
-    }
-
-    pollIntervalRef.current = setInterval(() => {
+    if (userdata) return;
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== "oauth_success" || !event.newValue) return;
       try {
-        const stored = localStorage.getItem("oauth_success");
-        if (stored) {
-          const data = JSON.parse(stored);
-          processOAuthSuccess(data);
-        }
-      } catch (e) {}
-    }, 500);
-
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
+        processOAuthSuccess(JSON.parse(event.newValue));
+      } catch {
+        return;
       }
     };
-  }, [userdata, dispatch, processOAuthSuccess]);
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [userdata, processOAuthSuccess]);
 
   const handleSignOut = () => {
     pipe(
@@ -331,66 +307,33 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
       : []),
   ];
 
-  const defaultStyle: React.CSSProperties = {
-    cursor: "pointer",
-    background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-    border: "2px solid transparent",
-    backgroundImage:
-      "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%), linear-gradient(135deg, #61dafb, #ff4500, #b300ff)",
-    backgroundOrigin: "border-box",
-    backgroundClip: "padding-box, border-box",
-    boxShadow:
-      "0 0 10px rgba(97, 218, 251, 0.5), 0 0 20px rgba(255, 69, 0, 0.3), inset 0 0 10px rgba(179, 0, 255, 0.2)",
-    transition: "all 0.3s ease",
-  };
-
-  const avatarHoverStyle: React.CSSProperties = {
-    boxShadow:
-      "0 0 15px rgba(97, 218, 251, 0.8), 0 0 30px rgba(255, 69, 0, 0.5), inset 0 0 15px rgba(179, 0, 255, 0.4)",
-    transform: "scale(1.05)",
-  };
-
-  const wrapperStyle: React.CSSProperties = {
-    position: "fixed",
-    top: "16px",
-    right: "16px",
-    zIndex: 1000,
-  };
-
-  const [isHovered, setIsHovered] = useState(false);
+  const avatarState = isSignedIn ? "signed-in" : "signed-out";
 
   return (
     <>
-      <div style={wrapperStyle}>
+      <div className="user-menu" style={style}>
         <ConfigProvider theme={authTheme}>
-        <Dropdown
-          menu={{ items: menuItems }}
-          trigger={["click"]}
-          placement="bottomRight"
-          rootClassName="user-menu-dropdown"
-          getPopupContainer={(trigger) =>
-            trigger.parentElement || document.body
-          }
-        >
-          <div
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={["click"]}
+            placement="bottomRight"
+            rootClassName="user-menu-dropdown"
+            getPopupContainer={(trigger) =>
+              trigger.parentElement || document.body
+            }
           >
-            <Avatar
-              icon={<NeonUserIcon isSignedIn={isSignedIn} />}
-              style={{
-                ...defaultStyle,
-                ...(isHovered ? avatarHoverStyle : {}),
-                ...(!isSignedIn && {
-                  opacity: 0.4,
-                  boxShadow: "none",
-                }),
-                ...style,
-              }}
-              size="large"
-            />
-          </div>
-        </Dropdown>
+            <button
+              type="button"
+              className="user-menu-trigger"
+              aria-label={isSignedIn ? "Account menu" : "Sign in or register"}
+            >
+              <Avatar
+                icon={<NeonUserIcon />}
+                className={\`user-menu-avatar \${avatarState}\`}
+                size="large"
+              />
+            </button>
+          </Dropdown>
         </ConfigProvider>
       </div>
       <LoginModal
@@ -420,6 +363,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ style }) => {
     </>
   );
 };
+
 `;
 
   return generateFile({ dir, filename, content }, "add_auth_user_menu");

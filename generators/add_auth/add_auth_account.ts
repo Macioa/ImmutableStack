@@ -2363,6 +2363,7 @@ import {
   type OAuthAccount,
 } from "../../../requests/Account";
 import {
+  AUTH_URL,
   initiateOAuth,
   requestOAuthProviders,
   type OAuthProvider,
@@ -2370,9 +2371,7 @@ import {
 import { OAuthButtons } from "../OAuthButtons";
 import { PanelHeader, attempt, type PanelProps } from "./panel";
 
-const AUTH_ORIGIN = new URL(
-  (import.meta as any).env?.["VITE_AUTH_URL"] || "http://localhost:4001",
-).origin;
+const AUTH_ORIGIN = new URL(AUTH_URL).origin;
 
 // OAuth accounts linked to this user: several are allowed, even from one provider.
 export const ConnectedAccountsPanel: React.FC<PanelProps> = () => {
