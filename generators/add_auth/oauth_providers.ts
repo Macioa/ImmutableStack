@@ -3,6 +3,11 @@
 // text may span lines; redirect adds the provider's redirect URI after the link
 type OAuthStep = { text: string; url: string; redirect?: boolean };
 
+// good: shares only sign-in basics; warn: notable tracking or extra data; bad: ad tracking or wider access than sign-in needs
+type PrivacyRating = "good" | "warn" | "bad";
+
+type OAuthPrivacy = { rating: PrivacyRating; shares: string; concerns: string[] };
+
 type OAuthProvider = {
   key: string;
   module: string;
@@ -10,6 +15,7 @@ type OAuthProvider = {
   purpose: string;
   steps: OAuthStep[];
   spec: string[];
+  privacy: OAuthPrivacy;
 };
 
 const OAUTH_PROVIDERS: OAuthProvider[] = [
@@ -30,6 +36,14 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
       `user_url: "https://www.googleapis.com/oauth2/v2/userinfo"`,
       `scope: "openid email profile"`,
     ],
+    privacy: {
+      rating: "warn",
+      shares: "Name, email, photo",
+      concerns: [
+        "Logs every sign-in to your Google account activity",
+        "Ad-funded: account data feeds Google's ad profile",
+      ],
+    },
   },
   {
     key: "github",
@@ -49,6 +63,14 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
       `scope: "read:user user:email"`,
       `fields: [name: ["name", "login"], picture: ["avatar_url"]]`,
     ],
+    privacy: {
+      rating: "good",
+      shares: "Username, name, avatar, all emails",
+      concerns: [
+        "Reads all verified emails, including private ones",
+        "Public profile and repos are visible to the app",
+      ],
+    },
   },
   {
     key: "microsoft",
@@ -68,6 +90,14 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
       `scope: "openid email profile User.Read"`,
       `fields: [email: ["mail", "userPrincipalName"], name: ["displayName"], picture: []]`,
     ],
+    privacy: {
+      rating: "warn",
+      shares: "Name, email, profile",
+      concerns: [
+        "User.Read exposes job title, phone and office on work accounts",
+        "Work sign-ins are visible to your organization's admins",
+      ],
+    },
   },
   {
     key: "discord",
@@ -86,6 +116,14 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
       `scope: "identify email"`,
       `fields: [name: ["global_name", "username"], picture: []]`,
     ],
+    privacy: {
+      rating: "warn",
+      shares: "Username, display name, avatar, email",
+      concerns: [
+        "Exposes your Discord ID, which links to your servers and messages",
+        "Support vendor breach in 2025 leaked user IDs and emails",
+      ],
+    },
   },
   {
     key: "linkedin",
@@ -105,6 +143,14 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
       `user_url: "https://api.linkedin.com/v2/userinfo"`,
       `scope: "openid profile email"`,
     ],
+    privacy: {
+      rating: "warn",
+      shares: "Real name, email, photo",
+      concerns: [
+        "Ties this account to your real-world professional identity",
+        "Profile data is used to train AI models by default",
+      ],
+    },
   },
   {
     key: "x",
@@ -126,27 +172,14 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
       `pkce: true`,
       `fields: [id: ["data.id"], email: ["data.confirmed_email"], name: ["data.name", "data.username"], picture: ["data.profile_image_url"]]`,
     ],
-  },
-  {
-    key: "reddit",
-    module: "Reddit",
-    label: "Reddit",
-    purpose: "\"Continue with Reddit\" sign in. Reddit shares no email, so users get a placeholder address.",
-    steps: [
-      { text: "Register a Reddit account:", url: "https://www.reddit.com/register" },
-      { text: "Review the Data API terms that apply to your app:", url: "https://redditinc.com/policies/data-api-terms" },
-      { text: "Create a \"web app\" and set the redirect URI:", url: "https://www.reddit.com/prefs/apps", redirect: true },
-      { text: "Copy the client ID (under the app name) and the secret:", url: "https://www.reddit.com/prefs/apps" },
-    ],
-    spec: [
-      `authorize_url: "https://www.reddit.com/api/v1/authorize"`,
-      `token_url: "https://www.reddit.com/api/v1/access_token"`,
-      `user_url: "https://oauth.reddit.com/api/v1/me"`,
-      `scope: "identity"`,
-      `token_auth: :basic`,
-      `authorize_params: %{duration: "temporary"}`,
-      `fields: [picture: ["icon_img"]]`,
-    ],
+    privacy: {
+      rating: "bad",
+      shares: "Name, username, avatar, email",
+      concerns: [
+        "Sign-in also grants read access to your posts and timeline",
+        "Account data is used to train AI models by default",
+      ],
+    },
   },
   {
     key: "facebook",
@@ -167,7 +200,15 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
       `scope: "email public_profile"`,
       `fields: [picture: ["picture.data.url"]]`,
     ],
+    privacy: {
+      rating: "bad",
+      shares: "Name, email, photo, Facebook ID",
+      concerns: [
+        "Meta records which apps you sign in to for ad targeting",
+        "History of third-party data misuse (Cambridge Analytica)",
+      ],
+    },
   },
 ];
 
-export { OAUTH_PROVIDERS, OAuthProvider, OAuthStep };
+export { OAUTH_PROVIDERS, OAuthPrivacy, OAuthProvider, OAuthStep, PrivacyRating };

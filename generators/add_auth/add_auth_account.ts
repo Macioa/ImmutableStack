@@ -2454,7 +2454,7 @@ export const ConnectedAccountsPanel: React.FC<PanelProps> = () => {
       {providers.length > 0 ? (
         <section className="account-connect">
           <Typography.Text strong>Connect another account</Typography.Text>
-          <OAuthButtons onSelect={connect} />
+          <OAuthButtons onSelect={connect} showPrivacy />
         </section>
       ) : (
         <Typography.Paragraph type="secondary">

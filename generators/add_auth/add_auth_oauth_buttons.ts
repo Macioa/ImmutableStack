@@ -1,23 +1,74 @@
 import { join } from "../../utils/path";
 import { generateFile } from "..";
 import { ApiAppData } from "../add_api";
+import { OAUTH_PROVIDERS, OAuthProvider } from "./oauth_providers";
+
+// TS object literal of each provider's privacy notes, keyed by provider name
+const privacyEntry = ({ key, privacy }: OAuthProvider) => `  ${key}: ${JSON.stringify(privacy)},`;
+
+const privacyMap = () => `const PROVIDER_PRIVACY: Record<string, ProviderPrivacy> = {
+${OAUTH_PROVIDERS.map(privacyEntry).join("\n")}
+};`;
 
 // One button per provider the server reports as configured; icons are the only per-provider UI code
 const add_auth_oauth_buttons = async ({ LibDir }: ApiAppData) => {
   const dir = join(LibDir || "", "lib/typescript/components/auth");
   const filename = "OAuthButtons.tsx";
   const content = `import React, { useEffect, useState } from "react";
-import { Button, Tooltip } from "antd";
+import { Button, Popover, Tooltip } from "antd";
 import {
+  CheckCircleFilled,
+  CloseCircleFilled,
   DiscordOutlined,
   FacebookFilled,
   GithubOutlined,
   LinkedinFilled,
-  RedditOutlined,
+  WarningFilled,
   XOutlined,
 } from "@ant-design/icons";
 import { requestOAuthProviders } from "../../requests/User";
 import type { OAuthProvider } from "../../requests/User";
+import "./auth.css";
+
+type PrivacyRating = "good" | "warn" | "bad";
+
+interface ProviderPrivacy {
+  rating: PrivacyRating;
+  shares: string;
+  concerns: string[];
+}
+
+// Generated from the provider list in ImmutableStack (generators/add_auth/oauth_providers.ts)
+${privacyMap()}
+
+const RATINGS: Record<PrivacyRating, { label: string; icon: React.ReactNode }> = {
+  good: { label: "Good privacy", icon: <CheckCircleFilled /> },
+  warn: { label: "Some concerns", icon: <WarningFilled /> },
+  bad: { label: "Privacy risk", icon: <CloseCircleFilled /> },
+};
+
+// Touch screens have no hover: the first tap shows the notes, the second continues
+const hasHover = () =>
+  typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+const PrivacyNotes: React.FC<{ privacy: ProviderPrivacy; touch: boolean }> = ({
+  privacy: { rating, shares, concerns },
+  touch,
+}) => (
+  <div className={\`oauth-privacy oauth-privacy--\${rating}\`}>
+    <div className="oauth-privacy__rating">
+      {RATINGS[rating].icon}
+      <span>{RATINGS[rating].label}</span>
+    </div>
+    <div className="oauth-privacy__shares">Shares: {shares}</div>
+    <ul className="oauth-privacy__concerns">
+      {concerns.map((concern) => (
+        <li key={concern}>{concern}</li>
+      ))}
+    </ul>
+    {touch && <div className="oauth-privacy__hint">Tap again to continue</div>}
+  </div>
+);
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -59,17 +110,20 @@ const PROVIDER_ICONS: Record<string, React.ReactNode> = {
   discord: <DiscordOutlined style={{ color: "#5865F2" }} />,
   linkedin: <LinkedinFilled style={{ color: "#0A66C2" }} />,
   x: <XOutlined style={{ color: "#fff" }} />,
-  reddit: <RedditOutlined style={{ color: "#FF4500" }} />,
   facebook: <FacebookFilled style={{ color: "#1877F2" }} />,
 };
 
 interface OAuthButtonsProps {
   onSelect: (provider: string) => void;
+  // Registering and linking accounts show each provider's privacy notes; sign in skips them
+  showPrivacy?: boolean;
 }
 
 // Renders one button per provider whose keys are configured on the server, and nothing when none are
-export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ onSelect }) => {
+export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ onSelect, showPrivacy = false }) => {
   const [providers, setProviders] = useState<OAuthProvider[]>([]);
+  const [touch] = useState(() => !hasHover());
+  const [shown, setShown] = useState<string | null>(null);
 
   useEffect(() => {
     requestOAuthProviders().then(setProviders);
@@ -77,20 +131,49 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ onSelect }) => {
 
   if (!providers.length) return null;
 
+  const privacyFor = (name: string) => (showPrivacy ? PROVIDER_PRIVACY[name] : undefined);
+
+  // On touch screens the first tap only opens the notes
+  const select = (name: string) =>
+    touch && privacyFor(name) && shown !== name ? setShown(name) : onSelect(name);
+
+  const touchProps = (name: string) =>
+    touch ? { open: shown === name, onOpenChange: (open: boolean) => !open && setShown(null) } : {};
+
+  const button = (name: string, label: string) => (
+    <Button
+      className="oauth-button"
+      aria-label={\`Continue with \${label}\`}
+      icon={PROVIDER_ICONS[name] ?? label[0]}
+      onClick={() => select(name)}
+    />
+  );
+
   return (
     <>
       <div className="auth-divider">or OAUTH</div>
       <div className="oauth-buttons">
-        {providers.map(({ name, label }) => (
-          <Tooltip key={name} title={\`Continue with \${label}\`}>
-            <Button
-              className="oauth-button"
-              aria-label={\`Continue with \${label}\`}
-              icon={PROVIDER_ICONS[name] ?? label[0]}
-              onClick={() => onSelect(name)}
-            />
-          </Tooltip>
-        ))}
+        {providers.map(({ name, label }) => {
+          const privacy = privacyFor(name);
+          return privacy ? (
+            <Popover
+              key={name}
+              title={label}
+              content={<PrivacyNotes privacy={privacy} touch={touch} />}
+              trigger={touch ? "click" : "hover"}
+              placement="top"
+              rootClassName="oauth-privacy-popover"
+              getPopupContainer={(node) => node.parentElement ?? document.body}
+              {...touchProps(name)}
+            >
+              {button(name, label)}
+            </Popover>
+          ) : (
+            <Tooltip key={name} title={\`Continue with \${label}\`}>
+              {button(name, label)}
+            </Tooltip>
+          );
+        })}
       </div>
     </>
   );

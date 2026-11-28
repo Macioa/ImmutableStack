@@ -280,7 +280,7 @@ dep or route.
 
 ## generators/add_auth/oauth_providers.ts
 
-- **Exports:** `OAUTH_PROVIDERS`, `OAuthProvider`, `OAuthStep`
+- **Exports:** `OAUTH_PROVIDERS`, `OAuthPrivacy`, `OAuthProvider`, `OAuthStep`, `PrivacyRating`
 - **Elixir modules:** `User.Read`
 
 ## generators/add_ui/gen_update_apps_package_json.ts

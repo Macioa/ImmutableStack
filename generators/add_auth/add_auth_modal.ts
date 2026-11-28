@@ -169,6 +169,62 @@ const add_auth_styles = async ({ LibDir }: ApiAppData) => {
   outline: none;
 }
 
+/* Provider privacy notes: overridable through --oauth-privacy-* variables */
+.oauth-privacy-popover {
+  --oauth-privacy-good: #52c41a;
+  --oauth-privacy-warn: #faad14;
+  --oauth-privacy-bad: #ff4d4f;
+  max-width: min(300px, calc(100vw - 24px));
+}
+
+.oauth-privacy-popover .ant-popover-inner {
+  background: var(--oauth-privacy-surface, #1a1a2e);
+  border: 1px solid var(--oauth-privacy-border, rgba(97, 218, 251, 0.35));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.oauth-privacy-popover .ant-popover-arrow::before {
+  background: var(--oauth-privacy-surface, #1a1a2e);
+}
+
+.oauth-privacy-popover .ant-popover-title {
+  margin-bottom: 6px;
+  color: #fff;
+}
+
+.oauth-privacy {
+  display: grid;
+  gap: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.oauth-privacy__rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.oauth-privacy--good .oauth-privacy__rating { color: var(--oauth-privacy-good); }
+.oauth-privacy--warn .oauth-privacy__rating { color: var(--oauth-privacy-warn); }
+.oauth-privacy--bad .oauth-privacy__rating { color: var(--oauth-privacy-bad); }
+
+.oauth-privacy__shares {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.oauth-privacy__concerns {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.oauth-privacy__hint {
+  font-size: 0.75rem;
+  color: #61dafb;
+}
+
 /* Account menu: same navy surface, gradient border and glow as the panels */
 .user-menu-dropdown .ant-dropdown-menu {
   min-width: 180px;
