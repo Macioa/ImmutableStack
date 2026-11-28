@@ -35,10 +35,15 @@ jobs:
         run: node .build/start.js
 
       # mise and its shims for the steps that follow
+      # On Windows winget puts mise on the user PATH in the registry, which later steps don't read
       - name: Add mise shims to PATH
         if: always()
         run: |
-          if [ -n "$LOCALAPPDATA" ]; then echo "$LOCALAPPDATA/mise/shims" >> "$GITHUB_PATH"; else
+          if [ -n "$LOCALAPPDATA" ]; then
+            powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable('Path','User') -split ';' | Where-Object { \$_ }" | tr -d '\r' >> "$GITHUB_PATH"
+            echo "$LOCALAPPDATA/mise/shims" >> "$GITHUB_PATH"
+            cat "$GITHUB_PATH"
+          else
             echo "$HOME/.local/bin" >> "$GITHUB_PATH"
             echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
           fi
