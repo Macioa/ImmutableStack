@@ -69,6 +69,12 @@ jobs:
         working-directory: ${{ runner.temp }}/envtest_umbrella
         run: echo "" | node "$GITHUB_WORKSPACE/.build/add_auth.js" -quick
 
+      - name: Compile and test
+        working-directory: ${{ runner.temp }}/envtest_umbrella
+        run: |
+          mix compile
+          mix test
+
       # -quick writes the full logs to files instead of the console
       - name: Show log tails
         if: always()
