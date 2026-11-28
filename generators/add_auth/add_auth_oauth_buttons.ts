@@ -29,6 +29,7 @@ import {
 import { requestOAuthProviders } from "../../requests/User";
 import type { OAuthProvider } from "../../requests/User";
 import "./auth.css";
+import "./oauth_privacy.css";
 
 type PrivacyRating = "good" | "warn" | "bad";
 
@@ -180,7 +181,69 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ onSelect, showPrivac
 };
 `;
 
-  return generateFile({ dir, filename, content }, "add_auth_oauth_buttons");
+  return Promise.all([
+    generateFile({ dir, filename, content }, "add_auth_oauth_buttons"),
+    generateFile({ dir, filename: "oauth_privacy.css", content: PRIVACY_CSS }, "add_auth_oauth_buttons"),
+  ]);
 };
+
+// Popover styles use the UI's --imm-* tokens when present, with matching fallbacks
+const PRIVACY_CSS = `/* Provider privacy notes */
+.oauth-privacy-popover {
+  --oauth-privacy-good: var(--imm-success, #3ef0a0);
+  --oauth-privacy-warn: #faad14;
+  --oauth-privacy-bad: var(--imm-danger, #ff6b81);
+  max-width: min(300px, calc(100vw - 24px));
+}
+
+.oauth-privacy-popover .ant-popover-inner {
+  background: var(--imm-navy, #1a1a2e);
+  border: 1px solid var(--imm-line-strong, rgba(97, 218, 251, 0.5));
+  border-radius: var(--imm-radius, 12px);
+  box-shadow: var(--imm-glow-sm, 0 0 10px rgba(97, 218, 251, 0.35));
+}
+
+.oauth-privacy-popover .ant-popover-arrow::before {
+  background: var(--imm-navy, #1a1a2e);
+}
+
+.oauth-privacy-popover .ant-popover-title {
+  margin-bottom: 6px;
+  color: var(--imm-text-strong, #e6fbff);
+}
+
+.oauth-privacy {
+  display: grid;
+  gap: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--imm-text, rgba(255, 255, 255, 0.87));
+}
+
+.oauth-privacy__rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.oauth-privacy--good .oauth-privacy__rating { color: var(--oauth-privacy-good); }
+.oauth-privacy--warn .oauth-privacy__rating { color: var(--oauth-privacy-warn); }
+.oauth-privacy--bad .oauth-privacy__rating { color: var(--oauth-privacy-bad); }
+
+.oauth-privacy__shares {
+  color: var(--imm-muted, rgba(230, 251, 255, 0.55));
+}
+
+.oauth-privacy__concerns {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.oauth-privacy__hint {
+  font-size: 0.75rem;
+  color: var(--imm-cyan, #61dafb);
+}
+`;
 
 export { add_auth_oauth_buttons };

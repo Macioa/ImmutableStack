@@ -210,7 +210,7 @@ dep or route.
 ## generators/add_auth/add_auth_oauth_buttons.ts
 
 - **Exports:** `add_auth_oauth_buttons`
-- **Writes:** `OAuthButtons.tsx`
+- **Writes:** `OAuthButtons.tsx`, `oauth_privacy.css`
 - **Elixir modules:** `React.FC`, `React.ReactNode`
 
 ## generators/add_auth/add_auth_oauth_controller.ts
