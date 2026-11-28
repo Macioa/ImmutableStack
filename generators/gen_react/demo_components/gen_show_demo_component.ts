@@ -43,18 +43,14 @@ export const ${singleUpperCamel}Render = ({ ${singleLowerCamel} }: ${singleUpper
   if (!${singleLowerCamel}) return null;
 
   return (
-    <div className="form-container" style={{ background: "none" }}>
-      <ul className="styled-list">
-        {Object.entries(${singleLowerCamel}).map(([key, value]) => (
-          <li className="styled-list-item" key={key}>
-            <span style={{ fontWeight: 600, color: "#235390", minWidth: 90, marginRight: 8 }}>
-              {key}:
-            </span>
-            <span>{String(value)}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <dl className="field-list">
+      {Object.entries(${singleLowerCamel}).map(([key, value]) => (
+        <div className="field-row" key={key}>
+          <dt>{key}</dt>
+          <dd>{String(value)}</dd>
+        </div>
+      ))}
+    </dl>
   );
 };
 
@@ -66,12 +62,13 @@ export const ${singleUpperCamel} = (props: ${singleUpperCamel}Props) => {
     if (effect) effect(dispatch as Dispatch);
   }, [dispatch, effect]);
 
-  return (
-    <div>
-      {${singleLowerCamel} ? <${singleUpperCamel}Render ${singleLowerCamel}={${singleLowerCamel}} /> : <p>No ${singleUpperCamel} selected</p>}
-    </div>
+  return ${singleLowerCamel} ? (
+    <${singleUpperCamel}Render ${singleLowerCamel}={${singleLowerCamel}} />
+  ) : (
+    <p className="muted">No ${singleUpperCamel} selected</p>
   );
-};`;
+};
+`;
 
   return generateFile(
     { dir: filedir, filename: `show.tsx`, content },

@@ -17,15 +17,15 @@ const createPropertyField = (
   type: string,
   singleLowerCamel: string
 ) => {
-  return ` 
-  <label htmlFor="${name}">${name}</label>
-  <input
-    type="${JsToInputType[type as keyof typeof JsToInputType] || "text"}"
-    name="${name}"
-    value={${singleLowerCamel}?.${name} ?? ""}
-    onChange={onChange}
-  />
-  `;
+  return `
+      <label htmlFor="${singleLowerCamel}-${name}">${name}</label>
+      <input
+        id="${singleLowerCamel}-${name}"
+        type="${JsToInputType[type as keyof typeof JsToInputType] || "text"}"
+        name="${name}"
+        value={${singleLowerCamel}?.${name} ?? ""}
+        onChange={onChange}
+      />`;
 };
 
 const gen_create_demo_component = async (
@@ -53,11 +53,11 @@ const gen_create_demo_component = async (
     })
     .join("\n");
 
-  const content = `
-  import React, { useState } from "react";
+  const content = `import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import type { Dispatch } from "redux";
 import type { ${singleUpperCamel} as ${singleUpperCamel}T } from "../../state/${singleUpperCamel}";
+import "../styles.css";
 
 interface CreateProps {
   onSubmit?: (
@@ -68,16 +68,19 @@ interface CreateProps {
   submitText?: string;
 }
 
+// Number inputs hand back strings; store numbers so the payload matches the ${singleUpperCamel} type
+const fieldValue = ({ type, value }: HTMLInputElement) =>
+  type === "number" && value !== "" ? Number(value) : value;
+
 export const ${singleUpperCamel}Form = ({ onSubmit, submitText }: CreateProps) => {
   const dispatch = useDispatch();
   const [${singleLowerCamel}, set${singleUpperCamel}] = useState<${singleUpperCamel}T | null>(null);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    set${singleUpperCamel}((prev${singleUpperCamel}) => {
-      return { ...prev${singleUpperCamel}, [name]: value } as ${singleUpperCamel}T;
-    });
-  };
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    set${singleUpperCamel}(
+      (prev${singleUpperCamel}) =>
+        ({ ...prev${singleUpperCamel}, [e.target.name]: fieldValue(e.target) }) as ${singleUpperCamel}T,
+    );
 
   return (
     <form className="form-container"
@@ -95,12 +98,9 @@ export const ${singleUpperCamel}Form = ({ onSubmit, submitText }: CreateProps) =
 };
 
 export const Create${singleUpperCamel} = ({ onSubmit }: CreateProps) => (
-  <div>
-    <h4>Create a ${singleUpperCamel}</h4>
-    <${singleUpperCamel}Form onSubmit={onSubmit} submitText="Create a ${singleUpperCamel}"/>
-  </div>
+  <${singleUpperCamel}Form onSubmit={onSubmit} submitText="Create a ${singleUpperCamel}" />
 );
-  `;
+`;
 
   return generateFile(
     { dir: filedir, filename: `create.tsx`, content },
