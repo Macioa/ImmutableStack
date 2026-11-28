@@ -90,7 +90,9 @@ const gen_request_create = ({
         method: "POST",
         body: JSON.stringify(${singleLowerCamel}),
       },
-      callback: (res: any) => dispatch(set${singleUpperCamel}(res.data)),
+      // Only a single entity is selected; a batch request answers with an array
+      callback: (res: any) =>
+        Array.isArray(res.data) ? null : dispatch(set${singleUpperCamel}(res.data)),
     }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_update = ({
@@ -106,7 +108,9 @@ const gen_request_update = ({
         method: "PUT",
         body: JSON.stringify(${singleLowerCamel}),
       },
-      callback: (res: any) => dispatch(set${singleUpperCamel}(res.data)),
+      // Only a single entity is selected; a batch request answers with an array
+      callback: (res: any) =>
+        Array.isArray(res.data) ? null : dispatch(set${singleUpperCamel}(res.data)),
     }, dispatch) as Promise<${singleUpperCamel}Response>;`;
 
 const gen_request_delete = ({ singleUpperCamel, singleSnake }: StringOnlyMap) =>
