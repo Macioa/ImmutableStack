@@ -1,6 +1,6 @@
 name: Environment tests
 
-# Installs the toolchain with the Immutable installer, then runs init and add_auth (sqlite, -cache, -quick)
+# Installs the toolchain with the Immutable installer, then runs init and add_auth (sqlite, -quick)
 on:
   pull_request:
     branches: [beta]
@@ -58,13 +58,13 @@ jobs:
       # Empty answer to the git domain prompt skips the remote
       - name: Init
         working-directory: ${{ runner.temp }}
-        run: echo "" | node "$GITHUB_WORKSPACE/.build/init_proj.js" envtest -sqlite -cache -quick
+        run: echo "" | node "$GITHUB_WORKSPACE/.build/init_proj.js" envtest -sqlite -quick
 
       - name: Add auth
         working-directory: ${{ runner.temp }}/envtest_umbrella
         run: echo "" | node "$GITHUB_WORKSPACE/.build/add_auth.js" -quick
 
-      # -cache and -quick write the full logs to files instead of the console
+      # -quick writes the full logs to files instead of the console
       - name: Show log tails
         if: always()
         run: |
